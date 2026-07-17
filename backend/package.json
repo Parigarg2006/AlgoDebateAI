@@ -1,0 +1,22 @@
+{
+  "name": "algo-debate-ai-backend",
+  "version": "1.0.0",
+  "description": "Multi-agent logic solver backend with C++ sandbox",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test:executor": "node tests/testExecutor.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.12.0",
+    "@langchain/core": "^1.2.3",
+    "@langchain/langgraph": "^1.4.8",
+    "bullmq": "^5.80.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "socket.io": "^4.8.3"
+  }
+}
