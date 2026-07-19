@@ -2,7 +2,8 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background-color: var(--bg-main);
 }
 
@@ -73,7 +74,9 @@
   gap: 24px;
   padding: 24px;
   width: 100%;
-  padding-bottom: 140px; /* Space for bottom drawer terminal */
+  height: calc(100vh - 60px - 120px);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Sidebar Column (Left, 25% width) */
@@ -82,7 +85,10 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 /* Workspace Column (Right, 75% width) */
@@ -90,7 +96,9 @@
   width: 75%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
 }
 
 /* Workspace Panels (Top Row of Workspace Column) */
@@ -376,7 +384,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto !important;
 }
 
 .workspace-empty-view {

@@ -35,7 +35,6 @@ function App() {
   const [maxRounds, setMaxRounds] = useState(4);
   const [language, setLanguage] = useState('cpp'); // cpp, python, java
   const [isCopied, setIsCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('solution');
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   
   // Custom Test Case States
@@ -890,7 +889,7 @@ function App() {
             </form>
           </div>
 
-          {/* Bento Tile 2: LangGraph Mission Path (Vertical Timeline) */}
+          {/* Bento Tile 2: LangGraph Mission Path (2x2 Grid) */}
           <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h2 className="card-header-row">
               <span className="card-title">
@@ -934,39 +933,80 @@ function App() {
               }
             `}</style>
           </div>
+
+          {/* Bento Tile 3: Custom Test Cases Widget */}
+          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <h2 className="card-header-row">
+              <span className="card-title">
+                <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
+                Run Custom Test Cases
+              </span>
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+              <textarea
+                placeholder="Enter custom inputs here... (e.g. 5 \n 1 2 3 4 5)"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                disabled={isCustomRunning}
+                style={{
+                  width: '100%',
+                  height: '60px',
+                  background: 'rgba(10, 15, 23, 0.4)',
+                  border: '1px solid var(--border-slate)',
+                  borderRadius: '6px',
+                  color: 'var(--text-primary)',
+                  padding: '8px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  resize: 'none',
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="button"
+                className="btn-start-debate-custom"
+                onClick={handleRunCustomTest}
+                disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
+                style={{
+                  height: '34px',
+                  background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
+                }}
+              >
+                {isCustomRunning ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>Running Sandbox...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={12} />
+                    <span>Run Custom Test</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </section>
 
-        {/* Right Workspace Column (75% width) */}
+        {/* Workspace Column (Right, 75% width) */}
         <section className="workspace-column">
           
-          {/* Navigation Tabs Bar */}
-          <div className="workspace-tabs-bar">
-            <button 
-              type="button"
-              className={`workspace-tab-btn ${activeTab === 'solution' ? 'active' : ''}`}
-              onClick={() => setActiveTab('solution')}
-            >
-              💻 Solution Workspace
-            </button>
-            <button 
-              type="button"
-              className={`workspace-tab-btn ${activeTab === 'debate' ? 'active' : ''}`}
-              onClick={() => setActiveTab('debate')}
-            >
-              ⚔️ Debate Arena
-            </button>
-            <button 
-              type="button"
-              className={`workspace-tab-btn ${activeTab === 'sandbox' ? 'active' : ''}`}
-              onClick={() => setActiveTab('sandbox')}
-            >
-              🧪 Sandbox Playground
-            </button>
-          </div>
-
-          {/* Tab 1: Solution Workspace */}
-          {activeTab === 'solution' && (
-            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="workspace-panels-grid">
+            
+            {/* Bento Tile 4: Workspace Console */}
+            <div className="bento-card workspace-panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
               <h2 className="card-header-row">
                 <span className="card-title">
                   <Code2 size={14} style={{ color: 'var(--accent-blue)' }} />
@@ -1010,7 +1050,7 @@ function App() {
                 )}
               </h2>
 
-              <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div className="workspace-content">
                 {jobState === 'idle' && (
                   <div className="workspace-empty-view">
                     <Atom size={36} />
@@ -1142,11 +1182,9 @@ function App() {
                 )}
               </div>
             </div>
-          )}
 
-          {/* Tab 2: Debate Arena */}
-          {activeTab === 'debate' && (
-            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {/* Bento Tile 5: Combat Debate Arena */}
+            <div className="bento-card workspace-panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
               <h2 className="card-header-row">
                 <span className="card-title">
                   <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
@@ -1249,92 +1287,8 @@ function App() {
                 )}
               </div>
             </div>
-          )}
-
-          {/* Tab 3: Sandbox Playground */}
-          {activeTab === 'sandbox' && (
-            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <h2 className="card-header-row">
-                <span className="card-title">
-                  <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
-                  Sandbox Custom Test Runner
-                </span>
-              </h2>
-
-              <div className="workspace-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>CUSTOM INPUT DATA (STDIN)</label>
-                  <textarea
-                    placeholder="Enter custom inputs to pass to the sandbox execution runtime..."
-                    value={customInput}
-                    onChange={(e) => setCustomInput(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '100px',
-                      background: 'rgba(10, 15, 23, 0.4)',
-                      border: '1px solid var(--border-slate)',
-                      borderRadius: '10px',
-                      color: 'var(--text-primary)',
-                      padding: '12px',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.8rem',
-                      resize: 'none',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleRunCustomTest}
-                  disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
-                  style={{
-                    height: '42px',
-                    background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                    color: '#ffffff',
-                    fontWeight: '600',
-                    borderRadius: '8px',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
-                    transition: 'all 0.2s',
-                    width: '100%'
-                  }}
-                >
-                  {isCustomRunning ? (
-                    <>
-                      <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Running Execution Sandbox...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play size={14} />
-                      <span>Run Custom Test Case</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Custom Output console logs */}
-                {terminalLogs.some(l => l.includes('custom_test_result') || l.includes('customOutput')) && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SANDBOX EXECUTION RESULTS</label>
-                    <pre style={{ flex: 1, background: 'rgba(10, 15, 23, 0.6)', border: '1px solid var(--border-slate)', borderRadius: '10px', padding: '14px', overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--accent-blue)', minHeight: '120px' }}>
-                      <code>
-                        {(() => {
-                          const resultLines = terminalLogs.filter(l => l.includes('custom_test_result') || l.includes('customOutput') || l.includes('custom test case'));
-                          return resultLines.length > 0 ? resultLines.join('\n') : 'Awaiting custom sandbox result run...';
-                        })()}
-                      </code>
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            
+          </div>
 
         </section>
       </main>
