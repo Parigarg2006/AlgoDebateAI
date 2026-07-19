@@ -12,43 +12,12 @@ dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey });
 
-// Define the response schema to enforce JSON output structure
-const CoderResponseSchema = {
-  type: 'OBJECT',
-  properties: {
-    code: {
-      type: 'STRING',
-      description: 'The complete, compilable C++ source code. Ensure it reads inputs from standard input (cin) and prints expected results to standard output (cout). Do not wrap in markdown backticks.'
-    },
-    testCases: {
-      type: 'ARRAY',
-      description: 'A list of 3 to 4 custom test cases to verify the code.',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          input: {
-            type: 'STRING',
-            description: 'The input data to feed into stdin.'
-          },
-          expectedOutput: {
-            type: 'STRING',
-            description: 'The expected output to compare against stdout.'
-          }
-        },
-        required: ['input', 'expectedOutput']
-      }
-    }
-  },
-  required: ['code', 'testCases']
-};
-
 /**
- * Generates an initial C++ code draft or refines it based on criticism history.
- * @param {string} problemDescription - The coding task description.
- * @param {Array<{round: number, code: string, criticism: string}>} [criticismHistory=[]] - Feedback history from previous rounds.
- * @returns {Promise<{code: string, testCases: Array<{input: string, expectedOutput: string}>}>}
+ * Generates an initial code draft or refines it based on criticism history.
+ * Supports C++, Python, and Java.
  */
-export async function generateDraft(problemDescription, criticismHistory = []) {
+export async function generateDraft(problemDescription, criticismHistory = [], customSystemInstruction = null, language = 'cpp') {
+  const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
 
   // If we have criticism from the Critic Agent or Sandbox, we build an iterative prompt
@@ -59,22 +28,61 @@ export async function generateDraft(problemDescription, criticismHistory = []) {
       prompt += `Your Code:\n${history.code}\n\n`;
       prompt += `Criticism & Sandbox Failures:\n${history.criticism}\n\n`;
     }
-    prompt += `Please write a corrected, optimized version of the C++ code that fixes all of these issues. Make sure it compiles, passes all edge cases, and is efficient.`;
+    prompt += `Please write a corrected, optimized version of the ${langUpper} code that fixes all of these issues. Make sure it runs/compiles, passes all edge cases, and is efficient.`;
   } else {
-    prompt += `Please write an initial C++ solution for this problem. Also generate 3 to 4 diverse test cases (including standard cases and edge cases) to verify your logic.`;
+    prompt += `Please write an initial ${langUpper} solution for this problem. Also generate 3 to 4 diverse test cases (including standard cases and edge cases) to verify your logic.`;
   }
 
   // System instructions establish the persona and standard guidelines
-  const systemInstruction = `
+  const systemInstruction = customSystemInstruction || `
 You are an expert competitive programmer and algorithms specialist.
-Your task is to write high-quality, optimal, and compilable C++ code.
+Your task is to write high-quality, optimal, and compilable ${langUpper} code.
 Guidelines:
-1. Use standard C++ headers and include proper namespaces (e.g. #include <iostream>, using namespace std;).
-2. Read all test inputs from standard input (cin) and write outputs to standard output (cout).
+1. Write code in ${langUpper}.
+2. Read all test inputs from standard input and write outputs to standard output.
 3. Do not include verbose print statements or prompts (e.g., "Enter number:"). Only print the final answer.
 4. Ensure the time complexity is optimal for large input constraints.
-5. Pay attention to edge cases: empty arrays, negative numbers, very large numbers (use long long if needed).
+5. Pay attention to edge cases: empty arrays, negative numbers, very large numbers (use 64-bit integers if needed).
   `.trim();
+
+  // Dynamically configure description based on language
+  let codeDesc = `The complete, compilable ${langUpper} source code.`;
+  if (language === 'cpp') {
+    codeDesc += ' Ensure it reads inputs from cin and prints to cout. Do not wrap in backticks.';
+  } else if (language === 'python') {
+    codeDesc += ' Ensure it reads inputs from sys.stdin or input() and prints to stdout. Do not wrap in backticks.';
+  } else if (language === 'java') {
+    codeDesc += ' Ensure it has a public class (Main or Solution) reading from Scanner or BufferedReader. Do not wrap in backticks.';
+  }
+
+  const CoderResponseSchema = {
+    type: 'OBJECT',
+    properties: {
+      code: {
+        type: 'STRING',
+        description: codeDesc
+      },
+      testCases: {
+        type: 'ARRAY',
+        description: 'A list of 3 to 4 custom test cases to verify the code.',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            input: {
+              type: 'STRING',
+              description: 'The input data to feed into stdin.'
+            },
+            expectedOutput: {
+              type: 'STRING',
+              description: 'The expected output to compare against stdout.'
+            }
+          },
+          required: ['input', 'expectedOutput']
+        }
+      }
+    },
+    required: ['code', 'testCases']
+  };
 
   // Call the Gemini API with structured output configuration
   const response = await ai.models.generateContent({
@@ -91,4 +99,70 @@ Guidelines:
   // The SDK automatically validates that response.text matches our CoderResponseSchema structure.
   // We can safely parse the response text as JSON.
   return JSON.parse(response.text);
+}
+
+/**
+ * Synthesizes exactly 5 diverse adversarial test cases based on the problem description.
+ * @param {string} problemDescription
+ * @param {string} language
+ * @returns {Promise<Array<{input: string, expectedOutput: string}>>}
+ */
+export async function synthesizeTestCases(problemDescription, language = 'cpp') {
+  const systemInstruction = `
+You are an expert QA engineer and test case designer for competitive programming.
+Your task is to analyze the problem description, extract mathematical boundaries/constraints, and dynamically synthesize a matrix of exactly 5 diverse adversarial test cases to evaluate algorithmic correctness.
+Generate test cases covering:
+1. Maximum limits (upper bounds of input values or lengths)
+2. Negative/Empty/Zero states or minimum constraints
+3. Uniform or repetitive elements (e.g., all array elements are the same)
+4. standard/average case
+5. Edge cases specific to the problem parameters (e.g. large numbers causing overflow, prime numbers, etc.)
+  `.trim();
+
+  const prompt = `Problem Description:\n${problemDescription}\n\nPlease generate the 5 adversarial test cases.`;
+
+  const TestCasesSchema = {
+    type: 'OBJECT',
+    properties: {
+      testCases: {
+        type: 'ARRAY',
+        description: 'A list of exactly 5 custom test cases.',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            input: {
+              type: 'STRING',
+              description: 'The input data to feed into stdin.'
+            },
+            expectedOutput: {
+              type: 'STRING',
+              description: 'The expected output to compare against stdout.'
+            }
+          },
+          required: ['input', 'expectedOutput']
+        }
+      }
+    },
+    required: ['testCases']
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-flash-lite-latest',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: TestCasesSchema,
+        temperature: 0.1
+      }
+    });
+
+    const result = JSON.parse(response.text);
+    return result.testCases || [];
+  } catch (error) {
+    console.error('[Test Synthesizer] Error generating test cases:', error);
+    // Return empty array fallback so it doesn't break execution
+    return [];
+  }
 }

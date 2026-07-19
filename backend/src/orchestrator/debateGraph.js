@@ -1,5 +1,5 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
-import { generateDraft } from '../agents/coderAgent.js';
+import { generateDraft, synthesizeTestCases } from '../agents/coderAgent.js';
 import { executeCpp } from '../executor/cppExecutor.js';
 import { critiqueCode } from '../agents/criticAgent.js';
 import { refineCode } from '../agents/refinerAgent.js';
@@ -28,23 +28,38 @@ export const DebateState = Annotation.Root({
   }),
   
   finalResult: Annotation({ reducer: (x, y) => y }),
-  onProgress: Annotation({ reducer: (x, y) => y }) // Callback to report progress to BullMQ / Socket.io
+  onProgress: Annotation({ reducer: (x, y) => y }), // Callback to report progress to BullMQ / Socket.io
+  coderPrompt: Annotation({ reducer: (x, y) => y }),
+  criticPrompt: Annotation({ reducer: (x, y) => y }),
+  refinerPrompt: Annotation({ reducer: (x, y) => y }),
+  language: Annotation({ reducer: (x, y) => y, default: () => 'cpp' })
 });
 
 /**
  * 2. Define Node: Coder Agent
  */
 async function coderNode(state) {
-  console.log(`\n[Node: Coder] Round ${state.currentRound} drafting...`);
+  const lang = state.language || 'cpp';
+  console.log(`\n[Node: Coder] Round ${state.currentRound} drafting (${lang.toUpperCase()})...`);
   
   if (state.onProgress) {
     await state.onProgress({ node: 'coder', round: state.currentRound });
   }
 
-  const draft = await generateDraft(state.problemDescription, state.criticismHistory);
+  const draft = await generateDraft(state.problemDescription, state.criticismHistory, state.coderPrompt, lang);
+  
+  let testCases = draft.testCases;
+  if (state.currentRound === 1) {
+    console.log('[Node: Coder] Synthesizing 5 adversarial edge-cases dynamically...');
+    const synthesized = await synthesizeTestCases(state.problemDescription, lang);
+    if (synthesized && synthesized.length > 0) {
+      testCases = synthesized;
+    }
+  }
+
   return {
     code: draft.code,
-    testCases: draft.testCases
+    testCases: testCases
   };
 }
 
@@ -52,13 +67,14 @@ async function coderNode(state) {
  * 3. Define Node: Sandbox Executor
  */
 async function sandboxNode(state) {
-  console.log(`[Node: Sandbox] Compiling and running tests in C++...`);
+  const lang = state.language || 'cpp';
+  console.log(`[Node: Sandbox] Compiling and running tests in ${lang.toUpperCase()}...`);
   
   if (state.onProgress) {
     await state.onProgress({ node: 'sandbox', round: state.currentRound, code: state.code });
   }
 
-  const execution = await executeCpp(state.code, state.testCases);
+  const execution = await executeCpp(state.code, state.testCases, lang);
   
   let results = [];
   if (execution.success) {
@@ -86,13 +102,14 @@ async function sandboxNode(state) {
  * 4. Define Node: Critic Agent
  */
 async function criticNode(state) {
-  console.log(`[Node: Critic] Reviewing solution logic...`);
+  const lang = state.language || 'cpp';
+  console.log(`[Node: Critic] Reviewing solution logic in ${lang.toUpperCase()}...`);
   
   if (state.onProgress) {
     await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code });
   }
 
-  const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults);
+  const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, state.criticPrompt, lang);
   console.log(`[Node: Critic] Approved: ${critique.approved}`);
   console.log(`[Node: Critic] Reasoning: ${critique.reasoning.substring(0, 150)}...`);
 
@@ -127,6 +144,17 @@ async function criticNode(state) {
       });
     }
 
+    // Capture compile/runtime errors directly from Sandbox results to parse into the next prompt
+    const errors = state.sandboxResults.filter(r => r.status !== 'PASS');
+    if (errors.length > 0) {
+      feedback += `\n\n[Generic Sandbox Error Stream]`;
+      errors.forEach((err, idx) => {
+        feedback += `\n- Test Case ${idx + 1} Status: ${err.status}`;
+        if (err.input) feedback += `\n  Input: ${err.input}`;
+        if (err.error) feedback += `\n  Stderr / Fault Stream:\n  ${err.error}`;
+      });
+    }
+
     // Pass as an array because the reducer will concatenate it to criticismHistory
     updates.criticismHistory = [{
       round: state.currentRound,
@@ -144,13 +172,14 @@ async function criticNode(state) {
  * 5. Define Node: Refiner Agent
  */
 async function refinerNode(state) {
-  console.log(`\n[Node: Refiner] Polishing final C++ solution...`);
+  const lang = state.language || 'cpp';
+  console.log(`\n[Node: Refiner] Polishing final ${lang.toUpperCase()} solution...`);
   
   if (state.onProgress) {
     await state.onProgress({ node: 'refiner', round: state.currentRound });
   }
 
-  const refined = await refineCode(state.problemDescription, state.code, state.criticismHistory);
+  const refined = await refineCode(state.problemDescription, state.code, state.criticismHistory, state.refinerPrompt, lang);
   return { finalResult: refined };
 }
 

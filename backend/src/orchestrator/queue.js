@@ -21,7 +21,7 @@ export const debateQueue = new Queue('debateQueue', { connection });
 export const debateWorker = new Worker(
   'debateQueue',
   async (job) => {
-    const { problemDescription, maxRounds } = job.data;
+    const { problemDescription, maxRounds, language, coderPrompt, criticPrompt, refinerPrompt } = job.data;
     console.log(`\n[Worker] Picked up job ${job.id} from queue.`);
 
     // Keep an array of round-by-round logs to report progress
@@ -31,6 +31,10 @@ export const debateWorker = new Worker(
     const finalState = await debateGraph.invoke({
       problemDescription,
       maxRounds,
+      language,
+      coderPrompt,
+      criticPrompt,
+      refinerPrompt,
       onProgress: async (roundProgress) => {
         roundsHistory.push(roundProgress);
 

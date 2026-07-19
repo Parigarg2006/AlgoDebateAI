@@ -1,110 +1,125 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
-
 :root {
-  --bg-primary: #080a10;
-  --bg-secondary: rgba(15, 20, 32, 0.7);
-  --bg-darker: #05060a;
+  --bg-main: #0b0f17;
+  --bg-card: rgba(22, 28, 45, 0.4);
+  --border-slate: rgba(255, 255, 255, 0.05);
   
-  --accent-blue: #00d2ff;
-  --accent-purple: #9d4edd;
-  --accent-green: #00f5d4;
-  --accent-red: #ff2a6d;
-  --accent-orange: #ff9f1c;
+  --accent-blue: #38bdf8;
+  --accent-purple: #c084fc;
+  --accent-green: #34d399;
+  --accent-red: #f87171;
+  --accent-orange: #fb923c;
   
-  --text-main: #f1f3f9;
-  --text-muted: #8b9bb4;
-  --text-disabled: #4e5a70;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(0, 210, 255, 0.15);
-  
-  --glass-bg: rgba(255, 255, 255, 0.02);
-  --glass-shadow: rgba(0, 0, 0, 0.4);
-  
-  --font-sans: 'Outfit', sans-serif;
+  --glass-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02), 0 8px 32px rgba(0, 0, 0, 0.4);
+  --backdrop-blur: blur(12px);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'Fira Code', monospace;
 }
 
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-main);
   font-family: var(--font-sans);
+  background: var(--bg-main);
+  color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 5% 15%, rgba(0, 210, 255, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 95% 85%, rgba(157, 78, 221, 0.05) 0%, transparent 45%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphic Panel utility */
-.glass-panel {
-  background: var(--bg-secondary);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
+/* Bento Card Style */
+.bento-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-slate);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 var(--glass-shadow);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--glass-shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
 }
 
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+.bento-card:hover {
+  border-color: rgba(255, 255, 255, 0.09);
 }
 
-/* Animated Neon Borders */
-.border-glow-blue { border-color: rgba(0, 210, 255, 0.25); box-shadow: 0 0 15px rgba(0, 210, 255, 0.05); }
-.border-glow-purple { border-color: rgba(157, 78, 221, 0.25); box-shadow: 0 0 15px rgba(157, 78, 221, 0.05); }
-.border-glow-green { border-color: rgba(0, 245, 212, 0.25); box-shadow: 0 0 15px rgba(0, 245, 212, 0.05); }
-.border-glow-red { border-color: rgba(255, 42, 109, 0.25); box-shadow: 0 0 15px rgba(255, 42, 109, 0.05); }
-
-/* Scrollbars */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Code layout customization */
-pre, code {
+/* Floating Holographic Glow (Cursor Follower) */
+.app-container {
+  position: relative;
+  background-color: var(--bg-main);
+}
+
+.app-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(600px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(99, 102, 241, 0.05), transparent 70%);
+}
+
+.app-header,
+.main-container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Live Token Rain animation for Debate Arena */
+.token-rain-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.04;
+  z-index: 0;
+}
+
+.token-column {
+  position: absolute;
+  top: -120px;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--accent-blue);
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  animation: tokenDrop 5s infinite linear;
+  white-space: nowrap;
 }
 
-/* Pulse animation for active nodes */
-@keyframes pulseGlow {
-  0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 5px rgba(0, 210, 255, 0.2); }
-  50% { transform: scale(1.03); opacity: 1; box-shadow: 0 0 20px rgba(0, 210, 255, 0.6); }
-  100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 5px rgba(0, 210, 255, 0.2); }
+@keyframes tokenDrop {
+  0% { top: -150px; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
 
-.active-pulse {
-  animation: pulseGlow 2s infinite ease-in-out;
-}
-
-/* Custom transitions */
-.fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}

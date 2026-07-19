@@ -50,9 +50,10 @@ const CriticResponseSchema = {
  * @param {Array<any>} [sandboxResults=[]] - Results from running test cases in the executor sandbox.
  * @returns {Promise<{approved: boolean, reasoning: string, failingTestCase?: {input: string, expectedOutput: string}}>}
  */
-export async function critiqueCode(problemDescription, code, sandboxResults = []) {
+export async function critiqueCode(problemDescription, code, sandboxResults = [], customSystemInstruction = null, language = 'cpp') {
+  const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
-  prompt += `Coder's proposed C++ Code:\n${code}\n\n`;
+  prompt += `Coder's proposed ${langUpper} Code:\n${code}\n\n`;
 
   if (sandboxResults.length > 0) {
     prompt += `Sandbox Execution Results:\n`;
@@ -72,16 +73,18 @@ export async function critiqueCode(problemDescription, code, sandboxResults = []
   }
 
   // Define the Critic persona: A strict competitive programming judge
-  const systemInstruction = `
+  const systemInstruction = customSystemInstruction || `
 You are a harsh, meticulous competitive programming judge and code reviewer.
-Your only job is to find bugs, edge case vulnerabilities, or performance/complexity bottlenecks in the provided C++ code.
-Review guidelines:
-1. Check for compilation errors (if sandbox results indicate compiler failures).
-2. Check for logic errors: Are there any off-by-one errors? Is there potential for integer overflow?
-3. Check for edge cases: How does the code handle empty arrays, N=0, N=1, negative numbers, extremely large numbers?
-4. Check for time complexity: Is the code optimal? If the problem has N <= 10^5 and the code runs in O(N^2) using nested loops, reject it (approved = false) and explain that it will TLE (Time Limit Exceeded).
-5. If you find a flaw, you must provide a concrete, failing test case in "failingTestCase" that proves the flaw.
-6. If the code is correct, optimal, and passes all edge cases, set approved = true. Be extremely thorough; do not approve lazy or sub-optimal solutions.
+Your only job is to find bugs, edge case vulnerabilities, or performance/complexity bottlenecks in the provided ${langUpper} code.
+
+Universal Evaluation Framework:
+1. PROBLEM CLASSIFICATION: Classify the problem type internally (e.g., Dynamic Programming, Graph Theory, Greedy, Segment Trees, String Mutation, Bit Manipulation, etc.).
+2. ALGORITHMIC BENCHMARKING: Establish the standard optimal time and space complexity bounds for this category of problem given the input limits.
+3. COMPLEXITY VERIFICATION: Analyze the proposed code and cross-verify its space/time complexity bounds strictly against the optimal limits of its classified category. If the code is sub-optimal (e.g. O(N^2) where O(N log N) is standard for this class), reject it (approved = false) and explain the complexity gap.
+4. SANDBOX ANALYSIS: Analyze sandbox results. If any test case failed (COMPILE_ERROR, TLE, or RTE/segfault), inspect the stdout/stderr/error stream and reject the code.
+5. CORRECTNESS & BOUNDARIES: Verify logic against extreme mathematical boundaries, integer overflows, empty/negative inputs, and empty states.
+6. FAILING TEST CASE: If approved is false, you must provide a concrete, failing test case in "failingTestCase" with both input and expectedOutput.
+7. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases. Do not approve lazy or sub-optimal solutions.
   `.trim();
 
   const response = await ai.models.generateContent({

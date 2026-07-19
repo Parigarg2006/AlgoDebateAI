@@ -18,48 +18,33 @@ async function ensureTempDir() {
 }
 
 /**
- * Compiles the C++ code to an executable.
- * @param {string} sourcePath - Absolute path to the .cpp source file.
- * @param {string} exePath - Absolute path to the output executable.
- * @returns {Promise<{success: boolean, error: string}>}
+ * Normalizes output string for fair comparison.
  */
-function compileCpp(sourcePath, exePath) {
-  return new Promise((resolve) => {
-    // Compile using g++ with -O3 optimization for competitive programming speeds
-    const compileCmd = `g++ -O3 "${sourcePath}" -o "${exePath}"`;
-    exec(compileCmd, (error, stdout, stderr) => {
-      if (error) {
-        resolve({
-          success: false,
-          error: stderr || stdout || error.message
-        });
-      } else {
-        resolve({
-          success: true,
-          error: ''
-        });
-      }
-    });
-  });
+function normalizeOutput(str) {
+  return str
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(line => line.trimEnd())
+    .filter((line, index, arr) => {
+      if (line === '' && index === arr.length - 1) return false;
+      return true;
+    })
+    .join('\n')
+    .trim();
 }
 
 /**
- * Runs the compiled executable against a single test case input.
- * @param {string} exePath - Absolute path to the executable.
- * @param {string} input - The input string to feed into stdin.
- * @param {number} timeoutMs - Timeout in milliseconds.
- * @returns {Promise<{status: string, actualOutput: string, error: string, timeMs: number}>}
+ * Runs a process with stdin input redirection and timeout protection.
  */
-function runTestCase(exePath, input, timeoutMs) {
+function runProcess(cmd, args, input, timeoutMs) {
   return new Promise((resolve) => {
     const startTime = process.hrtime();
-    const child = spawn(exePath);
+    const child = args ? spawn(cmd, args) : spawn(cmd);
 
     let stdout = '';
     let stderr = '';
     let isTimeout = false;
 
-    // Set timeout to kill the process if it runs too long (infinite loop protection)
     const timeout = setTimeout(() => {
       isTimeout = true;
       child.kill('SIGKILL');
@@ -78,7 +63,7 @@ function runTestCase(exePath, input, timeoutMs) {
       const diff = process.hrtime(startTime);
       const timeMs = Math.round(diff[0] * 1000 + diff[1] / 1000000);
       resolve({
-        status: 'RTE', // Runtime Error
+        status: 'RTE',
         actualOutput: '',
         error: err.message,
         timeMs
@@ -92,14 +77,14 @@ function runTestCase(exePath, input, timeoutMs) {
 
       if (isTimeout) {
         resolve({
-          status: 'TLE', // Time Limit Exceeded
+          status: 'TLE',
           actualOutput: '',
           error: 'Execution timed out.',
           timeMs
         });
       } else if (code !== 0 || signal) {
         resolve({
-          status: 'RTE', // Runtime Error (e.g., Segfault, non-zero exit)
+          status: 'RTE',
           actualOutput: stdout,
           error: stderr || `Process exited with code ${code} or signal ${signal}`,
           timeMs
@@ -114,7 +99,6 @@ function runTestCase(exePath, input, timeoutMs) {
       }
     });
 
-    // Write inputs to standard input and close it
     if (input) {
       child.stdin.write(input);
     }
@@ -123,91 +107,143 @@ function runTestCase(exePath, input, timeoutMs) {
 }
 
 /**
- * Normalizes output string for fair comparison (strips trailing whitespaces, carriage returns, and newlines).
- * @param {string} str 
- * @returns {string}
- */
-function normalizeOutput(str) {
-  return str
-    .replace(/\r\n/g, '\n') // Normalize Windows line endings
-    .split('\n')
-    .map(line => line.trimEnd()) // Trim trailing spaces on each line
-    .filter((line, index, arr) => {
-      // Remove trailing empty lines
-      if (line === '' && index === arr.length - 1) return false;
-      return true;
-    })
-    .join('\n')
-    .trim(); // Trim overall start and end whitespace
-}
-
-/**
- * Main function to compile and run C++ code against multiple test cases.
- * @param {string} code - The C++ source code.
- * @param {Array<{input: string, expectedOutput: string}>} testCases - The list of test cases.
+ * Main function to compile and run code against multiple test cases.
+ * Supports C++, Python, and Java.
+ * 
+ * @param {string} code - Source code.
+ * @param {Array<{input: string, expectedOutput: string}>} testCases - List of test cases.
+ * @param {string} [language='cpp'] - Target language ('cpp', 'python', 'java').
  * @param {number} [timeoutMs=2000] - Hard timeout limit per test case.
  * @returns {Promise<{success: boolean, compileSuccess: boolean, compileError?: string, results?: Array<any>}>}
  */
-export async function executeCpp(code, testCases, timeoutMs = 2000) {
+export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 2000) {
+  if (typeof language === 'number') {
+    timeoutMs = language;
+    language = 'cpp';
+  }
+  
   await ensureTempDir();
-
   const id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const sourcePath = path.join(TEMP_DIR, `solution_${id}.cpp`);
-  const exePath = path.join(TEMP_DIR, `solution_${id}.exe`); // On Windows, g++ adds .exe automatically or matches target
 
-  try {
-    // 1. Write the code to source file
-    await fs.writeFile(sourcePath, code);
+  if (language === 'cpp') {
+    const sourcePath = path.join(TEMP_DIR, `solution_${id}.cpp`);
+    const exePath = path.join(TEMP_DIR, `solution_${id}.exe`);
 
-    // 2. Compile code
-    const compilation = await compileCpp(sourcePath, exePath);
-    if (!compilation.success) {
-      return {
-        success: false,
-        compileSuccess: false,
-        compileError: compilation.error
-      };
-    }
+    try {
+      await fs.writeFile(sourcePath, code);
+      const compilation = await new Promise((resolve) => {
+        exec(`g++ -O3 "${sourcePath}" -o "${exePath}"`, (error, stdout, stderr) => {
+          if (error) resolve({ success: false, error: stderr || stdout || error.message });
+          else resolve({ success: true });
+        });
+      });
 
-    // 3. Execute against each test case
-    const results = [];
-    for (const testCase of testCases) {
-      const runResult = await runTestCase(exePath, testCase.input, timeoutMs);
-      
-      let finalStatus = runResult.status;
-      if (runResult.status === 'OK') {
-        const normalizedActual = normalizeOutput(runResult.actualOutput);
-        const normalizedExpected = normalizeOutput(testCase.expectedOutput);
-        if (normalizedActual === normalizedExpected) {
-          finalStatus = 'PASS';
-        } else {
-          finalStatus = 'FAIL';
-        }
+      if (!compilation.success) {
+        return {
+          success: false,
+          compileSuccess: false,
+          compileError: compilation.error
+        };
       }
 
-      results.push({
-        input: testCase.input,
-        expectedOutput: testCase.expectedOutput,
-        actualOutput: runResult.actualOutput,
-        status: finalStatus,
-        timeMs: runResult.timeMs,
-        error: runResult.error
-      });
+      const results = [];
+      for (const testCase of testCases) {
+        const runResult = await runProcess(exePath, null, testCase.input, timeoutMs);
+        let finalStatus = runResult.status;
+        if (runResult.status === 'OK') {
+          finalStatus = normalizeOutput(runResult.actualOutput) === normalizeOutput(testCase.expectedOutput) ? 'PASS' : 'FAIL';
+        }
+        results.push({
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: runResult.actualOutput,
+          status: finalStatus,
+          timeMs: runResult.timeMs,
+          error: runResult.error
+        });
+      }
+      return { success: true, compileSuccess: true, results };
+    } finally {
+      try { await fs.unlink(sourcePath); } catch (_) {}
+      try { await fs.unlink(exePath); } catch (_) {}
     }
-
-    return {
-      success: true,
-      compileSuccess: true,
-      results
-    };
-
-  } finally {
-    // 4. Cleanup files
-    try {
-      await fs.unlink(sourcePath);
-    } catch (_) {}
-    try {
-      await fs.unlink(exePath);
-    } catch (_) {}
   }
+
+  if (language === 'python') {
+    const sourcePath = path.join(TEMP_DIR, `solution_${id}.py`);
+    try {
+      await fs.writeFile(sourcePath, code);
+      const results = [];
+      for (const testCase of testCases) {
+        const cmd = process.platform === 'win32' ? 'python' : 'python3';
+        const runResult = await runProcess(cmd, [sourcePath], testCase.input, timeoutMs);
+        let finalStatus = runResult.status;
+        if (runResult.status === 'OK') {
+          finalStatus = normalizeOutput(runResult.actualOutput) === normalizeOutput(testCase.expectedOutput) ? 'PASS' : 'FAIL';
+        }
+        results.push({
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: runResult.actualOutput,
+          status: finalStatus,
+          timeMs: runResult.timeMs,
+          error: runResult.error
+        });
+      }
+      return { success: true, compileSuccess: true, results };
+    } finally {
+      try { await fs.unlink(sourcePath); } catch (_) {}
+    }
+  }
+
+  if (language === 'java') {
+    const match = code.match(/public\s+class\s+(\w+)/) || code.match(/class\s+(\w+)/);
+    const className = match ? match[1] : 'Main';
+    
+    const javaDir = path.join(TEMP_DIR, `java_${id}`);
+    await fs.mkdir(javaDir, { recursive: true });
+    
+    const sourcePath = path.join(javaDir, `${className}.java`);
+    try {
+      await fs.writeFile(sourcePath, code);
+      const compilation = await new Promise((resolve) => {
+        exec(`javac "${sourcePath}"`, (error, stdout, stderr) => {
+          if (error) resolve({ success: false, error: stderr || stdout || error.message });
+          else resolve({ success: true });
+        });
+      });
+
+      if (!compilation.success) {
+        return {
+          success: false,
+          compileSuccess: false,
+          compileError: compilation.error
+        };
+      }
+
+      const results = [];
+      for (const testCase of testCases) {
+        const runResult = await runProcess('java', ['-cp', javaDir, className], testCase.input, timeoutMs);
+        let finalStatus = runResult.status;
+        if (runResult.status === 'OK') {
+          finalStatus = normalizeOutput(runResult.actualOutput) === normalizeOutput(testCase.expectedOutput) ? 'PASS' : 'FAIL';
+        }
+        results.push({
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: runResult.actualOutput,
+          status: finalStatus,
+          timeMs: runResult.timeMs,
+          error: runResult.error
+        });
+      }
+      return { success: true, compileSuccess: true, results };
+    } finally {
+      try {
+        await fs.rm(javaDir, { recursive: true, force: true });
+      } catch (_) {}
+    }
+  }
+
+  return { success: false, compileSuccess: false, compileError: 'Unsupported language: ' + language };
 }
