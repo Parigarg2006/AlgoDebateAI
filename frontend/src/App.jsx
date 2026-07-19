@@ -837,6 +837,7 @@ function App() {
                     type="submit"
                     className="btn-start-debate-custom"
                     disabled={jobState === 'active' || (!problemDescription.trim() && !problemUrl.trim())}
+                    style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #10b981, #059669) !important', color: '#ffffff !important', fontWeight: '600', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px 0 rgba(5, 150, 105, 0.4)' }}
                   >
                     {jobState === 'active' ? (
                       <>
@@ -916,7 +917,7 @@ function App() {
           </div>
 
           {/* Bento Tile 2: LangGraph Visualizer (2x2 Clustered Loop Layout) */}
-          <div className="bento-card" style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', height: 'auto !important', minHeight: 'fit-content' }}>
             <h2 className="card-header-row">
               <span className="card-title">
                 <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
