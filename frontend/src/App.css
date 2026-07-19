@@ -2,8 +2,7 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   background-color: var(--bg-main);
 }
 
@@ -15,9 +14,11 @@
   padding: 14px 24px;
   height: 60px;
   border-bottom: 1px solid var(--border-slate);
-  background: rgba(11, 15, 23, 0.8);
+  background: rgba(11, 15, 23, 0.85);
   backdrop-filter: var(--backdrop-blur);
-  z-index: 10;
+  z-index: 100;
+  position: sticky;
+  top: 0;
 }
 
 .logo-container {
@@ -67,29 +68,29 @@
 
 /* Main Grid Layout */
 .main-container {
-  display: grid;
-  grid-template-columns: 430px 1fr;
-  gap: 20px;
-  padding: 20px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  padding: 24px;
+  width: 100%;
+  padding-bottom: 280px; /* Space for bottom drawer terminal */
 }
 
-/* Sidebar Column (Left) */
+/* Sidebar Column (Left, 25% width) */
 .sidebar-column {
+  width: 25%;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-height: 0;
+  gap: 24px;
 }
 
-/* Workspace Column (Right) */
+/* Workspace Column (Right, 75% width) */
 .workspace-column {
+  width: 75%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-height: 0;
+  gap: 24px;
 }
 
 /* Workspace Panels (Top Row of Workspace Column) */
@@ -1227,6 +1228,65 @@
 
 .diff-line.added .diff-line-text {
   color: #34d399;
+}
+
+/* Tab Navigation Controls */
+.workspace-tabs-bar {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.workspace-tab-btn {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.workspace-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.workspace-tab-btn.active {
+  color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.08);
+}
+
+/* Symmetrical layouts */
+.workspace-panel-card {
+  flex: 1;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .main-container {
+    flex-direction: column;
+    padding-bottom: 300px;
+  }
+  .sidebar-column {
+    width: 100%;
+  }
+  .workspace-column {
+    width: 100%;
+  }
 }
 
 

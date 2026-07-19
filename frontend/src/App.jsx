@@ -12,10 +12,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  ArrowRight,
-  ArrowLeft,
-  ArrowUp,
-  ArrowDown,
   Copy,
   Download,
   Volume2,
@@ -39,11 +35,12 @@ function App() {
   const [maxRounds, setMaxRounds] = useState(4);
   const [language, setLanguage] = useState('cpp'); // cpp, python, java
   const [isCopied, setIsCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('solution');
+  const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   
   // Custom Test Case States
   const [customInput, setCustomInput] = useState('');
   const [isCustomRunning, setIsCustomRunning] = useState(false);
-  const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
 
   // Settings Modal & Prompt Customizer States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -158,22 +155,7 @@ function App() {
     }
   }, [isMuted]);
 
-  // Confidence Meter Calculations
-  const confidenceMetrics = useMemo(() => {
-    if (jobState === 'idle') return { pct: 0, color: 'var(--text-muted)', label: '0%' };
-    if (jobState === 'failed') return { pct: 10, color: 'var(--accent-red)', label: '10%' };
-    if (jobState === 'completed') return { pct: 98, color: 'var(--accent-green)', label: '98%' };
-    
-    // active states
-    if (activeNode === 'coder') return { pct: 35, color: 'var(--accent-red)', label: '35%' };
-    if (activeNode === 'sandbox') return { pct: 55, color: '#fb923c', label: '55%' }; // Orange/Yellow
-    if (activeNode === 'critic') return { pct: 70, color: '#fbbf24', label: '70%' }; // Yellow
-    if (activeNode === 'refiner') return { pct: 90, color: 'var(--accent-green)', label: '90%' };
-    
-    return { pct: 20, color: 'var(--text-secondary)', label: '20%' };
-  }, [jobState, activeNode]);
 
-  const { pct: confidencePct, color: confidenceColor, label: confidenceLabel } = confidenceMetrics;
 
   // 3. Generate Terminal Logs Dynamically from Progress State
   const terminalLogs = useMemo(() => {
@@ -667,6 +649,17 @@ function App() {
     setIsVaultOpen(false);
   }, []);
 
+  const getOptimizationPercentage = () => {
+    if (jobState === 'completed') return 98;
+    if (jobState === 'idle') return 0;
+    if (activeNode === 'coder') return 35;
+    if (activeNode === 'sandbox') return 70;
+    if (activeNode === 'critic') return 85;
+    if (activeNode === 'refiner') return 95;
+    return 35;
+  };
+  const optPercent = getOptimizationPercentage();
+
   return (
     <div className="app-container" ref={containerRef} onMouseMove={handleMouseMove}>
       {/* 1. Header Row */}
@@ -774,7 +767,7 @@ function App() {
       {/* 2. Bento Grid Layout */}
       <main className="main-container">
         
-        {/* Left Sidebar Column */}
+        {/* Left Sidebar Column (25% width) */}
         <section className="sidebar-column">
           
           {/* Bento Tile 1: Problem Input */}
@@ -848,192 +841,231 @@ function App() {
             </form>
           </div>
 
-          {/* Custom Test Case Widget Bento Card */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h2 
-              className="card-header-row" 
-              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}
-              onClick={() => setIsCustomTestOpen(!isCustomTestOpen)}
-              title="Expand/Collapse custom test run pane"
-            >
-              <span className="card-title">
-                <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
-                Run Custom Test Cases
-              </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {isCustomTestOpen ? '▲' : '▼'}
-              </span>
-            </h2>
-            
-            {isCustomTestOpen && (
-              <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
-                <textarea
-                  className="problem-textarea"
-                  style={{ height: '70px', minHeight: '60px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}
-                  placeholder="Enter custom inputs here... (e.g. 5 \n 1 2 3 4 5)"
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  disabled={isCustomRunning}
-                />
-                <button
-                  type="button"
-                  className="btn-start-debate-custom"
-                  onClick={handleRunCustomTest}
-                  disabled={isCustomRunning || !customInput.trim()}
-                  style={{ height: '36px' }}
-                >
-                  {isCustomRunning ? (
-                    <>
-                      <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Running test case...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play size={12} />
-                      <span>Run custom test</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Bento Tile 2: LangGraph Visualizer (2x2 Clustered Loop Layout) */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          {/* Bento Tile 2: LangGraph Mission Path (Vertical Timeline) */}
+          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h2 className="card-header-row">
               <span className="card-title">
                 <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
-                LangGraph Visualizer
+                LangGraph Mission Path
               </span>
             </h2>
-            
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '8px', textAlign: 'center', fontWeight: 500 }}>
-              {jobState === 'completed' ? 'Solve Completed successfully' : (jobState === 'active' ? `Active Execution: Round ${currentRound}` : (jobState === 'failed' ? 'Solve Failed' : 'Awaiting Graph Trigger'))}
-            </div>
 
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, overflow: 'hidden', width: '100%' }}>
-              <div className="visualizer-grid" style={{ transform: 'scale(0.9)', transformOrigin: 'center center', width: '100%' }}>
-                {/* Row 1 */}
-                <div className={`visualizer-node ${getNodeStatusClass('coder')} ${getNodeStatusClass('coder') === 'status-active' ? 'active-pulse active-coder' : ''}`}>
-                  <span className="node-number">{getNodeStatusClass('coder') === 'status-completed' ? '✓' : '1'}</span>
-                  <Code2 size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
-                  <div className="node-info">
-                    <span className="node-title">Coder</span>
-                  </div>
-                </div>
-                
-                {/* Coder-to-Sandbox Arrow */}
-                <div className={`visualizer-connector ${activeNode === 'sandbox' ? 'flow-active' : ''}`}>
-                  <ArrowRight size={14} />
-                </div>
-                
-                <div className={`visualizer-node ${getNodeStatusClass('sandbox')} ${getNodeStatusClass('sandbox') === 'status-active' ? 'active-pulse active-sandbox' : ''}`}>
-                  <span className="node-number">{getNodeStatusClass('sandbox') === 'status-completed' ? '✓' : '2'}</span>
-                  <Cpu size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
-                  <div className="node-info">
-                    <span className="node-title">Sandbox</span>
-                  </div>
-                </div>
+            <div className="timeline-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', paddingLeft: '8px' }}>
+              {/* Vertical line connector */}
+              <div style={{
+                position: 'absolute',
+                left: '19px',
+                top: '12px',
+                bottom: '12px',
+                width: '2px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                zIndex: 0
+              }} />
 
-                {/* Row 2 */}
-                {/* Critic-to-Coder Rejection Arrow */}
-                <div className={`visualizer-connector vertical ${activeNode === 'coder' && currentRound > 1 ? 'flow-active-reverse' : ''}`}>
-                  <ArrowUp size={14} style={{ color: 'var(--accent-red)' }} />
+              {/* Step 1: Coder */}
+              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: getNodeStatusClass('coder') === 'status-active' ? 'var(--accent-blue)' : (getNodeStatusClass('coder') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  color: '#000000',
+                  boxShadow: getNodeStatusClass('coder') === 'status-active' ? '0 0 12px var(--accent-blue)' : 'none',
+                  animation: getNodeStatusClass('coder') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
+                  flexShrink: 0
+                }}>
+                  {getNodeStatusClass('coder') === 'status-completed' ? '✓' : '1'}
                 </div>
-                
-                <div className="visualizer-connector"></div>
-                
-                {/* Sandbox-to-Critic Arrow */}
-                <div className={`visualizer-connector vertical ${activeNode === 'critic' ? 'flow-active' : ''}`}>
-                  <ArrowDown size={14} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('coder') === 'status-active' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                    Step 1: Coder Draft
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Initial algorithmic logic writing
+                  </span>
                 </div>
+              </div>
 
-                {/* Row 3 */}
-                <div className={`visualizer-node ${getNodeStatusClass('refiner')} ${getNodeStatusClass('refiner') === 'status-active' ? 'active-pulse active-refiner' : ''}`}>
-                  <span className="node-number">{getNodeStatusClass('refiner') === 'status-completed' ? '✓' : '4'}</span>
-                  <Sparkles size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
-                  <div className="node-info">
-                    <span className="node-title">Refiner</span>
-                  </div>
+              {/* Step 2: Sandbox */}
+              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: getNodeStatusClass('sandbox') === 'status-active' ? 'var(--accent-blue)' : (getNodeStatusClass('sandbox') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  color: '#000000',
+                  boxShadow: getNodeStatusClass('sandbox') === 'status-active' ? '0 0 12px var(--accent-blue)' : 'none',
+                  animation: getNodeStatusClass('sandbox') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
+                  flexShrink: 0
+                }}>
+                  {getNodeStatusClass('sandbox') === 'status-completed' ? '✓' : '2'}
                 </div>
-                
-                {/* Critic-to-Refiner Approval Arrow */}
-                <div className={`visualizer-connector ${activeNode === 'refiner' ? 'flow-active' : ''}`}>
-                  <ArrowLeft size={14} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('sandbox') === 'status-active' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                    Step 2: Sandbox Evaluation
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Compilation & test case harness runs
+                  </span>
                 </div>
-                
-                <div className={`visualizer-node ${getNodeStatusClass('critic')} ${getNodeStatusClass('critic') === 'status-active' ? 'active-pulse active-critic' : ''}`}>
-                  <span className="node-number">{getNodeStatusClass('critic') === 'status-completed' ? '✓' : '3'}</span>
-                  <ShieldCheck size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
-                  <div className="node-info">
-                    <span className="node-title">Critic</span>
-                  </div>
+              </div>
+
+              {/* Step 3: Critic */}
+              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: getNodeStatusClass('critic') === 'status-active' ? 'var(--accent-purple)' : (getNodeStatusClass('critic') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  color: '#000000',
+                  boxShadow: getNodeStatusClass('critic') === 'status-active' ? '0 0 12px var(--accent-purple)' : 'none',
+                  animation: getNodeStatusClass('critic') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
+                  flexShrink: 0
+                }}>
+                  {getNodeStatusClass('critic') === 'status-completed' ? '✓' : '3'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('critic') === 'status-active' ? 'var(--accent-purple)' : 'var(--text-primary)' }}>
+                    Step 3: Red Team Critique
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Category classification & complexity audit
+                  </span>
+                </div>
+              </div>
+
+              {/* Step 4: Refiner */}
+              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: getNodeStatusClass('refiner') === 'status-active' ? 'var(--accent-purple)' : (getNodeStatusClass('refiner') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  color: '#000000',
+                  boxShadow: getNodeStatusClass('refiner') === 'status-active' ? '0 0 12px var(--accent-purple)' : 'none',
+                  animation: getNodeStatusClass('refiner') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
+                  flexShrink: 0
+                }}>
+                  {getNodeStatusClass('refiner') === 'status-completed' ? '✓' : '4'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('refiner') === 'status-active' ? 'var(--accent-purple)' : 'var(--text-primary)' }}>
+                    Step 4: Refiner Polishing
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Comment injection & formatting review
+                  </span>
                 </div>
               </div>
             </div>
+            <style>{`
+              @keyframes pulseNeon {
+                from { opacity: 0.6; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1.05); }
+              }
+            `}</style>
           </div>
         </section>
 
-        {/* Right Workspace Column */}
+        {/* Right Workspace Column (75% width) */}
         <section className="workspace-column">
           
-          {/* Workspace Panels Grid: Code Console & Debate Arena side-by-side */}
-          <div className="workspace-panels-grid">
-            
-            {/* Bento Tile 3: Code Console */}
-            <div className="bento-card workspace-panel-card">
+          {/* Navigation Tabs Bar */}
+          <div className="workspace-tabs-bar">
+            <button 
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'solution' ? 'active' : ''}`}
+              onClick={() => setActiveTab('solution')}
+            >
+              💻 Solution Workspace
+            </button>
+            <button 
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'debate' ? 'active' : ''}`}
+              onClick={() => setActiveTab('debate')}
+            >
+              ⚔️ Debate Arena
+            </button>
+            <button 
+              type="button"
+              className={`workspace-tab-btn ${activeTab === 'sandbox' ? 'active' : ''}`}
+              onClick={() => setActiveTab('sandbox')}
+            >
+              🧪 Sandbox Playground
+            </button>
+          </div>
+
+          {/* Tab 1: Solution Workspace */}
+          {activeTab === 'solution' && (
+            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h2 className="card-header-row">
                 <span className="card-title">
                   <Code2 size={14} style={{ color: 'var(--accent-blue)' }} />
                   {jobState === 'active' ? `Active Code Workspace (Round ${currentRound})` : 'Workspace Console'}
                 </span>
-                {/* Segmented confidence meter gauge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Graph Confidence:</span>
-                  <div style={{ width: '80px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: `${confidencePct}%`, height: '100%', background: confidenceColor, transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: confidenceColor, fontWeight: 700, minWidth: '32px' }}>{confidenceLabel}</span>
-                  
-                  {/* Diff View Toggle Switch */}
-                  {coderDraft && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Diff View:</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsDiffView(!isDiffView)}
+                
+                {/* Diff View Toggle Switch */}
+                {coderDraft && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Diff View:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsDiffView(!isDiffView)}
+                      style={{
+                        position: 'relative',
+                        width: '32px',
+                        height: '18px',
+                        borderRadius: '9px',
+                        background: isDiffView ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        padding: 0
+                      }}
+                      title="Toggle Split-Screen Code Diff"
+                    >
+                      <div
                         style={{
-                          position: 'relative',
-                          width: '32px',
-                          height: '18px',
-                          borderRadius: '9px',
-                          background: isDiffView ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)',
-                          border: '1px solid rgba(255,255,255,0.05)',
-                          cursor: 'pointer',
-                          transition: 'background 0.2s',
-                          padding: 0
+                          position: 'absolute',
+                          top: '2px',
+                          left: isDiffView ? '16px' : '2px',
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          background: '#ffffff',
+                          transition: 'left 0.2s'
                         }}
-                        title="Toggle Split-Screen Code Diff"
-                      >
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: '2px',
-                            left: isDiffView ? '16px' : '2px',
-                            width: '12px',
-                            height: '12px',
-                            borderRadius: '50%',
-                            background: '#ffffff',
-                            transition: 'left 0.2s'
-                          }}
-                        />
-                      </button>
-                    </div>
-                  )}
-                </div>
+                      />
+                    </button>
+                  </div>
+                )}
               </h2>
-              
-              <div className="workspace-content">
+
+              <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {jobState === 'idle' && (
                   <div className="workspace-empty-view">
                     <Atom size={36} />
@@ -1085,7 +1117,7 @@ function App() {
                             <span>{isCopied ? 'Copied' : 'Copy'}</span>
                           </button>
                         </div>
-                        <pre>
+                        <pre style={{ flex: 1, background: 'rgba(10, 15, 23, 0.5)', border: '1px solid var(--border-slate)', borderRadius: '8px', padding: '14px', overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', lineHeight: '1.45', color: 'var(--text-primary)' }}>
                           <code>{liveCode}</code>
                         </pre>
                       </div>
@@ -1093,9 +1125,32 @@ function App() {
 
                     {jobState === 'completed' && finalResult && (
                       <div className="polished-solution-layout fade-in">
+                        {/* Gamified Victory Banner */}
+                        <div style={{
+                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          marginBottom: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)'
+                        }}>
+                          <Sparkles size={20} style={{ color: 'var(--accent-green)' }} />
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-green)', letterSpacing: '0.5px' }}>
+                              🎯 COMPILATION VICTORY: OPTIMAL SOLUTION SECURED
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Target Language: {language === 'cpp' ? 'C++' : language.toUpperCase()} | All verification checks passed.
+                            </span>
+                          </div>
+                        </div>
+
                         <div className="code-actions-bar">
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Polished Solution ({language === 'cpp' ? 'C++' : language.toUpperCase()})
+                            Polished Solution Code
                           </span>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button type="button" className="action-btn" onClick={() => handleCopyCode(finalResult.finalCode)} title="Copy final polished code">
@@ -1111,16 +1166,19 @@ function App() {
                         <pre className="final-code-block">
                           <code>{finalResult.finalCode}</code>
                         </pre>
-                        <div className="stats-grid">
-                          <div className="stat-card">
-                            <div className="stat-label">Time Complexity</div>
-                            <div className="stat-value">{finalResult.timeComplexity}</div>
+
+                        {/* High-tech glowing complexity numeric badges */}
+                        <div className="stats-grid" style={{ display: 'flex', gap: '16px', marginBottom: '20px', marginTop: '20px' }}>
+                          <div className="stat-card" style={{ flex: 1, background: 'rgba(56, 189, 248, 0.02)', border: '1px solid rgba(56, 189, 248, 0.15)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 0 15px rgba(56, 189, 248, 0.05)' }}>
+                            <div className="stat-label" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>TIME COMPLEXITY</div>
+                            <div className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--accent-blue)', fontWeight: 800, fontFamily: 'var(--font-mono)', textShadow: '0 0 8px rgba(56, 189, 248, 0.4)' }}>{finalResult.timeComplexity}</div>
                           </div>
-                          <div className="stat-card">
-                            <div className="stat-label">Space Complexity</div>
-                            <div className="stat-value">{finalResult.spaceComplexity}</div>
+                          <div className="stat-card" style={{ flex: 1, background: 'rgba(192, 132, 252, 0.02)', border: '1px solid rgba(192, 132, 252, 0.15)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 0 15px rgba(192, 132, 252, 0.05)' }}>
+                            <div className="stat-label" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>SPACE COMPLEXITY</div>
+                            <div className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--accent-purple)', fontWeight: 800, fontFamily: 'var(--font-mono)', textShadow: '0 0 8px rgba(192, 132, 252, 0.4)' }}>{finalResult.spaceComplexity}</div>
                           </div>
                         </div>
+
                         <div className="strategy-box">
                           <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>Strategy & Explanation:</strong>
                           {finalResult.explanation}
@@ -1139,205 +1197,278 @@ function App() {
                 )}
               </div>
             </div>
+          )}
 
-            {/* Bento Tile 4: Debate Arena Timeline */}
-            <div className="bento-card workspace-panel-card" style={{ position: 'relative' }}>
-              {/* Live Token Rain Layer (only active when debate is running) */}
-              {jobState === 'active' && (
-                <div className="token-rain-container">
-                  <div className="token-column" style={{ left: '8%', animationDelay: '0s', animationDuration: '4.5s' }}>01011001</div>
-                  <div className="token-column" style={{ left: '22%', animationDelay: '0.4s', animationDuration: '6s' }}>10101011</div>
-                  <div className="token-column" style={{ left: '40%', animationDelay: '0.8s', animationDuration: '5s' }}>int main()</div>
-                  <div className="token-column" style={{ left: '60%', animationDelay: '0.2s', animationDuration: '5.5s' }}>11001010</div>
-                  <div className="token-column" style={{ left: '78%', animationDelay: '0.6s', animationDuration: '4s' }}>std::vector</div>
-                  <div className="token-column" style={{ left: '92%', animationDelay: '1s', animationDuration: '6.5s' }}>10110010</div>
-                </div>
-              )}
-              <h2 className="card-header-row" style={{ position: 'relative', zIndex: 1 }}>
+          {/* Tab 2: Debate Arena */}
+          {activeTab === 'debate' && (
+            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <h2 className="card-header-row">
                 <span className="card-title">
                   <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
-                  Debate Arena
+                  Combat Debate Arena
                 </span>
               </h2>
-              
-              <div className="workspace-content" style={{ position: 'relative', zIndex: 1 }}>
+
+              <div className="workspace-content">
                 {jobState === 'idle' ? (
                   <div className="workspace-empty-view">
                     <Workflow size={36} />
                     <p>Debate timeline will stream here...</p>
                   </div>
                 ) : (
-                  <div className="debate-arena-list fade-in">
-                    {roundsHistory.length === 0 ? (
-                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        Streaming nodes progress...
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    {/* VS Match Dashboard */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+                      {/* Agent Coder */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '40%' }}>
+                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', border: '2px solid var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)' }}>
+                          <Code2 size={24} style={{ color: 'var(--accent-blue)' }} />
+                        </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>Agent Coder</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Fighter - Blue Corner</span>
                       </div>
-                    ) : (
-                      <>
-                        {roundsHistory.map((step, idx) => {
-                          const isCriticDone = step.node === 'critic-done';
-                          const isCoder = step.node === 'coder';
-                          const isSandbox = step.node === 'sandbox';
-                          const isCritic = step.node === 'critic';
-                          const isRefiner = step.node === 'refiner';
 
-                          let title = '';
-                          let avatarBg = '';
-                          let avatarIcon = null;
-                          let cardContent = null;
+                      {/* VS */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--accent-orange)', letterSpacing: '2px', textShadow: '0 0 10px rgba(251, 146, 60, 0.3)' }}>VS</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Round {currentRound}</span>
+                      </div>
 
-                          if (isCoder) {
-                            title = `Coder Agent (Round ${step.round})`;
-                            avatarBg = 'rgba(56, 189, 248, 0.08)';
-                            avatarIcon = <Code2 size={12} style={{ color: 'var(--accent-blue)' }} />;
-                            cardContent = <p className="timeline-text">Drafting initial {language === 'cpp' ? 'C++' : language.toUpperCase()} solution...</p>;
-                          } else if (isSandbox) {
-                            title = `C++ Sandbox (Round ${step.round})`;
-                            avatarBg = 'rgba(56, 189, 248, 0.08)';
-                            avatarIcon = <Cpu size={12} style={{ color: 'var(--accent-blue)' }} />;
-                            cardContent = (
-                              <div>
-                                <p className="timeline-text">Compiling and running test cases...</p>
-                                {step.code && (
-                                  <details className="code-details">
-                                    <summary>View Source Code</summary>
-                                    <pre className="inline-code-box"><code>{step.code}</code></pre>
-                                  </details>
-                                )}
-                              </div>
-                            );
-                          } else if (isCritic) {
-                            title = `Critic Agent (Round ${step.round})`;
-                            avatarBg = 'rgba(192, 132, 252, 0.08)';
-                            avatarIcon = <ShieldCheck size={12} style={{ color: 'var(--accent-purple)' }} />;
-                            cardContent = <p className="timeline-text">Reviewing correctness and red-teaming logic...</p>;
-                          } else if (isCriticDone) {
-                            title = `Critic Review (Round ${step.round})`;
-                            avatarBg = step.criticApproved ? 'rgba(52, 211, 153, 0.08)' : 'rgba(248, 113, 113, 0.08)';
-                            avatarIcon = step.criticApproved ? 
-                              <CheckCircle2 size={12} style={{ color: 'var(--accent-green)' }} /> : 
-                              <AlertTriangle size={12} style={{ color: 'var(--accent-red)' }} />;
-                            
-                            const compileErr = step.sandboxResults?.find(t => t.status === 'COMPILE_ERROR');
+                      {/* Agent Critic */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '40%' }}>
+                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(248, 113, 113, 0.1)', border: '2px solid var(--accent-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(248, 113, 113, 0.2)' }}>
+                          <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
+                        </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-red)' }}>Agent Critic</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Red Team Judge</span>
+                      </div>
+                    </div>
 
-                            cardContent = (
-                              <div className="critic-done-card">
-                                <div className="verdict-header" style={{ color: step.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                                  Verdict: {step.criticApproved ? 'APPROVED' : 'REJECTED'}
-                                </div>
-                                <p className="criticism-text">{step.criticReasoning}</p>
-                                
-                                {compileErr && (
-                                  <div className="compiler-error-box">
-                                    <strong>Compiler Output:</strong>
-                                    <pre>{compileErr.error}</pre>
-                                  </div>
-                                )}
+                    {/* Code Optimization Meter */}
+                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <span>Code Optimization Meter</span>
+                        <span style={{ color: optPercent > 80 ? 'var(--accent-green)' : (optPercent > 50 ? 'var(--accent-orange)' : 'var(--accent-red)') }}>{optPercent}% Confidence</span>
+                      </div>
+                      <div style={{ height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden', position: 'relative' }}>
+                        <div 
+                          style={{ 
+                            height: '100%', 
+                            width: `${optPercent}%`, 
+                            background: 'linear-gradient(90deg, #38bdf8 0%, #c084fc 50%, #34d399 100%)', 
+                            borderRadius: '5px',
+                            transition: 'width 0.5s ease-in-out',
+                            boxShadow: '0 0 10px rgba(52, 211, 153, 0.4)'
+                          }} 
+                        />
+                      </div>
+                    </div>
 
-                                {step.sandboxResults && !compileErr && (
-                                  <div className="test-results-box">
-                                    <strong>Sandbox Test Run (Click case to view):</strong>
-                                    <div className="test-cases-grid">
-                                      {step.sandboxResults.map((tc, tcIdx) => {
-                                        const maxTime = 300; // ms reference limit
-                                        const fillWidth = Math.min((tc.timeMs / maxTime) * 100, 100);
-
-                                        return (
-                                          <div 
-                                            key={tcIdx} 
-                                            className={`test-case-item ${tc.status === 'PASSED' ? 'passed' : 'failed'}`}
-                                            title={`Input: "${tc.input}"\nExpected: "${tc.expectedOutput}"\nActual: "${tc.actualOutput}"`}
-                                            onClick={() => alert(`Test Case ${tcIdx + 1}\nStatus: ${tc.status}\nTime: ${tc.timeMs}ms\nInput: ${tc.input}\nExpected Output: ${tc.expectedOutput}\nActual Output: ${tc.actualOutput}`)}
-                                            style={{ position: 'relative', overflow: 'hidden' }}
-                                          >
-                                            <div 
-                                              className="test-case-fill" 
-                                              style={{ 
-                                                position: 'absolute', 
-                                                left: 0, 
-                                                top: 0, 
-                                                bottom: 0, 
-                                                width: `${fillWidth}%`, 
-                                                backgroundColor: tc.status === 'PASSED' ? 'rgba(52, 211, 153, 0.08)' : 'rgba(248, 113, 113, 0.08)',
-                                                zIndex: 0,
-                                                transition: 'width 0.5s ease-out'
-                                              }} 
-                                            />
-                                            <span style={{ zIndex: 1, position: 'relative' }}>Case {tcIdx + 1}: {tc.status}</span>
-                                            <span style={{ zIndex: 1, position: 'relative', fontWeight: 600 }}>{tc.timeMs}ms</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          } else if (isRefiner) {
-                            title = `Refiner Agent (Round ${step.round})`;
-                            avatarBg = 'rgba(192, 132, 252, 0.08)';
-                            avatarIcon = <Sparkles size={12} style={{ color: 'var(--accent-purple)' }} />;
-                            cardContent = <p className="timeline-text">Polishing final code layout and adding complexity breakdown...</p>;
-                          }
-
-                          return (
-                            <div key={idx} className="timeline-card-wrapper">
-                              <div className="timeline-avatar" style={{ backgroundColor: avatarBg }}>
-                                {avatarIcon}
-                              </div>
-                              <div className="timeline-card">
-                                <div className="timeline-card-header">
-                                  <span className="timeline-card-title">{title}</span>
-                                </div>
-                                <div className="timeline-card-body">
-                                  {cardContent}
-                                </div>
-                              </div>
+                    {/* Tactical Log Alerts list */}
+                    <div className="debate-arena-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto' }}>
+                      {roundsHistory.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          Awaiting match audit reports...
+                        </div>
+                      ) : (
+                        roundsHistory.map((round, idx) => (
+                          <div 
+                            key={idx} 
+                            style={{
+                              borderLeft: `4px solid ${round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)'}`,
+                              background: 'rgba(255, 255, 255, 0.01)',
+                              border: '1px solid rgba(255, 255, 255, 0.04)',
+                              borderRadius: '8px',
+                              padding: '14px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                                [Round {round.round} Audit Alert]
+                              </span>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                Status: {round.criticApproved ? 'PASSED' : 'REJECTED'}
+                              </span>
                             </div>
-                          );
-                        })}
-                        <div ref={debateEndRef} />
-                      </>
-                    )}
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                              {round.criticReasoning}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
+          )}
 
-          </div>
+          {/* Tab 3: Sandbox Playground */}
+          {activeTab === 'sandbox' && (
+            <div className="bento-card workspace-panel-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h2 className="card-header-row">
+                <span className="card-title">
+                  <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
+                  Sandbox Custom Test Runner
+                </span>
+              </h2>
 
-          {/* Bento Tile 5: VS Code style Terminal Widget */}
-          <div className="terminal-widget">
-            <div className="terminal-header">
-              <div className="terminal-header-title">
-                <TerminalIcon size={12} />
-                <span>Agent Execution Terminal</span>
-              </div>
-              <div className="terminal-header-dots">
-                <span className="terminal-dot red"></span>
-                <span className="terminal-dot yellow"></span>
-                <span className="terminal-dot green"></span>
-              </div>
-            </div>
-            <div className="terminal-body">
-              {terminalLogs.map((log, index) => {
-                let logClass = 'info';
-                if (log.startsWith('[ERROR]')) logClass = 'error';
-                else if (log.startsWith('[SYSTEM]')) logClass = 'system';
-                else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logClass = 'success';
+              <div className="workspace-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>CUSTOM INPUT DATA (STDIN)</label>
+                  <textarea
+                    placeholder="Enter custom inputs to pass to the sandbox execution runtime..."
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '100px',
+                      background: 'rgba(10, 15, 23, 0.4)',
+                      border: '1px solid var(--border-slate)',
+                      borderRadius: '10px',
+                      color: 'var(--text-primary)',
+                      padding: '12px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.8rem',
+                      resize: 'none',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
 
-                return (
-                  <div key={index} className={`terminal-log-line ${logClass}`}>
-                    {log}
+                <button
+                  type="button"
+                  onClick={handleRunCustomTest}
+                  disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
+                  style={{
+                    height: '42px',
+                    background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+                    transition: 'all 0.2s',
+                    width: '100%'
+                  }}
+                >
+                  {isCustomRunning ? (
+                    <>
+                      <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Running Execution Sandbox...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={14} />
+                      <span>Run Custom Test Case</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Custom Output console logs */}
+                {terminalLogs.some(l => l.includes('custom_test_result') || l.includes('customOutput')) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SANDBOX EXECUTION RESULTS</label>
+                    <pre style={{ flex: 1, background: 'rgba(10, 15, 23, 0.6)', border: '1px solid var(--border-slate)', borderRadius: '10px', padding: '14px', overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--accent-blue)', minHeight: '120px' }}>
+                      <code>
+                        {(() => {
+                          const resultLines = terminalLogs.filter(l => l.includes('custom_test_result') || l.includes('customOutput') || l.includes('custom test case'));
+                          return resultLines.length > 0 ? resultLines.join('\n') : 'Awaiting custom sandbox result run...';
+                        })()}
+                      </code>
+                    </pre>
                   </div>
-                );
-              })}
-              <div ref={terminalEndRef} />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
         </section>
       </main>
+
+      {/* Sliding Execution Terminal Bottom Drawer */}
+      <div 
+        className={`terminal-widget-drawer ${isTerminalOpen ? 'open' : 'collapsed'}`}
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: isTerminalOpen ? '250px' : '36px',
+          background: '#0d131f',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <div 
+          className="terminal-header" 
+          onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+          style={{ 
+            cursor: 'pointer', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            padding: '8px 16px',
+            background: '#080d16',
+            userSelect: 'none'
+          }}
+        >
+          <div className="terminal-header-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <TerminalIcon size={12} style={{ color: 'var(--accent-blue)' }} />
+            <span>Agent Execution Terminal</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {isTerminalOpen ? '▼ Collapse' : '▲ Expand'}
+            </span>
+            <div className="terminal-header-dots" style={{ display: 'flex', gap: '6px' }}>
+              <span className="terminal-dot red" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
+              <span className="terminal-dot yellow" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
+              <span className="terminal-dot green" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
+            </div>
+          </div>
+        </div>
+        {isTerminalOpen && (
+          <div 
+            className="terminal-body" 
+            style={{ 
+              flex: 1, 
+              padding: '12px 16px', 
+              overflowY: 'auto', 
+              fontFamily: 'var(--font-mono)', 
+              fontSize: '0.75rem', 
+              lineHeight: '1.5',
+              background: 'rgba(10, 15, 23, 0.95)'
+            }}
+          >
+            {terminalLogs.map((log, index) => {
+              let logClass = 'info';
+              if (log.startsWith('[ERROR]')) logClass = 'error';
+              else if (log.startsWith('[SYSTEM]')) logClass = 'system';
+              else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logClass = 'success';
+
+              return (
+                <div key={index} className={`terminal-log-line ${logClass}`} style={{ marginBottom: '4px' }}>
+                  {log}
+                </div>
+              );
+            })}
+            <div ref={terminalEndRef} />
+          </div>
+        )}
+      </div>
 
       {/* Settings Modal Overlay */}
       {isSettingsOpen && (
