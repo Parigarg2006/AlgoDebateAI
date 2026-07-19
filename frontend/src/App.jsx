@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  RotateCcw,
   ArrowRight,
   ArrowLeft,
   ArrowUp,
@@ -831,23 +830,18 @@ function App() {
                     <option value="java">Java</option>
                   </select>
                 </div>
-                {/* Bottom Tier: Action Buttons */}
-                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px', width: '100%' }}>
                   <button 
                     onClick={handleStartDebate} 
-                    style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', fontWeight: '600', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)', cursor: 'pointer' }}
+                    style={{ flex: 1, height: '40px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', fontWeight: '600', borderRadius: '8px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)' }}
                   >
                     Start Debate
                   </button>
-                  <button
-                    type="button"
-                    className="bento-btn-secondary"
-                    onClick={handleReset}
-                    disabled={jobState === 'active'}
-                    style={{ flex: 1 }}
+                  <button 
+                    onClick={handleReset} 
+                    style={{ flex: 1, height: '40px', background: 'rgba(255, 255, 255, 0.05)', color: '#94a3b8', fontWeight: '500', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer' }}
                   >
-                    <RotateCcw size={14} />
-                    <span>Reset</span>
+                    Reset
                   </button>
                 </div>
               </div>
@@ -905,7 +899,7 @@ function App() {
           </div>
 
           {/* Bento Tile 2: LangGraph Visualizer (2x2 Clustered Loop Layout) */}
-          <div className="bento-card" style={{ minHeight: '380px', height: 'auto', paddingBottom: '24px', overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
+          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <h2 className="card-header-row">
               <span className="card-title">
                 <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
@@ -917,61 +911,63 @@ function App() {
               {jobState === 'completed' ? 'Solve Completed successfully' : (jobState === 'active' ? `Active Execution: Round ${currentRound}` : (jobState === 'failed' ? 'Solve Failed' : 'Awaiting Graph Trigger'))}
             </div>
 
-            <div className="visualizer-grid">
-              {/* Row 1 */}
-              <div className={`visualizer-node ${getNodeStatusClass('coder')} ${getNodeStatusClass('coder') === 'status-active' ? 'active-pulse active-coder' : ''}`}>
-                <span className="node-number">{getNodeStatusClass('coder') === 'status-completed' ? '✓' : '1'}</span>
-                <Code2 size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
-                <div className="node-info">
-                  <span className="node-title">Coder</span>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, overflow: 'hidden', width: '100%' }}>
+              <div className="visualizer-grid" style={{ transform: 'scale(0.9)', transformOrigin: 'center center', width: '100%' }}>
+                {/* Row 1 */}
+                <div className={`visualizer-node ${getNodeStatusClass('coder')} ${getNodeStatusClass('coder') === 'status-active' ? 'active-pulse active-coder' : ''}`}>
+                  <span className="node-number">{getNodeStatusClass('coder') === 'status-completed' ? '✓' : '1'}</span>
+                  <Code2 size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
+                  <div className="node-info">
+                    <span className="node-title">Coder</span>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Coder-to-Sandbox Arrow */}
-              <div className={`visualizer-connector ${activeNode === 'sandbox' ? 'flow-active' : ''}`}>
-                <ArrowRight size={14} />
-              </div>
-              
-              <div className={`visualizer-node ${getNodeStatusClass('sandbox')} ${getNodeStatusClass('sandbox') === 'status-active' ? 'active-pulse active-sandbox' : ''}`}>
-                <span className="node-number">{getNodeStatusClass('sandbox') === 'status-completed' ? '✓' : '2'}</span>
-                <Cpu size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
-                <div className="node-info">
-                  <span className="node-title">Sandbox</span>
+                
+                {/* Coder-to-Sandbox Arrow */}
+                <div className={`visualizer-connector ${activeNode === 'sandbox' ? 'flow-active' : ''}`}>
+                  <ArrowRight size={14} />
                 </div>
-              </div>
+                
+                <div className={`visualizer-node ${getNodeStatusClass('sandbox')} ${getNodeStatusClass('sandbox') === 'status-active' ? 'active-pulse active-sandbox' : ''}`}>
+                  <span className="node-number">{getNodeStatusClass('sandbox') === 'status-completed' ? '✓' : '2'}</span>
+                  <Cpu size={14} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
+                  <div className="node-info">
+                    <span className="node-title">Sandbox</span>
+                  </div>
+                </div>
 
-              {/* Row 2 */}
-              {/* Critic-to-Coder Rejection Arrow */}
-              <div className={`visualizer-connector vertical ${activeNode === 'coder' && currentRound > 1 ? 'flow-active-reverse' : ''}`}>
-                <ArrowUp size={14} style={{ color: 'var(--accent-red)' }} />
-              </div>
-              
-              <div className="visualizer-connector"></div>
-              
-              {/* Sandbox-to-Critic Arrow */}
-              <div className={`visualizer-connector vertical ${activeNode === 'critic' ? 'flow-active' : ''}`}>
-                <ArrowDown size={14} />
-              </div>
-
-              {/* Row 3 */}
-              <div className={`visualizer-node ${getNodeStatusClass('refiner')} ${getNodeStatusClass('refiner') === 'status-active' ? 'active-pulse active-refiner' : ''}`}>
-                <span className="node-number">{getNodeStatusClass('refiner') === 'status-completed' ? '✓' : '4'}</span>
-                <Sparkles size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
-                <div className="node-info">
-                  <span className="node-title">Refiner</span>
+                {/* Row 2 */}
+                {/* Critic-to-Coder Rejection Arrow */}
+                <div className={`visualizer-connector vertical ${activeNode === 'coder' && currentRound > 1 ? 'flow-active-reverse' : ''}`}>
+                  <ArrowUp size={14} style={{ color: 'var(--accent-red)' }} />
                 </div>
-              </div>
-              
-              {/* Critic-to-Refiner Approval Arrow */}
-              <div className={`visualizer-connector ${activeNode === 'refiner' ? 'flow-active' : ''}`}>
-                <ArrowLeft size={14} />
-              </div>
-              
-              <div className={`visualizer-node ${getNodeStatusClass('critic')} ${getNodeStatusClass('critic') === 'status-active' ? 'active-pulse active-critic' : ''}`}>
-                <span className="node-number">{getNodeStatusClass('critic') === 'status-completed' ? '✓' : '3'}</span>
-                <ShieldCheck size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
-                <div className="node-info">
-                  <span className="node-title">Critic</span>
+                
+                <div className="visualizer-connector"></div>
+                
+                {/* Sandbox-to-Critic Arrow */}
+                <div className={`visualizer-connector vertical ${activeNode === 'critic' ? 'flow-active' : ''}`}>
+                  <ArrowDown size={14} />
+                </div>
+
+                {/* Row 3 */}
+                <div className={`visualizer-node ${getNodeStatusClass('refiner')} ${getNodeStatusClass('refiner') === 'status-active' ? 'active-pulse active-refiner' : ''}`}>
+                  <span className="node-number">{getNodeStatusClass('refiner') === 'status-completed' ? '✓' : '4'}</span>
+                  <Sparkles size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
+                  <div className="node-info">
+                    <span className="node-title">Refiner</span>
+                  </div>
+                </div>
+                
+                {/* Critic-to-Refiner Approval Arrow */}
+                <div className={`visualizer-connector ${activeNode === 'refiner' ? 'flow-active' : ''}`}>
+                  <ArrowLeft size={14} />
+                </div>
+                
+                <div className={`visualizer-node ${getNodeStatusClass('critic')} ${getNodeStatusClass('critic') === 'status-active' ? 'active-pulse active-critic' : ''}`}>
+                  <span className="node-number">{getNodeStatusClass('critic') === 'status-completed' ? '✓' : '3'}</span>
+                  <ShieldCheck size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
+                  <div className="node-info">
+                    <span className="node-title">Critic</span>
+                  </div>
                 </div>
               </div>
             </div>
