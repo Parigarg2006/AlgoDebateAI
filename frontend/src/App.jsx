@@ -660,6 +660,55 @@ function App() {
   };
   const optPercent = getOptimizationPercentage();
 
+  const getNodeStyle = (node) => {
+    const status = getNodeStatusClass(node);
+    const base = {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '4px',
+      padding: '8px 12px',
+      borderRadius: '8px',
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      minWidth: '85px',
+      textAlign: 'center',
+      userSelect: 'none'
+    };
+
+    if (status === 'status-completed') {
+      return {
+        ...base,
+        background: '#10b981',
+        color: '#ffffff',
+        boxShadow: '0 0 12px rgba(16, 185, 129, 0.5)',
+        border: '1px solid #10b981'
+      };
+    }
+
+    if (status === 'status-active') {
+      const activeColor = (node === 'coder' || node === 'sandbox') ? 'var(--accent-blue)' : 'var(--accent-purple)';
+      const shadowColor = (node === 'coder' || node === 'sandbox') ? 'rgba(56, 189, 248, 0.4)' : 'rgba(192, 132, 252, 0.4)';
+      return {
+        ...base,
+        background: 'rgba(255, 255, 255, 0.02)',
+        color: activeColor,
+        borderColor: activeColor,
+        boxShadow: `0 0 10px ${shadowColor}`,
+        animation: 'pulseActive 1.5s infinite alternate'
+      };
+    }
+
+    return {
+      ...base,
+      background: 'rgba(255, 255, 255, 0.02)',
+      color: 'var(--text-secondary)'
+    };
+  };
+
   return (
     <div className="app-container" ref={containerRef} onMouseMove={handleMouseMove}>
       {/* 1. Header Row */}
@@ -850,142 +899,38 @@ function App() {
               </span>
             </h2>
 
-            <div className="timeline-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', paddingLeft: '8px' }}>
-              {/* Vertical line connector */}
-              <div style={{
-                position: 'absolute',
-                left: '19px',
-                top: '12px',
-                bottom: '12px',
-                width: '2px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                zIndex: 0
-              }} />
-
-              {/* Step 1: Coder */}
-              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: getNodeStatusClass('coder') === 'status-active' ? 'var(--accent-blue)' : (getNodeStatusClass('coder') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  color: '#000000',
-                  boxShadow: getNodeStatusClass('coder') === 'status-active' ? '0 0 12px var(--accent-blue)' : 'none',
-                  animation: getNodeStatusClass('coder') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
-                  flexShrink: 0
-                }}>
-                  {getNodeStatusClass('coder') === 'status-completed' ? '✓' : '1'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('coder') === 'status-active' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
-                    Step 1: Coder Draft
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Initial algorithmic logic writing
-                  </span>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gridTemplateRows: 'auto auto auto', gap: '12px 6px', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
+              {/* Row 1: Coder -> Sandbox */}
+              <div style={getNodeStyle('coder')}>
+                <Code2 size={14} style={{ marginBottom: '4px' }} />
+                <span>Coder</span>
+              </div>
+              <div style={{ color: activeNode === 'sandbox' ? 'var(--accent-blue)' : 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold' }}>→</div>
+              <div style={getNodeStyle('sandbox')}>
+                <Cpu size={14} style={{ marginBottom: '4px' }} />
+                <span>Sandbox</span>
               </div>
 
-              {/* Step 2: Sandbox */}
-              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: getNodeStatusClass('sandbox') === 'status-active' ? 'var(--accent-blue)' : (getNodeStatusClass('sandbox') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  color: '#000000',
-                  boxShadow: getNodeStatusClass('sandbox') === 'status-active' ? '0 0 12px var(--accent-blue)' : 'none',
-                  animation: getNodeStatusClass('sandbox') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
-                  flexShrink: 0
-                }}>
-                  {getNodeStatusClass('sandbox') === 'status-completed' ? '✓' : '2'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('sandbox') === 'status-active' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
-                    Step 2: Sandbox Evaluation
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Compilation & test case harness runs
-                  </span>
-                </div>
-              </div>
+              {/* Row 2: vertical arrow paths */}
+              <div style={{ color: (activeNode === 'coder' && currentRound > 1) ? 'var(--accent-red)' : 'var(--text-muted)', textAlign: 'center', fontSize: '1rem', fontWeight: 'bold' }}>↑</div>
+              <div></div>
+              <div style={{ color: activeNode === 'critic' ? 'var(--accent-purple)' : 'var(--text-muted)', textAlign: 'center', fontSize: '1rem', fontWeight: 'bold' }}>↓</div>
 
-              {/* Step 3: Critic */}
-              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: getNodeStatusClass('critic') === 'status-active' ? 'var(--accent-purple)' : (getNodeStatusClass('critic') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  color: '#000000',
-                  boxShadow: getNodeStatusClass('critic') === 'status-active' ? '0 0 12px var(--accent-purple)' : 'none',
-                  animation: getNodeStatusClass('critic') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
-                  flexShrink: 0
-                }}>
-                  {getNodeStatusClass('critic') === 'status-completed' ? '✓' : '3'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('critic') === 'status-active' ? 'var(--accent-purple)' : 'var(--text-primary)' }}>
-                    Step 3: Red Team Critique
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Category classification & complexity audit
-                  </span>
-                </div>
+              {/* Row 3: Refiner <- Critic */}
+              <div style={getNodeStyle('refiner')}>
+                <Sparkles size={14} style={{ marginBottom: '4px' }} />
+                <span>Refiner</span>
               </div>
-
-              {/* Step 4: Refiner */}
-              <div style={{ display: 'flex', gap: '16px', zIndex: 1, position: 'relative' }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: getNodeStatusClass('refiner') === 'status-active' ? 'var(--accent-purple)' : (getNodeStatusClass('refiner') === 'status-completed' ? 'var(--accent-green)' : 'rgba(255,255,255,0.05)'),
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  color: '#000000',
-                  boxShadow: getNodeStatusClass('refiner') === 'status-active' ? '0 0 12px var(--accent-purple)' : 'none',
-                  animation: getNodeStatusClass('refiner') === 'status-active' ? 'pulseNeon 1.5s infinite alternate' : 'none',
-                  flexShrink: 0
-                }}>
-                  {getNodeStatusClass('refiner') === 'status-completed' ? '✓' : '4'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getNodeStatusClass('refiner') === 'status-active' ? 'var(--accent-purple)' : 'var(--text-primary)' }}>
-                    Step 4: Refiner Polishing
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Comment injection & formatting review
-                  </span>
-                </div>
+              <div style={{ color: activeNode === 'refiner' ? 'var(--accent-purple)' : 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold' }}>←</div>
+              <div style={getNodeStyle('critic')}>
+                <ShieldCheck size={14} style={{ marginBottom: '4px' }} />
+                <span>Critic</span>
               </div>
             </div>
             <style>{`
-              @keyframes pulseNeon {
-                from { opacity: 0.6; transform: scale(0.95); }
-                to { opacity: 1; transform: scale(1.05); }
+              @keyframes pulseActive {
+                from { opacity: 0.8; transform: scale(0.96); }
+                to { opacity: 1; transform: scale(1.04); }
               }
             `}</style>
           </div>
@@ -1402,7 +1347,7 @@ function App() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: isTerminalOpen ? '250px' : '36px',
+          height: isTerminalOpen ? '120px' : '36px',
           background: '#0d131f',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           zIndex: 1000,
