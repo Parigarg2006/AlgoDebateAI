@@ -833,23 +833,11 @@ function App() {
                 </div>
                 {/* Bottom Tier: Action Buttons */}
                 <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-                  <button
-                    type="submit"
-                    className="btn-start-debate-custom"
-                    disabled={jobState === 'active' || (!problemDescription.trim() && !problemUrl.trim())}
-                    style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #10b981, #059669) !important', color: '#ffffff !important', fontWeight: '600', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px 0 rgba(5, 150, 105, 0.4)' }}
+                  <button 
+                    onClick={handleStartDebate} 
+                    style={{ flex: 1, height: '42px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', fontWeight: '600', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)', cursor: 'pointer' }}
                   >
-                    {jobState === 'active' ? (
-                      <>
-                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                        <span>Solving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} />
-                        <span>Start Debate</span>
-                      </>
-                    )}
+                    Start Debate
                   </button>
                   <button
                     type="button"
@@ -917,7 +905,7 @@ function App() {
           </div>
 
           {/* Bento Tile 2: LangGraph Visualizer (2x2 Clustered Loop Layout) */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', height: 'auto !important', minHeight: 'fit-content' }}>
+          <div className="bento-card" style={{ minHeight: '380px', height: 'auto', paddingBottom: '24px', overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
             <h2 className="card-header-row">
               <span className="card-title">
                 <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
