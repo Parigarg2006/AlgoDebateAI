@@ -179,7 +179,8 @@ debateWorker.on('failed', (job, err) => {
  */
 app.post('/api/debate', async (req, res) => {
   try {
-    const { problemDescription, problemUrl, maxRounds = 4, jobId, language = 'cpp', coderPrompt, criticPrompt, refinerPrompt } = req.body;
+    const { problemDescription, problemUrl, maxRounds = 2, jobId, language = 'cpp', coderPrompt, criticPrompt, refinerPrompt } = req.body;
+    const maxRoundsClamped = Math.min(Number(maxRounds) || 2, 2);
 
     let finalProblemDescription = problemDescription;
 
@@ -210,7 +211,7 @@ app.post('/api/debate', async (req, res) => {
     // Add debate job to queue with a custom client-generated jobId
     const job = await debateQueue.add(
       'debateJob',
-      { problemDescription: finalProblemDescription, maxRounds, language, coderPrompt, criticPrompt, refinerPrompt },
+      { problemDescription: finalProblemDescription, maxRounds: maxRoundsClamped, language, coderPrompt, criticPrompt, refinerPrompt },
       { jobId } // Instructs BullMQ to use the client-generated ID
     );
 

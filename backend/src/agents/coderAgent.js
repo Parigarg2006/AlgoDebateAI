@@ -42,7 +42,7 @@ Guidelines:
 2. Read all test inputs from standard input and write outputs to standard output.
 3. Do not include verbose print statements or prompts (e.g., "Enter number:"). Only print the final answer.
 4. Ensure the time complexity is optimal for large input constraints.
-5. Pay attention to edge cases: empty arrays, negative numbers, very large numbers (use 64-bit integers if needed).
+5. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
   `.trim();
 
   // Dynamically configure description based on language

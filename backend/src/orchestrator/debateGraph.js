@@ -10,7 +10,7 @@ import { refineCode } from '../agents/refinerAgent.js';
  */
 export const DebateState = Annotation.Root({
   problemDescription: Annotation(),
-  maxRounds: Annotation({ default: () => 4 }),
+  maxRounds: Annotation({ default: () => 2 }),
   currentRound: Annotation({
     reducer: (x, y) => y,
     default: () => 1
@@ -187,7 +187,8 @@ async function refinerNode(state) {
  * 6. Define Conditional Edge (Routing Logic)
  */
 function routeAfterCritic(state) {
-  if (state.criticApproved || state.currentRound > state.maxRounds) {
+  const limit = Math.min(state.maxRounds || 2, 2);
+  if (state.criticApproved || state.currentRound > limit) {
     return "refiner";
   }
   return "coder";
