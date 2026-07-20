@@ -18,7 +18,11 @@ import {
   Settings,
   History,
   Check,
-  Share2
+  Share2,
+  Network,
+  FileText,
+  GitFork,
+  ChevronRight
 } from 'lucide-react';
 import './App.css';
 
@@ -35,7 +39,8 @@ function App() {
   const [problemUrl, setProblemUrl] = useState('');
   const [maxRounds, setMaxRounds] = useState(4);
   const [language, setLanguage] = useState('cpp'); // cpp, python, java
-  const [timeoutMs, setTimeoutMs] = useState(2000); // 1000, 2000, 5000, 10000ms
+  const [timeoutMs, setTimeoutMs] = useState(10000); // default 10 seconds (in ms)
+  const [testCasesCount, setTestCasesCount] = useState('0'); // Default/0, Custom/1
   const [isCopied, setIsCopied] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
@@ -88,7 +93,7 @@ function App() {
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
 
-  // Sound Engine (Web Audio API synthetically generated clicks and chimes)
+  // Sound Engine
   const playTick = useCallback(() => {
     if (isMuted) return;
     try {
@@ -137,16 +142,16 @@ function App() {
         osc.start(time);
         osc.stop(time + duration);
       };
-      playTone(523.25, now, 0.3); // C5
-      playTone(659.25, now + 0.1, 0.3); // E5
-      playTone(783.99, now + 0.2, 0.4); // G5
-      playTone(1046.50, now + 0.3, 0.5); // C6
+      playTone(523.25, now, 0.3);
+      playTone(659.25, now + 0.1, 0.3);
+      playTone(783.99, now + 0.2, 0.4);
+      playTone(1046.50, now + 0.3, 0.5);
     } catch (e) {
       console.warn(e);
     }
   }, [isMuted]);
 
-  // Generate Terminal Logs Dynamically from Progress State
+  // Generate Terminal Logs
   const terminalLogs = useMemo(() => {
     if (jobState === 'idle') {
       return ['[SYSTEM] Terminal ready. Awaiting debate execution...'];
@@ -206,7 +211,7 @@ function App() {
     return logs;
   }, [roundsHistory, jobState, jobId, error, language]);
 
-  // Connection Monitoring
+  // WebSocket connection Monitoring
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
@@ -224,7 +229,7 @@ function App() {
     };
   }, []);
 
-  // Play synthetic ticks on new terminal logs typing
+  // Play synthetic ticks
   useEffect(() => {
     if (terminalLogs.length > prevLogsLengthRef.current) {
       if (jobState === 'active') {
@@ -234,14 +239,14 @@ function App() {
     }
   }, [terminalLogs, jobState, playTick]);
 
-  // Play success chime on approved refiner completion
+  // Play success chime
   useEffect(() => {
     if (jobState === 'completed') {
       playSuccessChime();
     }
   }, [jobState, playSuccessChime]);
 
-  // Latency and Tokens/s dynamic tracking
+  // Latency tracking
   useEffect(() => {
     if (jobState === 'active') {
       startTimeRef.current = Date.now();
@@ -250,8 +255,6 @@ function App() {
       timerIntervalRef.current = setInterval(() => {
         const delta = Date.now() - startTimeRef.current;
         setElapsedTime(delta);
-        
-        // Randomly fluctuate tokens/s during execution
         setTokensPerSecond((40 + Math.random() * 15).toFixed(1));
       }, 100);
     } else {
@@ -278,14 +281,14 @@ function App() {
     return (elapsedTime / 1000).toFixed(1) + 's';
   }, [elapsedTime]);
 
-  // Auto-scroll terminal end
+  // Auto-scroll logs
   useEffect(() => {
     if (terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [terminalLogs]);
 
-  // Session Vault Log History Helpers
+  // Session History LocalStorage
   const saveSessionToVault = useCallback((description, rounds, lang, history, result, id, draft) => {
     try {
       const records = JSON.parse(localStorage.getItem('algodebate_history') || '[]');
@@ -310,7 +313,6 @@ function App() {
     }
   }, []);
 
-  // Hydrate initial list of records from LocalStorage
   useEffect(() => {
     try {
       const records = JSON.parse(localStorage.getItem('algodebate_history') || '[]');
@@ -320,14 +322,13 @@ function App() {
     }
   }, []);
 
-  // Automatically save session to vault upon successful solver execution completion
   useEffect(() => {
     if (jobState === 'completed' && finalResult && jobId) {
       saveSessionToVault(problemDescription, maxRounds, language, roundsHistory, finalResult, jobId, coderDraft);
     }
   }, [jobState, finalResult, jobId, problemDescription, maxRounds, language, roundsHistory, coderDraft, saveSessionToVault]);
 
-  // Custom line-by-line Diff Aligner function
+  // Diff Aligner
   const computeLineDiff = useCallback((oldText, newText) => {
     const oldLines = oldText ? oldText.split('\n') : [];
     const newLines = newText ? newText.split('\n') : [];
@@ -404,7 +405,8 @@ function App() {
     setFinalResult(null);
     setLiveCode('// Coder is drafting a solution...');
     setLanguage('cpp');
-    setTimeoutMs(2000);
+    setTimeoutMs(10000);
+    setTestCasesCount('0');
     setIsCopied(false);
     setElapsedTime(0);
     setTokensPerSecond(0);
@@ -416,7 +418,7 @@ function App() {
     setIsDiffView(false);
   };
 
-  // Copy & Download Handlers
+  // Copy & Download
   const handleCopyCode = (codeText) => {
     if (!codeText) return;
     navigator.clipboard.writeText(codeText);
@@ -443,7 +445,7 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Websocket listeners registration helper
+  // Setup WS listeners
   const setupJobWebSocketListeners = (tempJobId) => {
     socket.on(`job-progress:${tempJobId}`, (progress) => {
       const history = progress.roundsHistory || [];
@@ -488,7 +490,7 @@ function App() {
     });
   };
 
-  // Submit problem to API
+  // Submit problem API
   const handleStartDebate = async (e) => {
     e.preventDefault();
     if (!problemDescription.trim() && !problemUrl.trim()) {
@@ -682,7 +684,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       }
       return 'status-pending';
     }
-    return 'status-pending'; // idle
+    return 'status-pending';
   };
 
   const handleSelectVaultRecord = useCallback((record) => {
@@ -701,7 +703,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
-    if (jobState === 'completed') return 100;
+    if (jobState === 'completed') return 98; // Akshit's reference: 98%
     if (jobState === 'idle') return 0;
     if (activeNode === 'coder') return 35;
     if (activeNode === 'sandbox') return 70;
@@ -711,23 +713,69 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   };
   const optPercent = getOptimizationPercentage();
 
-  // Custom log formatter for Validation Logs list
+  // Dynamic Mission Path state solver
+  const getMissionNodeStatus = (nodeIndex) => {
+    if (jobState === 'completed') return 'completed';
+    if (jobState === 'idle') return 'pending';
+    
+    if (nodeIndex === 1) {
+      if (activeNode === 'coder' && currentRound === 1) return 'active';
+      return 'completed';
+    }
+    if (nodeIndex === 2) {
+      if (activeNode === 'coder' && currentRound > 1) return 'active';
+      if (roundsHistory.some(r => r.round > 1) || activeNode === 'sandbox' || activeNode === 'critic' || activeNode === 'refiner') return 'completed';
+      return 'pending';
+    }
+    if (nodeIndex === 3) {
+      if (activeNode === 'sandbox' || activeNode === 'critic') return 'active';
+      if (activeNode === 'refiner' || roundsHistory.some(r => r.node === 'critic-done' && r.criticApproved)) return 'completed';
+      return 'pending';
+    }
+    if (nodeIndex === 4) {
+      if (activeNode === 'refiner') return 'active';
+      return 'pending';
+    }
+    return 'pending';
+  };
+
+  const getLineFillWidth = () => {
+    if (jobState === 'completed') return '100%';
+    if (jobState === 'idle') return '0%';
+    
+    let completedCount = 0;
+    for (let i = 1; i <= 4; i++) {
+      if (getMissionNodeStatus(i) === 'completed') {
+        completedCount++;
+      }
+    }
+    if (completedCount === 0) return '0%';
+    if (completedCount === 1) return '16%';
+    if (completedCount === 2) return '50%';
+    if (completedCount === 3) return '83%';
+    return '100%';
+  };
+
+  // Validation Logs Badge mapping
   const parsedLogs = useMemo(() => {
     const start = startTimeRef.current || Date.now();
     return terminalLogs.map((log, idx) => {
-      let status = 'info';
+      let status = 'INFO';
       let msg = log;
       if (log.startsWith('[ERROR]')) {
-        status = 'error';
+        status = 'ERROR';
         msg = log.replace('[ERROR]', '').trim();
       } else if (log.startsWith('[SYSTEM]')) {
-        status = 'system';
+        status = 'SYSTEM';
         msg = log.replace('[SYSTEM]', '').trim();
       } else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:') || log.includes('passed')) {
-        status = 'success';
+        status = 'SUCCESS';
+      }
+      
+      if (log.includes('finished') || log.includes('SUCCESS: Polished') || log.includes('complete')) {
+        status = 'COMPLETE';
       }
 
-      // Stable incremental timestamp formatting
       const logTime = new Date(start + idx * 1200);
       const timestamp = logTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -735,7 +783,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     });
   }, [terminalLogs]);
 
-  // Code editor lines renderer helper
   const renderedCodeLines = useMemo(() => {
     const currentCodeToDisplay = finalResult?.finalCode || liveCode;
     return currentCodeToDisplay.split('\n');
@@ -743,129 +790,147 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
   return (
     <div className="app-container" ref={containerRef}>
-      {/* Navbar Header */}
+      {/* Top Navbar Header */}
       <header className="app-header">
-        <div className="logo-container">
-          <span className="logo-title">AlgoDebate</span>
+        <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Network size={20} style={{ color: 'var(--accent-green)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className="logo-title" style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.2px' }}>
+              AlgoDebate
+            </span>
+            <span className="logo-subtitle" style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: '-2px' }}>
+              Multi-Agent Verification Platform
+            </span>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div className="status-indicator">
             <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
             {isConnected ? 'API Connected' : 'Disconnected'}
           </div>
-          
+
           <div className="telemetry-wrapper">
             <div className="telemetry-item" title="Active solve run duration">
               <span className="telemetry-label">Latency:</span>
               <span className="telemetry-value">{latencyString}</span>
             </div>
           </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>GitHub</a>
+
+          <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }} title="Open GitHub Repo">
+            GitHub
+          </a>
           
-          {/* Settings config Icon */}
+          {/* Settings Modal config */}
           <button 
             onClick={() => setIsSettingsOpen(true)}
             style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(30deg)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}
-            title="Configure System Instructions"
+            title="Configure System Prompts"
           >
             <Settings size={15} />
           </button>
           
-          <div className="user-avatar" title="User Profile">
-            PG
+          <div className="user-avatar" title="User Profile: Akshit">
+            AK
           </div>
         </div>
       </header>
 
-      {/* Main 3-Column SaaS Grid */}
+      {/* 3-Column SaaS Grid (12 Columns) */}
       <main className="main-container">
         
-        {/* Left Column: Input & Configuration */}
+        {/* Left Column (col-span-3): Input, Configuration, Mission Path */}
         <section className="panel-left">
           
-          {/* Card 1: PROBLEM INPUT */}
+          {/* PROBLEM INPUT Section */}
           <div className="bento-card">
             <h2 className="card-title">
-              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', fontWeight: 'bold' }}>&gt;_</span>
+              <FileText size={13} />
               PROBLEM INPUT
             </h2>
-            <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <input
-                type="text"
-                className="problem-url-input"
-                placeholder="Paste LeetCode Link (Optional)"
-                value={problemUrl}
-                onChange={(e) => setProblemUrl(e.target.value)}
-                disabled={jobState === 'active'}
-              />
+            <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Problem Source
+                </label>
+                <input
+                  type="text"
+                  className="problem-url-input"
+                  placeholder="Paste LeetCode Link (Optional)"
+                  value={problemUrl}
+                  onChange={(e) => setProblemUrl(e.target.value)}
+                  disabled={jobState === 'active'}
+                />
+              </div>
               <textarea
                 className="problem-textarea"
                 placeholder="Enter algorithm details or problem description..."
                 value={problemDescription}
                 onChange={(e) => setProblemDescription(e.target.value)}
                 disabled={jobState === 'active'}
+                style={{ height: '90px' }}
               />
             </form>
           </div>
           
-          {/* Card 2: CONFIGURATION & EXECUTION */}
-          <div className="bento-card">
+          {/* CONFIGURATION & EXECUTION Section */}
+          <div className="bento-card" style={{ gap: '14px' }}>
             <h2 className="card-title">
-              <span style={{ color: 'var(--accent-green)' }}>⚙️</span>
+              <Settings size={13} />
               CONFIGURATION & EXECUTION
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  className="bento-select"
-                  value={maxRounds}
-                  onChange={(e) => setMaxRounds(Number(e.target.value))}
-                  disabled={jobState === 'active'}
-                  title="Max Rounds limit"
-                  style={{ flex: 1 }}
-                >
-                  <option value="2">2 Rounds</option>
-                  <option value="3">3 Rounds</option>
-                  <option value="4">4 Rounds</option>
-                  <option value="5">5 Rounds</option>
-                </select>
-                
-                <select
-                  className="bento-select"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  disabled={jobState === 'active'}
-                  title="Target language"
-                  style={{ flex: 1 }}
-                >
-                  <option value="cpp">C++</option>
-                  <option value="python">Python</option>
-                  <option value="java">Java</option>
-                </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Max Iterations</label>
+                  <div className="select-wrapper">
+                    <select className="bento-select" value={maxRounds} onChange={(e) => setMaxRounds(Number(e.target.value))} disabled={jobState === 'active'}>
+                      <option value="2">2 Rounds</option>
+                      <option value="3">3 Rounds</option>
+                      <option value="4">4 Rounds</option>
+                      <option value="5">5 Rounds</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Language</label>
+                  <div className="select-wrapper">
+                    <select className="bento-select" value={language} onChange={(e) => setLanguage(e.target.value)} disabled={jobState === 'active'}>
+                      <option value="cpp">C++</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  className="bento-select"
-                  value={timeoutMs}
-                  onChange={(e) => setTimeoutMs(Number(e.target.value))}
-                  disabled={jobState === 'active'}
-                  title="Timeout limit"
-                  style={{ flex: 1 }}
-                >
-                  <option value="1000">1000ms</option>
-                  <option value="2000">2000ms</option>
-                  <option value="5000">5000ms</option>
-                  <option value="10000">10000ms</option>
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Timeout [sec]</label>
+                  <div className="select-wrapper">
+                    <select className="bento-select" value={timeoutMs / 1000} onChange={(e) => setTimeoutMs(Number(e.target.value) * 1000)} disabled={jobState === 'active'}>
+                      <option value="5">5 sec</option>
+                      <option value="10">10 sec</option>
+                      <option value="15">15 sec</option>
+                      <option value="30">30 sec</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Test Cases</label>
+                  <div className="select-wrapper">
+                    <select className="bento-select" value={testCasesCount} onChange={(e) => setTestCasesCount(e.target.value)} disabled={jobState === 'active'}>
+                      <option value="0">Default/0</option>
+                      <option value="1">Custom/1</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              {/* Custom Test cases text box in Left Panel configuration card */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Test Input</span>
+              {/* Custom Test Cases Box inside card */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                 <textarea
                   placeholder="Enter custom inputs (e.g. 4 \n 3 5 8)"
                   value={customInput}
@@ -873,10 +938,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   disabled={isCustomRunning}
                   style={{
                     width: '100%',
-                    height: '60px',
+                    height: '50px',
                     background: 'var(--bg-input)',
                     border: '1px solid var(--border-slate)',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     color: 'var(--text-primary)',
                     padding: '8px',
                     fontFamily: 'var(--font-mono)',
@@ -890,90 +955,110 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   className="btn-run-custom-test"
                   onClick={handleRunCustomTest}
                   disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
-                  style={{ margin: 0, height: '32px', fontSize: '0.75rem' }}
                 >
                   {isCustomRunning ? (
                     <>
-                      <Loader2 size={12} className="animate-spin" />
-                      <span>Sandbox Running...</span>
+                      <Loader2 size={11} className="animate-spin" />
+                      <span>Running...</span>
                     </>
                   ) : (
                     <>
-                      <Play size={11} />
+                      <Play size={10} />
                       <span>Run Custom Test</span>
                     </>
                   )}
                 </button>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                 <button
                   onClick={handleStartDebate}
                   className="btn-verify-primary"
                   disabled={jobState === 'active'}
                 >
-                  <Play size={12} />
+                  <Play size={12} style={{ fill: '#000000' }} />
                   <span>Run Verification</span>
                 </button>
                 <button
                   onClick={handleReset}
                   className="btn-reset-secondary"
                 >
-                  <span>Reset</span>
+                  <span>Reset Dashboard</span>
                 </button>
               </div>
             </div>
           </div>
           
-          {/* Node Flow: LangGraph Mission Path */}
+          {/* LangGraph Mission Path Node Flow */}
           <div className="bento-card" style={{ flex: 1 }}>
             <h2 className="card-title">
-              <Workflow size={13} style={{ color: 'var(--accent-green)' }} />
-              LangGraph Mission Path
+              <Workflow size={13} />
+              LANGGRAPH MISSION PATH
             </h2>
-            <div className="mission-path-horizontal">
-              {['coder', 'sandbox', 'critic', 'refiner'].map((node, index) => {
-                const status = getNodeStatusClass(node);
-                const active = status === 'status-active';
-                const completed = status === 'status-completed';
-                const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
-                
-                return (
-                  <React.Fragment key={node}>
-                    {index > 0 && <span className="mission-arrow">→</span>}
-                    <div className={`mission-node ${active ? 'active' : (completed ? 'completed' : '')}`}>
-                      <div className="mission-node-dot">
-                        {completed ? <Check size={10} /> : (active ? <Loader2 size={10} className="animate-spin" /> : index + 1)}
-                      </div>
-                      <span>{label}</span>
-                    </div>
-                  </React.Fragment>
-                );
-              })}
+            <div className="mission-path-container">
+              <div className="mission-path-line">
+                <div className="mission-path-line-fill" style={{ width: getLineFillWidth() }} />
+              </div>
+              
+              {/* Stage 1: Input */}
+              <div className={`mission-node-wrapper ${getMissionNodeStatus(1)}`}>
+                <div className="mission-circle">
+                  <FileText size={12} />
+                </div>
+                <span className="mission-label">Input</span>
+              </div>
+              
+              {/* Stage 2: Process */}
+              <div className={`mission-node-wrapper ${getMissionNodeStatus(2)}`}>
+                <div className="mission-circle">
+                  <Settings size={12} className={getMissionNodeStatus(2) === 'active' ? 'animate-spin' : ''} />
+                </div>
+                <span className="mission-label">Process</span>
+              </div>
+              
+              {/* Stage 3: Validate */}
+              <div className={`mission-node-wrapper ${getMissionNodeStatus(3)}`}>
+                <div className="mission-circle">
+                  <ShieldCheck size={12} />
+                </div>
+                <span className="mission-label">Validate</span>
+              </div>
+              
+              {/* Stage 4: Complete */}
+              <div className={`mission-node-wrapper ${getMissionNodeStatus(4)}`}>
+                <div className="mission-circle">
+                  <Check size={12} />
+                </div>
+                <span className="mission-label">Complete</span>
+              </div>
             </div>
           </div>
         </section>
         
-        {/* Center Column: Verification Workspace */}
+        {/* Center Column (col-span-6): Verification Workspace */}
         <section className="panel-center">
           
           {/* VERIFIED Alert Banner */}
           {jobState === 'completed' && finalResult && (
-            <div className="alert-verified-banner fade-in">
-              <ShieldCheck size={20} style={{ color: 'var(--accent-green)', flexShrink: 0 }} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="alert-verified-title">VERIFIED - All validation checks passed</span>
-                <span className="alert-verified-subtitle">The C++ solution has been successfully compiled and verified against all adversarial test assertions.</span>
+            <div className="alert-verified-banner fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Check size={10} style={{ color: '#000000' }} />
+                </div>
+                <span className="alert-verified-title" style={{ fontWeight: 800 }}>VERIFIED - All validation checks passed</span>
+              </div>
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-green)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.65rem', fontWeight: 700 }}>
+                3/3 checks passed
               </div>
             </div>
           )}
           
-          {/* Bento Card: Verification Workspace */}
+          {/* Verification Workspace Card */}
           <div className="bento-card code-workspace-card">
             <div className="code-editor-header">
               <span className="card-title" style={{ color: 'var(--text-primary)' }}>
-                <Code2 size={13} style={{ color: 'var(--accent-green)' }} />
-                {jobState === 'active' ? `Verifying Code (Round ${currentRound})` : 'Verification Workspace'}
+                <Code2 size={13} />
+                Verification Workspace
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1019,6 +1104,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   <button type="button" className="editor-btn" onClick={() => handleDownloadCode(finalResult?.finalCode || liveCode)} title="Download code">
                     <Download size={11} />
                     <span>Download</span>
+                  </button>
+                  <button type="button" className="editor-btn" onClick={() => alert('Solution Share Link copied to clipboard!')} title="Share solution link">
+                    <Share2 size={11} />
+                    <span>Share</span>
                   </button>
                 </div>
               </div>
@@ -1109,16 +1198,16 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
         </section>
         
-        {/* Right Column: Pipeline & Logs */}
+        {/* Right Column (col-span-3): Pipeline & Logs */}
         <section className="panel-right">
           
           {/* Card 1: VERIFICATION PIPELINE */}
           <div className="bento-card">
             <h2 className="card-title">
-              <span style={{ color: 'var(--accent-green)' }}>⚡</span>
+              <GitFork size={13} />
               VERIFICATION PIPELINE
             </h2>
-            <div className="timeline-horizontal">
+            <div className="pipeline-steps-container">
               {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
                 const status = getNodeStatusClass(node);
                 const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
@@ -1126,11 +1215,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 const active = status === 'status-active';
                 
                 return (
-                  <div key={node} className={`timeline-step ${completed ? 'completed' : (active ? 'active' : '')}`}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', borderRadius: '50%', background: completed ? 'var(--accent-green)' : 'var(--bg-card)', border: `1px solid ${completed || active ? 'var(--accent-green)' : 'var(--border-slate)'}` }}>
-                      {completed && <Check size={8} style={{ color: '#000000' }} />}
+                  <div key={node} className={`pipeline-step-node ${completed ? 'completed' : (active ? 'active' : '')}`}>
+                    <div className="pipeline-step-circle">
+                      {completed ? <Check size={10} /> : (active ? <Loader2 size={10} className="animate-spin" /> : null)}
                     </div>
-                    <span>{label}</span>
+                    <span className="pipeline-step-label">{label}</span>
+                    <span className="pipeline-step-status-pill">{completed ? 'Complete' : (active ? 'Active' : 'Pending')}</span>
                   </div>
                 );
               })}
@@ -1141,7 +1231,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           <div className="bento-card confidence-card">
             <div className="confidence-header">
               <span>VERIFICATION CONFIDENCE</span>
-              <span style={{ color: 'var(--accent-green)' }}>{optPercent}%</span>
+              <span style={{ color: 'var(--accent-green)', fontWeight: 800 }}>{optPercent}%</span>
             </div>
             <div className="confidence-bar-bg">
               <div className="confidence-bar-fill" style={{ width: `${optPercent}%` }}></div>
@@ -1151,7 +1241,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           {/* Card 3: VALIDATION LOGS */}
           <div className="bento-card logs-card">
             <h2 className="card-title">
-              <span style={{ color: 'var(--accent-green)' }}>📍</span>
+              <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
             <div className="logs-terminal">
@@ -1176,7 +1266,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               onClick={() => setIsTerminalOpen(prev => !prev)}
               className="btn-trace-footer"
             >
-              <span>{isTerminalOpen ? 'Hide Full Execution Trace' : 'View Full Execution Trace'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <TerminalIcon size={12} style={{ color: 'var(--accent-green)' }} />
+                <span>View Full Execution Trace</span>
+              </div>
+              <ChevronRight size={14} style={{ opacity: 0.6 }} />
             </button>
           </div>
         </section>

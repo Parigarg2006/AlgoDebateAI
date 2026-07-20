@@ -27,22 +27,20 @@
 }
 
 .logo-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.2px;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
-.logo-title::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  background-color: var(--accent-green);
-  border-radius: 50%;
-  display: inline-block;
+.logo-subtitle {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .status-indicator {
@@ -1017,34 +1015,215 @@
 }
 
 /* Run Custom Test button styling */
-.btn-run-custom-test {
-  width: 100%;
-  height: 32px;
-  background: transparent !important;
-  border: 1px solid #374151 !important; /* border-neutral-700 */
-  color: var(--text-secondary) !important;
-  font-weight: 700 !important;
-  font-size: 0.72rem !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  transition: all 0.2s !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-.btn-run-custom-test:hover:not(:disabled) {
-  border-color: var(--accent-green) !important;
-  color: var(--accent-green) !important;
-  background-color: rgba(16, 185, 129, 0.05) !important;
-}
-
 .btn-run-custom-test:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
   border-color: var(--border-slate) !important;
   color: var(--text-muted) !important;
+}
+
+/* Custom Select Dropdowns Caret wrappers */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.bento-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 28px !important;
+}
+
+/* LangGraph Mission Path horizontal visualizer */
+.mission-path-container {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 10px;
+  width: 100%;
+}
+
+.mission-path-line {
+  position: absolute;
+  top: 25px; /* middle of 26px circle node */
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background-color: var(--border-slate);
+  z-index: 0;
+}
+
+.mission-path-line-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+  transition: width 0.3s ease-in-out;
+}
+
+.mission-node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+  position: relative;
+}
+
+.mission-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-slate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.3s;
+}
+
+.mission-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.mission-node-wrapper.completed .mission-circle {
+  background-color: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000000;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.mission-node-wrapper.completed .mission-label {
+  color: var(--text-primary);
+}
+
+.mission-node-wrapper.active .mission-circle {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.mission-node-wrapper.active .mission-label {
+  color: var(--accent-green);
+}
+
+/* Horizontal Pipeline steps in VERIFICATION PIPELINE card */
+.pipeline-steps-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+  gap: 12px;
+}
+
+.pipeline-step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  text-align: center;
+}
+
+.pipeline-step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--bg-input);
+  border: 2px solid var(--border-slate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.25s;
+}
+
+.pipeline-step-node.completed .pipeline-step-circle {
+  background-color: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000000;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.pipeline-step-node.active .pipeline-step-circle {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.pipeline-step-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.pipeline-step-node.completed .pipeline-step-label {
+  color: var(--text-primary);
+}
+
+.pipeline-step-status-pill {
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid var(--border-slate);
+  text-transform: uppercase;
+}
+
+.pipeline-step-node.completed .pipeline-step-status-pill {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--accent-green);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.pipeline-step-node.active .pipeline-step-status-pill {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--accent-orange);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Color-coded Validation Log Pills */
+.log-status-pill.INFO {
+  background-color: rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border-slate) !important;
+}
+
+.log-status-pill.SUCCESS {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: var(--accent-green) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.log-status-pill.COMPLETE {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: var(--accent-orange) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+.log-status-pill.ERROR {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--accent-red) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.log-status-pill.SYSTEM {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
 }
