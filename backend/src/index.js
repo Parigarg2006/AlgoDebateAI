@@ -51,15 +51,6 @@ You are given three integers n, s, and m. A sequence seq of length n is consider
 
 The goal is to return the maximum possible element that can appear in any such valid sequence.
 
-Expected Function Signature:
-C++:
-class Solution {
-public:
-    long long maximumValue(int n, int s, int m) {
-        
-    }
-};
-
 Constraints:
 1 <= n, s <= 10^9
 1 <= m <= 10^5
@@ -73,6 +64,38 @@ Example 2:
 Input: n = 2, s = 4, m = 3
 Output: 7
 Explanation: A valid sequence is [4, 7], and the maximum element is 7.
+
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long maximumValue(int n, int s, int m) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def maximumValue(self, n: int, s: int, m: int) -> int:
+
+Java:
+class Solution {
+    public long maximumValue(int n, int s, int m) {
+        
+    }
+}
+
+Go:
+func maximumValue(n int, s int, m int) int64 {
+    
+}
+
+Rust:
+impl Solution {
+    pub fn maximum_value(n: i32, s: i32, m: i32) -> i64 {
+        
+    }
+}
 `;
     }
 
@@ -84,10 +107,15 @@ Explanation: A valid sequence is [4, 7], and the maximum element is 7.
       },
       body: JSON.stringify({
         query: `
-          query questionContent($titleSlug: String!) {
+          query questionData($titleSlug: String!) {
             question(titleSlug: $titleSlug) {
               content
               title
+              codeSnippets {
+                lang
+                langSlug
+                code
+              }
             }
           }
         `,
@@ -126,7 +154,22 @@ Explanation: A valid sequence is [4, 7], and the maximum element is 7.
       .replace(/\n\s*\n/g, '\n\n')
       .trim();
 
-    return `Title: ${title}\n\nProblem Description:\n${cleanContent}`;
+    // Extract starter templates
+    const codeSnippets = question.codeSnippets || [];
+    const cppSnippet = codeSnippets.find(s => s.langSlug === 'cpp')?.code || '';
+    const pythonSnippet = codeSnippets.find(s => s.langSlug === 'python3' || s.langSlug === 'python')?.code || '';
+    const javaSnippet = codeSnippets.find(s => s.langSlug === 'java')?.code || '';
+    const golangSnippet = codeSnippets.find(s => s.langSlug === 'golang')?.code || '';
+    const rustSnippet = codeSnippets.find(s => s.langSlug === 'rust')?.code || '';
+
+    let snippetsText = '\n\n=== EXPORTED STARTER TEMPLATES ===\n';
+    if (cppSnippet) snippetsText += `C++:\n${cppSnippet}\n\n`;
+    if (pythonSnippet) snippetsText += `Python:\n${pythonSnippet}\n\n`;
+    if (javaSnippet) snippetsText += `Java:\n${javaSnippet}\n\n`;
+    if (golangSnippet) snippetsText += `Go:\n${golangSnippet}\n\n`;
+    if (rustSnippet) snippetsText += `Rust:\n${rustSnippet}\n\n`;
+
+    return `Title: ${title}\n\nProblem Description:\n${cleanContent}${snippetsText}`;
   } catch (error) {
     console.error('[LeetCode Parser] Error fetching problem:', error);
     throw error;
