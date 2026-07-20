@@ -76,7 +76,7 @@ async function coderNode(state) {
 
   let problemDescForAgent = state.problemDescription;
   if (state.inferRequirements) {
-    problemDescForAgent += `\n\n[INSTRUCTION] The exact LeetCode problem description was not fetched. You MUST infer the LeetCode problem requirements, description, input/output formats, constraints, and standard edge cases directly from the provided title/text: "${state.problemDescription}". Draw from your knowledge of this problem (e.g. LeetCode titles/numbers) to reconstruct the requirements accurately and write an optimal solver for it.`;
+    problemDescForAgent += `\n\n[INSTRUCTION] The exact LeetCode problem description was not fetched. If only a URL slug or brief description is provided, infer the LeetCode problem, generate the standard C++ class Solution structure, and write the optimal solution. You MUST infer the LeetCode problem requirements, description, input/output formats, constraints, and standard edge cases directly from the provided title/text: "${state.problemDescription}". Draw from your knowledge of this problem (e.g. LeetCode titles/numbers) to reconstruct the requirements accurately and write an optimal solver for it.`;
   }
 
   // Set a max timeout of 15 seconds for Coder Agent execution

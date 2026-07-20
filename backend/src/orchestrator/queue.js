@@ -1,5 +1,7 @@
 import { Queue, Worker } from 'bullmq';
 import { debateGraph } from './debateGraph.js';
+import { fetchLeetCodeProblem, withTimeout, slugToCamelCase, stripMarkdown } from '../utils/leetcode.js';
+import { extractSampleTestCases } from '../utils/parser.js';
 
 // Connection options to Docker Redis running on port 6379
 const connection = {
@@ -24,30 +26,232 @@ export const debateWorker = new Worker(
     console.log(`\n[Worker] Picked up job ${job.id} from queue.`);
     const roundsHistory = [];
     
+    const onProgress = async (roundProgress) => {
+      roundsHistory.push(roundProgress);
+      await job.updateProgress({
+        status: 'IN_PROGRESS',
+        currentRound: roundProgress.round || 1,
+        roundsHistory
+      });
+    };
+
     try {
-      const { problemDescription, maxRounds, language, coderPrompt, criticPrompt, refinerPrompt, inferRequirements } = job.data;
+      const { problemDescription, problemUrl, maxRounds, language, coderPrompt, criticPrompt, refinerPrompt } = job.data;
+
+      // 1. Initial State Parsing & WebSocket Logs
+      let finalProblemDescription = problemDescription || '';
+      let urlToFetch = '';
+      let extractedTitle = '';
+      let inferRequirements = false;
+
+      // Helper to extract LeetCode URL from a string
+      function extractLeetCodeUrl(text) {
+        if (!text) return null;
+        const urlRegex = /(https?:\/\/(?:www\.)?leetcode\.com\/problems\/[a-zA-Z0-9-]+)/i;
+        const match = text.match(urlRegex);
+        return match ? match[1] : null;
+      }
+
+      // Helper to extract Markdown LeetCode link
+      function extractMarkdownLink(text) {
+        if (!text) return null;
+        const mdRegex = /\[([^\]]+)\]\((https?:\/\/(?:www\.)?leetcode\.com\/problems\/[a-zA-Z0-9-]+)\)/i;
+        const match = text.match(mdRegex);
+        if (match) {
+          return { title: match[1], url: match[2] };
+        }
+        return null;
+      }
+
+      // Scan problemUrl and problemDescription for markdown links or plain URLs
+      const urlFromInputUrl = extractLeetCodeUrl(problemUrl);
+      const mdFromInputUrl = extractMarkdownLink(problemUrl);
+
+      const urlFromDesc = extractLeetCodeUrl(problemDescription);
+      const mdFromDesc = extractMarkdownLink(problemDescription);
+
+      if (mdFromInputUrl) {
+        urlToFetch = mdFromInputUrl.url;
+        extractedTitle = mdFromInputUrl.title;
+      } else if (mdFromDesc) {
+        urlToFetch = mdFromDesc.url;
+        extractedTitle = mdFromDesc.title;
+      } else if (urlFromInputUrl) {
+        urlToFetch = urlFromInputUrl;
+      } else if (urlFromDesc) {
+        urlToFetch = urlFromDesc;
+      }
+
+      let hasValidFetch = false;
+
+      if (problemUrl && problemUrl.trim() !== '' && !urlToFetch) {
+        // Fall back dynamically to slug name template
+        console.warn('[Worker] Invalid LeetCode URL format, using dynamic slug template.');
+        await onProgress({ node: 'coder', round: 1, message: '[SYSTEM] Invalid LeetCode URL structure. Generating dynamic template from URL...' });
+        inferRequirements = true;
+        const slug = problemUrl.match(/problems\/([^/]+)/)?.[1] || 'algorithm-problem';
+        const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const methodName = slugToCamelCase(slug);
+        const defaultSnippets = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long ${methodName}(vector<int>& nums) {
+        // Default fallback solution
+        return 0;
+    }
+};
+
+Python:
+class Solution:
+    def ${methodName}(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long ${methodName}(int[] nums) {
+        return 0;
+    }
+}
+`;
+        finalProblemDescription = `Title: ${formattedTitle}\n\nProblem Description:\nPlease write a solution for the LeetCode problem "${formattedTitle}".\n\nProblem URL: ${problemUrl}\n${defaultSnippets}`;
+      }
+
+      if (urlToFetch) {
+        try {
+          console.log(`[Worker] Attempting to fetch LeetCode problem from URL: ${urlToFetch} with 3s timeout`);
+          await onProgress({ node: 'coder', round: 1, message: '[SYSTEM] Parsing problem URL and extracting starter signature templates...' });
+          
+          const fetchedDescription = await withTimeout(fetchLeetCodeProblem(urlToFetch), 3000);
+          hasValidFetch = true;
+          
+          let combined = fetchedDescription;
+          if (extractedTitle) {
+            combined = `Title: ${stripMarkdown(extractedTitle)}\n\n${combined}`;
+          }
+          
+          // Clean problem description inputs
+          const cleanDesc = stripMarkdown(problemDescription);
+          const cleanUrlInput = stripMarkdown(problemUrl);
+
+          // Include any additional contextual inputs provided by the user
+          let extraContext = '';
+          if (cleanDesc && !cleanDesc.includes(urlToFetch)) {
+            extraContext += `\n\nAdditional Description Context:\n${cleanDesc}`;
+          }
+          if (cleanUrlInput && !cleanUrlInput.includes(urlToFetch)) {
+            extraContext += `\n\nAdditional Input Context:\n${cleanUrlInput}`;
+          }
+          finalProblemDescription = combined + extraContext;
+          await onProgress({ node: 'coder', round: 1, message: '[SYSTEM] LeetCode GraphQL fetch completed successfully.' });
+        } catch (err) {
+          console.warn('[Worker] GraphQL fetch failed, switching to default template:', err.message);
+          await onProgress({ node: 'coder', round: 1, message: '[SYSTEM] GraphQL fetch failed. Switching to dynamic AI fallback template...' });
+          inferRequirements = true;
+          
+          const slug = urlToFetch.match(/problems\/([^/]+)/)?.[1] || 'algorithm-problem';
+          const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          const methodName = slugToCamelCase(slug);
+
+          const cleanDesc = stripMarkdown(problemDescription);
+          const cleanUrlInput = stripMarkdown(problemUrl);
+          let extraContext = '';
+          if (cleanDesc && !cleanDesc.includes(urlToFetch)) {
+            extraContext += `\n\nAdditional Description Context:\n${cleanDesc}`;
+          }
+          if (cleanUrlInput && !cleanUrlInput.includes(urlToFetch)) {
+            extraContext += `\n\nAdditional Input Context:\n${cleanUrlInput}`;
+          }
+          
+          const defaultSnippets = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long ${methodName}(vector<int>& nums) {
+        // Default fallback solution
+        return 0;
+    }
+};
+
+Python:
+class Solution:
+    def ${methodName}(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long ${methodName}(int[] nums) {
+        return 0;
+    }
+}
+`;
+          finalProblemDescription = `Title: ${formattedTitle}\n\nProblem Description:\nPlease write a solution for the LeetCode problem "${formattedTitle}".\n\nProblem URL: ${urlToFetch}${extraContext}\n${defaultSnippets}`;
+        }
+      }
+
+      if (!hasValidFetch && (!problemUrl || problemUrl.trim() === '')) {
+        // If we didn't fetch from LeetCode GraphQL and there is no URL, we strip markdown and use raw input text directly
+        const cleanDesc = stripMarkdown(problemDescription);
+        let combinedText = cleanDesc || '';
+        
+        if (combinedText && !combinedText.includes('=== EXPORTED STARTER TEMPLATES ===')) {
+          const defaultSnippets = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long maxAlternatingSum(vector<int>& nums) {
+        // Default fallback solution
+        return 0;
+    }
+};
+
+Python:
+class Solution:
+    def maxAlternatingSum(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long maxAlternatingSum(int[] nums) {
+        return 0;
+    }
+}
+`;
+          combinedText += `\n${defaultSnippets}`;
+        }
+        
+        finalProblemDescription = combinedText;
+        inferRequirements = true;
+      }
+
+      // Ensure we have at least some input description text
+      if (!finalProblemDescription || finalProblemDescription.trim() === '') {
+        finalProblemDescription = `Title: Algorithm Solver\n\nProblem Description:\nPlease write an optimal solver algorithm solution.\n\n=== EXPORTED STARTER TEMPLATES ===\nC++:\nclass Solution {\npublic:\n    int solve(vector<int>& nums) {\n        return 0;\n    }\n};`;
+        inferRequirements = true;
+      }
+
+      // Extract sample cases and append them explicitly to the context
+      const sampleCases = extractSampleTestCases(finalProblemDescription);
+      if (sampleCases.length > 0) {
+        finalProblemDescription += `\n\n=== EXTRACTED SAMPLE TEST CASES ===\n`;
+        sampleCases.forEach((tc, idx) => {
+          finalProblemDescription += `Sample ${idx + 1}:\nInput: ${tc.input}\nExpected Output: ${tc.expectedOutput}\n\n`;
+        });
+      }
 
       // Invoke the LangGraph workflow, passing the initial state and our progress callback
       const finalState = await debateGraph.invoke({
-        problemDescription,
+        problemDescription: finalProblemDescription,
         maxRounds,
         language,
         coderPrompt,
         criticPrompt,
         refinerPrompt,
         inferRequirements,
-        onProgress: async (roundProgress) => {
-          roundsHistory.push(roundProgress);
-
-          // Update the job progress in Redis so our frontend can read it in real time
-          await job.updateProgress({
-            status: 'IN_PROGRESS',
-            currentRound: roundProgress.round,
-            roundsHistory
-          });
-
-          console.log(`[Worker] Job ${job.id} -> Round ${roundProgress.round} processed and progress saved.`);
-        }
+        onProgress
       });
 
       const finalResult = finalState.finalResult;
@@ -78,3 +282,4 @@ export const debateWorker = new Worker(
 debateWorker.on('failed', (job, err) => {
   console.error(`[Worker] Job ${job ? job.id : 'unknown'} failed with error:`, err);
 });
+
