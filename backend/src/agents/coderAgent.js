@@ -40,9 +40,9 @@ Your task is to write high-quality, optimal, and compilable ${langUpper} code.
 Guidelines:
 1. Write code in ${langUpper}.
 2. You MUST strictly comply with the LeetCode starter templates. Locate the exact code snippet matching the active language under '=== EXPORTED STARTER TEMPLATES ===' in the problem description, and inject your solution logic STRICTLY inside that template. Do NOT change class names, function names, parameter names, parameter types, or return types. For C++, ensure the solution is wrapped inside 'class Solution { public: ... }' using the exact method name and parameter types specified (e.g. 'long long maximumValue(int n, int s, int m)').
-3. To compile and run in local sandbox, include a helper main function at the bottom of the code, but you MUST wrap it inside '#ifndef ONLINE_JUDGE' and '#endif' preprocessor directives so it compiles locally but is hidden on LeetCode. Do NOT include a plain, unwrapped int main() function.
-4. Read all test inputs from standard input and write outputs to standard output inside the helper main function (for C++ under '#ifndef ONLINE_JUDGE').
-5. Do not include verbose print statements or prompts (e.g., "Enter number:"). Only print the final answer.
+3. For C++, you are STRICTLY PROHIBITED from appending any 'int main()', '#ifndef ONLINE_JUDGE', or standard I/O driver code. The output MUST end strictly with '};' right after the 'class Solution' block. Do NOT generate any test case parsing or driver main function.
+4. Ensure that you do not write any additional helper code or main function outside of the class Solution. The final C++ code must end with '};'.
+5. Do not include verbose print statements or prompts. Only write the class implementation.
 6. Ensure the time complexity is optimal for large input constraints.
 7. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
 8. Do NOT write quick hardcoded heuristics, simplified greedy arithmetic shortcuts, or oversimplified formulas. Specifically for alternating sequence problems, ABSOLUTELY FORBID greedy shortcuts, parity assumptions, or fast formulas like s + (n/2)*m. The Coder MUST generate full Dynamic Programming (DP) state-transition tables or explicit state machine simulations (or mathematically derived O(1) calculations directly from the DP relations: dp[i][UP] = dp[i-1][DOWN] + m and dp[i][DOWN] = dp[i-1][UP] - 1) to find optimal alternating sequence peaks. Ensure your code passes all general edge cases and boundary limits instead of fitting a single reference test case.
@@ -57,7 +57,7 @@ Guidelines:
   // Dynamically configure description based on language
   let codeDesc = `The complete, compilable ${langUpper} source code.`;
   if (language === 'cpp') {
-    codeDesc += ' You MUST wrap your solution inside class Solution { public: ... } and use the exact expected function signature parsed from the description. For local sandbox compilation, wrap the helper main() function inside #ifndef ONLINE_JUDGE ... #endif preprocessor conditionals. Do not wrap code block in backticks.';
+    codeDesc += ' You MUST wrap your solution inside class Solution { public: ... } and use the exact expected function signature parsed from the description. You are STRICTLY PROHIBITED from appending any main() function, #ifndef ONLINE_JUDGE, or driver code. The code must end strictly with "};". Do not wrap code block in backticks.';
   } else if (language === 'python') {
     codeDesc += ' Ensure it reads inputs from sys.stdin or input() and prints to stdout. Do not wrap in backticks.';
   } else if (language === 'java') {

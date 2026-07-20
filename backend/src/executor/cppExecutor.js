@@ -49,9 +49,152 @@ function extractLanguageSnippet(problemDescription, language) {
   else if (language === 'golang' || language === 'go') langLabel = 'Go';
   else if (language === 'rust') langLabel = 'Rust';
   
-  const regex = new RegExp(`${langLabel}:\\s*\\n([\\s\\S]*?)(?:\\n\\n|$)`);
+  const escapedLangLabel = langLabel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const regex = new RegExp(`${escapedLangLabel}:\\s*\\n([\\s\\S]*?)(?:\\n\\n|$)`);
   const match = templatesSection.match(regex);
   return match ? match[1].trim() : '';
+}
+
+/**
+ * Helper to split C++ function parameters respecting template arguments (like vector<pair<int, int>>).
+ */
+function splitParams(rawParams) {
+  const params = [];
+  let current = '';
+  let depth = 0;
+  for (let i = 0; i < rawParams.length; i++) {
+    const char = rawParams[i];
+    if (char === '<') depth++;
+    else if (char === '>') depth--;
+    
+    if (char === ',' && depth === 0) {
+      params.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) {
+    params.push(current.trim());
+  }
+  return params;
+}
+
+/**
+ * Extracts returnType, methodName, and raw parameters from a class Solution block.
+ */
+function extractSignature(cppTemplate) {
+  const clean = cppTemplate.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+  const classMatch = clean.match(/class\s+Solution\s*\{([\s\S]*?)\};?/);
+  if (!classMatch) return null;
+  const classBody = classMatch[1];
+  
+  // Strip access specifiers (public, private, protected)
+  const cleanBody = classBody.replace(/(public|private|protected)\s*:/g, '');
+  
+  // Match first member function signature inside class body
+  const methodRegex = /([\w\s\*&<>:]+)\s+(\w+)\s*\(([^)]*)\)/;
+  const match = cleanBody.match(methodRegex);
+  if (!match) return null;
+  
+  return {
+    returnType: match[1].trim(),
+    methodName: match[2].trim(),
+    params: match[3].trim()
+  };
+}
+
+/**
+ * Generates C++ read statement based on parameter type.
+ */
+function getCppReadCode(type, varName) {
+  const cleanType = type.replace(/const\s+/, '').replace(/&\s*/g, '').trim();
+  
+  // Check if it is a 2D vector: vector<vector<T>>
+  const vec2DMatch = cleanType.match(/^vector\s*<\s*vector\s*<\s*([\w\s\*&<>:]+?)\s*>\s*>\s*$/);
+  if (vec2DMatch) {
+    const innerType = vec2DMatch[1].trim();
+    return `
+    int rows_${varName}, cols_${varName};
+    if (!(std::cin >> rows_${varName} >> cols_${varName})) return 0;
+    ${cleanType} ${varName}(rows_${varName}, std::vector<${innerType}>(cols_${varName}));
+    for (int r = 0; r < rows_${varName}; ++r) {
+        for (int c = 0; c < cols_${varName}; ++c) {
+            if (!(std::cin >> ${varName}[r][c])) return 0;
+        }
+    }
+    `;
+  }
+  
+  // Check if it is a 1D vector: vector<T>
+  const vec1DMatch = cleanType.match(/^vector\s*<\s*([\w\s\*&<>:]+?)\s*>\s*$/);
+  if (vec1DMatch) {
+    const innerType = vec1DMatch[1].trim();
+    return `
+    int size_${varName};
+    if (!(std::cin >> size_${varName})) return 0;
+    ${cleanType} ${varName}(size_${varName});
+    for (int i = 0; i < size_${varName}; ++i) {
+        if (!(std::cin >> ${varName}[i])) return 0;
+    }
+    `;
+  }
+  
+  // Otherwise, treat as primitive type
+  return `
+    ${cleanType} ${varName};
+    if (!(std::cin >> ${varName})) return 0;
+  `;
+}
+
+/**
+ * Generates C++ print statement based on return type.
+ */
+function getCppPrintCode(returnType, callExpression) {
+  const cleanType = returnType.trim();
+  
+  // Check if return type is a 2D vector
+  const vec2DMatch = cleanType.match(/^vector\s*<\s*vector\s*<\s*([\s\S]+?)\s*>\s*>\s*$/);
+  if (vec2DMatch) {
+    return `
+    auto result = ${callExpression};
+    for (const auto& row : result) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            std::cout << row[i] << (i + 1 == row.size() ? "" : " ");
+        }
+        std::cout << "\\n";
+    }
+    `;
+  }
+  
+  // Check if return type is a 1D vector
+  const vec1DMatch = cleanType.match(/^vector\s*<\s*([\s\S]+?)\s*>\s*$/);
+  if (vec1DMatch) {
+    return `
+    auto result = ${callExpression};
+    for (size_t i = 0; i < result.size(); ++i) {
+        std::cout << result[i] << (i + 1 == result.size() ? "" : " ");
+    }
+    std::cout << "\\n";
+    `;
+  }
+  
+  if (cleanType === 'bool') {
+    return `
+    std::cout << (${callExpression} ? "true" : "false") << std::endl;
+    `;
+  }
+  
+  if (cleanType === 'void') {
+    return `
+    ${callExpression};
+    `;
+  }
+  
+  // Primitive or other types
+  return `
+    std::cout << ${callExpression} << std::endl;
+  `;
 }
 
 /**
@@ -153,24 +296,64 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
     let modifiedCode = code;
     try {
       const cppTemplate = extractLanguageSnippet(problemDescription, 'cpp');
-      if (cppTemplate) {
-        const cleanTemplate = cppTemplate.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
-        const signatureMatch = cleanTemplate.match(/(\w[\w\s\*&<>:]+)\s+(\w+)\s*\(([^)]*)\)/);
+      if (cppTemplate && code.includes('class Solution')) {
+        const signatureMatch = extractSignature(cppTemplate);
         if (signatureMatch) {
-          const returnType = signatureMatch[1].trim();
-          const methodName = signatureMatch[2].trim();
-          const rawParams = signatureMatch[3].trim();
-          const paramTypes = rawParams ? rawParams.split(',').map(p => p.trim().replace(/\s+\w+(\[\])?$/, '').trim()).join(', ') : '';
+          const { returnType, methodName, params } = signatureMatch;
+          const paramList = splitParams(params);
+          const paramParsed = paramList.map((p, idx) => {
+            const cleanP = p.trim().replace(/\s+/g, ' ');
+            const parts = cleanP.split(' ');
+            const name = parts[parts.length - 1];
+            const type = parts.slice(0, parts.length - 1).join(' ').trim();
+            const typeForDecl = type.replace(/const\s+/, '').replace(/&\s*/g, '').trim();
+            return { type: typeForDecl, originalType: type, name: name, declName: `arg_${idx}` };
+          });
           
+          // 1. Inject signature check (Strict compilation check)
+          const paramTypes = paramParsed.map(p => p.originalType).join(', ');
           modifiedCode += `\n\n/* LeetCode Strict Signature Verification */\n`;
           modifiedCode += `namespace leetcode_signature_verify {\n`;
           modifiedCode += `    typedef ${returnType} (Solution::*SignatureType)(${paramTypes});\n`;
           modifiedCode += `    SignatureType check_ptr = &Solution::${methodName};\n`;
           modifiedCode += `}\n`;
+
+          // 2. Generate driver main function if the code does not already contain a main function
+          if (!code.includes('int main') && !code.includes('main(')) {
+            let driverCode = `\n\n/* Sandbox Test Runner Driver */\n`;
+            driverCode += `#include <iostream>\n`;
+            driverCode += `#include <vector>\n`;
+            driverCode += `#include <string>\n`;
+            driverCode += `#include <algorithm>\n`;
+            driverCode += `#include <queue>\n`;
+            driverCode += `#include <stack>\n`;
+            driverCode += `#include <map>\n`;
+            driverCode += `#include <set>\n`;
+            driverCode += `#include <unordered_map>\n`;
+            driverCode += `#include <unordered_set>\n`;
+            driverCode += `#include <numeric>\n`;
+            driverCode += `#include <cmath>\n\n`;
+            driverCode += `int main() {\n`;
+            
+            // Generate declaration and read statements
+            paramParsed.forEach(p => {
+              driverCode += getCppReadCode(p.type, p.declName);
+            });
+            
+            // Call Solution method
+            const callArgs = paramParsed.map(p => p.declName).join(', ');
+            const callExpr = `sol.${methodName}(${callArgs})`;
+            driverCode += `\n    Solution sol;\n`;
+            driverCode += `    ` + getCppPrintCode(returnType, callExpr).trim().replace(/\n/g, '\n    ') + `\n`;
+            driverCode += `    return 0;\n`;
+            driverCode += `}\n`;
+            
+            modifiedCode += driverCode;
+          }
         }
       }
     } catch (err) {
-      console.warn('[Sandbox C++] Failed to inject signature check:', err.message);
+      console.warn('[Sandbox C++] Failed to inject signature check and driver:', err.message);
     }
 
     try {

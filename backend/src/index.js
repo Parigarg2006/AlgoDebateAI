@@ -157,6 +157,9 @@ impl Solution {
     // Extract starter templates
     const codeSnippets = question.codeSnippets || [];
     const cppSnippet = codeSnippets.find(s => s.langSlug === 'cpp')?.code || '';
+    if (!cppSnippet) {
+      throw new Error('Unable to fetch problem signature');
+    }
     const pythonSnippet = codeSnippets.find(s => s.langSlug === 'python3' || s.langSlug === 'python')?.code || '';
     const javaSnippet = codeSnippets.find(s => s.langSlug === 'java')?.code || '';
     const golangSnippet = codeSnippets.find(s => s.langSlug === 'golang')?.code || '';
@@ -172,7 +175,7 @@ impl Solution {
     return `Title: ${title}\n\nProblem Description:\n${cleanContent}${snippetsText}`;
   } catch (error) {
     console.error('[LeetCode Parser] Error fetching problem:', error);
-    throw error;
+    throw new Error('Unable to fetch problem signature');
   }
 }
 
@@ -347,6 +350,11 @@ app.post('/api/debate', async (req, res) => {
 
     // 2. Determine final problem description and inference requirements
     let hasValidFetch = false;
+    if (problemUrl && problemUrl.trim() !== '' && !urlToFetch) {
+      console.error('[API] Invalid LeetCode URL supplied:', problemUrl);
+      return res.status(400).json({ error: "Unable to fetch problem signature" });
+    }
+
     if (urlToFetch) {
       try {
         console.log(`[API] Attempting to fetch LeetCode problem from extracted URL: ${urlToFetch}`);
@@ -372,7 +380,8 @@ app.post('/api/debate', async (req, res) => {
         }
         finalProblemDescription = combined + extraContext;
       } catch (err) {
-        console.warn('[API] Extracted LeetCode URL fetching failed, falling back to text inputs:', err.message);
+        console.error('[API] LeetCode URL fetching failed:', err.message);
+        return res.status(400).json({ error: "Unable to fetch problem signature" });
       }
     }
 
