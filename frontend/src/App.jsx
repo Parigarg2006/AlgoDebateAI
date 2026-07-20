@@ -753,10 +753,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           <div className="telemetry-wrapper">
-            <div className="telemetry-item" title="Speed of language processing">
-              <span className="telemetry-label">Tokens/s:</span>
-              <span className="telemetry-value">{tokensPerSecond || '0.0'}</span>
-            </div>
             <div className="telemetry-item" title="LangGraph depth steps">
               <span className="telemetry-label">Depth:</span>
               <span className="telemetry-value">{roundsHistory.length}</span>
@@ -789,7 +785,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a href="/docs" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Docs</a>
+          <a href="https://github.com/Parigarg2006/AlgoDebateAI#readme" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Docs</a>
           <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>GitHub</a>
           
           {/* History Vault Icon */}
@@ -835,10 +831,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         {/* Left Column: Input & Configuration */}
         <section className="panel-left">
           
-          {/* Card 1: Problem Input */}
+          {/* Card 1: PROBLEM INPUT */}
           <div className="bento-card">
             <h2 className="card-title">
-              <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', fontWeight: 'bold' }}>&gt;_</span>
               PROBLEM INPUT
             </h2>
             <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -860,10 +856,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </form>
           </div>
           
-          {/* Card 2: Configuration & Execution */}
+          {/* Card 2: CONFIGURATION & EXECUTION */}
           <div className="bento-card">
             <h2 className="card-title">
-              <Settings size={13} style={{ color: 'var(--accent-green)' }} />
+              <span style={{ color: 'var(--accent-green)' }}>⚙️</span>
               CONFIGURATION & EXECUTION
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1164,7 +1160,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           {/* Card 1: VERIFICATION PIPELINE */}
           <div className="bento-card">
             <h2 className="card-title">
-              <Workflow size={13} style={{ color: 'var(--accent-green)' }} />
+              <span style={{ color: 'var(--accent-green)' }}>⚡</span>
               VERIFICATION PIPELINE
             </h2>
             <div className="timeline-horizontal">
@@ -1200,7 +1196,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           {/* Card 3: VALIDATION LOGS */}
           <div className="bento-card logs-card">
             <h2 className="card-title">
-              <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
+              <span style={{ color: 'var(--accent-green)' }}>📍</span>
               VALIDATION LOGS
             </h2>
             <div className="logs-terminal">
