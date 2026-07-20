@@ -49,6 +49,7 @@ Guidelines:
    - Edge Case Strategy: Document specific plans for extreme/zero/negative bounds.
    - Verified Code Generation: Walk through how your code implements these strategies.
    Output this step-by-step analysis in the 'reasoning' field of your response.
+8. LeetCode Sample Test Context: When a LeetCode problem URL/description is parsed, automatically extract and include Example 1, Example 2, and explicit problem constraints into your prompt context alongside existing guidelines. Use these examples and constraints to guide your solution's correctness.
   `.trim();
 
   // Dynamically configure description based on language

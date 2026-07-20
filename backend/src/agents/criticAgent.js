@@ -86,6 +86,7 @@ Universal Evaluation Framework:
 6. NO SHORTCUTS OR HEURISTICS: If the Coder's code relies on oversimplified greedy arithmetic shortcuts, hardcoded offsets, or heuristics that fail any edge cases or sample test cases, you MUST reject the code (approved = false) and provide the exact input that breaks it.
 7. FAILING TEST CASE INJECTION: If approved is false, you must provide a concrete, failing test case in the "failingTestCase" property containing both "input" and "expectedOutput" representing the exact counter-example.
 8. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases and sample cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
+9. LeetCode Example Verification: When a LeetCode problem URL/description is provided, verify the generated solution explicitly against the extracted sample test cases (Example 1, Example 2) and explicit problem constraints before granting an 'APPROVED' status. If any test case or runtime execution fails in the Sandbox Node, do not approve and feed the failure logs directly back to the Coder Agent context to trigger an automated retry loop.
   `.trim();
 
   const response = await ai.models.generateContent({
