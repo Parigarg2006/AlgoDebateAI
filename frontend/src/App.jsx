@@ -649,7 +649,7 @@ function App() {
   }, []);
 
   const getOptimizationPercentage = () => {
-    if (jobState === 'completed') return 98;
+    if (jobState === 'completed') return 100;
     if (jobState === 'idle') return 0;
     if (activeNode === 'coder') return 35;
     if (activeNode === 'sandbox') return 70;
@@ -1219,11 +1219,13 @@ function App() {
 
                       {/* Agent Critic */}
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '40%' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(248, 113, 113, 0.1)', border: '2px solid var(--accent-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(248, 113, 113, 0.2)' }}>
-                          <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
+                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: jobState === 'completed' ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)', border: `2px solid ${jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${jobState === 'completed' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(248, 113, 113, 0.2)'}` }}>
+                          <ShieldCheck size={24} style={{ color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)' }} />
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-red)' }}>Agent Critic</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Red Team Judge</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)' }}>Agent Critic</span>
+                        <span style={{ fontSize: '0.7rem', color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--text-secondary)' }}>
+                          {jobState === 'completed' ? 'Status: APPROVED / VERIFIED' : 'Red Team Judge'}
+                        </span>
                       </div>
                     </div>
 
@@ -1231,17 +1233,17 @@ function App() {
                     <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                         <span>Code Optimization Meter</span>
-                        <span style={{ color: optPercent > 80 ? 'var(--accent-green)' : (optPercent > 50 ? 'var(--accent-orange)' : 'var(--accent-red)') }}>{optPercent}% Confidence</span>
+                        <span style={{ color: jobState === 'completed' ? '#10b981' : (optPercent > 80 ? 'var(--accent-green)' : (optPercent > 50 ? 'var(--accent-orange)' : 'var(--accent-red)')) }}>{optPercent}% Confidence</span>
                       </div>
                       <div style={{ height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden', position: 'relative' }}>
                         <div 
                           style={{ 
                             height: '100%', 
                             width: `${optPercent}%`, 
-                            background: 'linear-gradient(90deg, #38bdf8 0%, #c084fc 50%, #34d399 100%)', 
+                            background: jobState === 'completed' ? '#10b981' : 'linear-gradient(90deg, #38bdf8 0%, #c084fc 50%, #34d399 100%)', 
                             borderRadius: '5px',
                             transition: 'width 0.5s ease-in-out',
-                            boxShadow: '0 0 10px rgba(52, 211, 153, 0.4)'
+                            boxShadow: jobState === 'completed' ? '0 0 12px rgba(16, 185, 129, 0.6)' : '0 0 10px rgba(52, 211, 153, 0.4)'
                           }} 
                         />
                       </div>
@@ -1254,33 +1256,69 @@ function App() {
                           Awaiting match audit reports...
                         </div>
                       ) : (
-                        roundsHistory.map((round, idx) => (
-                          <div 
-                            key={idx} 
-                            style={{
-                              borderLeft: `4px solid ${round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)'}`,
-                              background: 'rgba(255, 255, 255, 0.01)',
-                              border: '1px solid rgba(255, 255, 255, 0.04)',
-                              borderRadius: '8px',
-                              padding: '14px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '8px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                                [Round {round.round} Audit Alert]
-                              </span>
-                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                Status: {round.criticApproved ? 'PASSED' : 'REJECTED'}
-                              </span>
+                        <>
+                          {roundsHistory.map((round, idx) => {
+                            const isRefinerLog = round.node === 'refiner';
+                            if (isRefinerLog) return null;
+                            
+                            return (
+                              <div 
+                                key={idx} 
+                                style={{
+                                  borderLeft: `4px solid ${round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)'}`,
+                                  background: 'rgba(255, 255, 255, 0.01)',
+                                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                                  borderRadius: '8px',
+                                  padding: '14px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px'
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                                    [Round {round.round} Audit Alert]
+                                  </span>
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                    Status: {round.criticApproved ? 'PASSED' : 'REJECTED'}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                                  {round.criticReasoning || `Node ${round.node} execution progress...`}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Victory Audit Card at the bottom */}
+                          {jobState === 'completed' && finalResult && (
+                            <div 
+                              style={{
+                                borderLeft: '4px solid #10b981',
+                                background: 'rgba(16, 185, 129, 0.05)',
+                                border: '1px solid rgba(16, 185, 129, 0.15)',
+                                borderRadius: '8px',
+                                padding: '14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px',
+                                boxShadow: '0 0 12px rgba(16, 185, 129, 0.1)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#10b981' }}>
+                                  [FINAL VICTORY AUDIT]
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                                  Status: APPROVED / OPTIMAL CODE SECURED
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                LangGraph debate workflow has terminated successfully. The final solution has been fully compiled, sandbox-tested, and polished by the Refiner Agent. Verification complete.
+                              </div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                              {round.criticReasoning}
-                            </div>
-                          </div>
-                        ))
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
