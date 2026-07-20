@@ -981,7 +981,8 @@ function App() {
                   gap: '6px',
                   cursor: 'pointer',
                   fontSize: '0.8rem',
-                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)',
+                  marginTop: '12px'
                 }}
               >
                 {isCustomRunning ? (
