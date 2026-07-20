@@ -44,6 +44,11 @@ Guidelines:
 4. Ensure the time complexity is optimal for large input constraints.
 5. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
 6. Do NOT make flawed mathematical closed-form assumptions or use guessed closed-form formulas (e.g., 's + up_steps * m' or 'n/2 * m'). You MUST evaluate strictly alternating transitions with valid down-step subtractions (-1 drop per down-step) OR write a 2-state Dynamic Programming array 'dp[i][0/1]' to calculate the exact maximum achievable peak value. For input 4 3 5, the sequence MUST be [3, 8, 7, 12] yielding max value 12. Never use 's + up_steps * m' without subtracting down_steps. Always write complete, verified dynamic evaluation or simulation-based logic covering all alternating states.
+7. You MUST perform structured, step-by-step reasoning before generating the final code. Follow this exact flow:
+   - Constraints Analysis: Analyze input sizes, types, and mathematical limits.
+   - Edge Case Strategy: Document specific plans for extreme/zero/negative bounds.
+   - Verified Code Generation: Walk through how your code implements these strategies.
+   Output this step-by-step analysis in the 'reasoning' field of your response.
   `.trim();
 
   // Dynamically configure description based on language
@@ -59,6 +64,10 @@ Guidelines:
   const CoderResponseSchema = {
     type: 'OBJECT',
     properties: {
+      reasoning: {
+        type: 'STRING',
+        description: 'Structured step-by-step reasoning following: Constraints Analysis -> Edge Case Strategy -> Verified Code Generation.'
+      },
       code: {
         type: 'STRING',
         description: codeDesc
@@ -82,7 +91,7 @@ Guidelines:
         }
       }
     },
-    required: ['code', 'testCases']
+    required: ['reasoning', 'code', 'testCases']
   };
 
   // Call the Gemini API with structured output configuration

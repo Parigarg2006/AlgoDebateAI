@@ -657,7 +657,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             },
             body: JSON.stringify({
               problemDescription: reTriggerDescription,
-              maxRounds: 2,
+              maxRounds,
               jobId: newJobId,
               language,
               coderPrompt,

@@ -10,7 +10,7 @@ import { refineCode } from '../agents/refinerAgent.js';
  */
 export const DebateState = Annotation.Root({
   problemDescription: Annotation(),
-  maxRounds: Annotation({ default: () => 2 }),
+  maxRounds: Annotation({ default: () => 4 }),
   currentRound: Annotation({
     reducer: (x, y) => y,
     default: () => 1
@@ -48,6 +48,10 @@ async function coderNode(state) {
 
   const draft = await generateDraft(state.problemDescription, state.criticismHistory, state.coderPrompt, lang);
   
+  if (draft.reasoning) {
+    console.log(`[Node: Coder] Chain-of-Thought Reasoning:\n${draft.reasoning}\n`);
+  }
+
   let testCases = draft.testCases;
   if (state.currentRound === 1) {
     console.log('[Node: Coder] Synthesizing 5 adversarial edge-cases dynamically...');
@@ -110,8 +114,19 @@ async function criticNode(state) {
   }
 
   const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, state.criticPrompt, lang);
-  console.log(`[Node: Critic] Approved: ${critique.approved}`);
-  console.log(`[Node: Critic] Reasoning: ${critique.reasoning.substring(0, 150)}...`);
+  
+  let approved = critique.approved;
+  let reasoning = critique.reasoning;
+
+  // Enforce Self-Correction Loop: If sandbox execution failed, force approved to false
+  const sandboxFailed = state.sandboxResults && state.sandboxResults.some(r => r.status !== 'PASS');
+  if (sandboxFailed) {
+    approved = false;
+    reasoning = `[SANDBOX FAILURE] The code did not pass all sandbox test cases.\n` + reasoning;
+  }
+
+  console.log(`[Node: Critic] Approved: ${approved}`);
+  console.log(`[Node: Critic] Reasoning: ${reasoning.substring(0, 150)}...`);
 
   // Fire intermediate round progress callback with final critic evaluation data
   if (state.onProgress) {
@@ -120,19 +135,19 @@ async function criticNode(state) {
       round: state.currentRound,
       code: state.code,
       sandboxResults: state.sandboxResults,
-      criticApproved: critique.approved,
-      criticReasoning: critique.reasoning
+      criticApproved: approved,
+      criticReasoning: reasoning
     });
   }
 
   // Prepare updates to merge into state
   const updates = {
-    criticApproved: critique.approved,
-    criticReasoning: critique.reasoning
+    criticApproved: approved,
+    criticReasoning: reasoning
   };
 
-  if (!critique.approved) {
-    let feedback = critique.reasoning;
+  if (!approved) {
+    let feedback = reasoning;
     const nextTestCases = [...state.testCases];
 
     // If the Critic supplied a breaking case, append it so the coder must solve it next round
@@ -187,7 +202,7 @@ async function refinerNode(state) {
  * 6. Define Conditional Edge (Routing Logic)
  */
 function routeAfterCritic(state) {
-  const limit = Math.min(state.maxRounds || 2, 2);
+  const limit = Math.min(state.maxRounds || 4, 4);
   if (state.criticApproved || state.currentRound > limit) {
     return "refiner";
   }

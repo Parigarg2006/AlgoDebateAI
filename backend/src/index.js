@@ -203,8 +203,8 @@ debateWorker.on('failed', (job, err) => {
  */
 app.post('/api/debate', async (req, res) => {
   try {
-    const { problemDescription, problemUrl, maxRounds = 2, jobId, language = 'cpp', coderPrompt, criticPrompt, refinerPrompt } = req.body;
-    const maxRoundsClamped = Math.min(Number(maxRounds) || 2, 2);
+    const { problemDescription, problemUrl, maxRounds = 4, jobId, language = 'cpp', coderPrompt, criticPrompt, refinerPrompt } = req.body;
+    const maxRoundsClamped = Math.min(Number(maxRounds) || 4, 4);
 
     let finalProblemDescription = problemDescription;
 
