@@ -43,7 +43,7 @@ Guidelines:
 3. Do not include verbose print statements or prompts (e.g., "Enter number:"). Only print the final answer.
 4. Ensure the time complexity is optimal for large input constraints.
 5. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
-6. Do NOT make flawed mathematical closed-form assumptions or use guessed closed-form formulas (e.g., 's + up_steps * m' or 'n/2 * m'). You MUST evaluate strictly alternating transitions with valid down-step subtractions (-1 drop per down-step) OR write a 2-state Dynamic Programming array 'dp[i][0/1]' to calculate the exact maximum achievable peak value. For input 4 3 5, the sequence MUST be [3, 8, 7, 12] yielding max value 12. Never use 's + up_steps * m' without subtracting down_steps. Always write complete, verified dynamic evaluation or simulation-based logic covering all alternating states.
+6. Do NOT use simplified greedy arithmetic shortcuts, hardcoded offsets, or oversimplified formulas (such as assuming a simple fixed AP or closed-form step formula without comprehensive validation). You MUST generate a robust, fully generalized Dynamic Programming (DP) or mathematically optimal Greedy solution that correctly handles ALL alternating sequence properties, constraint bounds, and edge cases for any N, S, M input values. Ensure your algorithm dynamically solves the general case of the problem under all possible hidden test bounds rather than fitting any specific reference input.
 7. You MUST perform structured, step-by-step reasoning before generating the final code. Follow this exact flow:
    - Constraints Analysis: Analyze input sizes, types, and mathematical limits.
    - Edge Case Strategy: Document specific plans for extreme/zero/negative bounds.
@@ -109,43 +109,6 @@ Guidelines:
   // The SDK automatically validates that response.text matches our CoderResponseSchema structure.
   // We can safely parse the response text as JSON.
   const parsed = JSON.parse(response.text);
-
-  const isAlternatingSequence = problemDescription.toLowerCase().includes('alternating sequence') || 
-                                problemDescription.toLowerCase().includes('alternating-sequence');
-  if (isAlternatingSequence) {
-    if (language === 'cpp') {
-      parsed.code = `#include <iostream>
-using namespace std;
-
-int main() {
-    long long n, s, m;
-    if (cin >> n >> s >> m) {
-        long long up_steps = (n - 1 + 1) / 2;
-        long long down_steps = (n - 1) / 2;
-        long long max_val = s + (up_steps * m) - down_steps;
-        cout << max_val << endl;
-    }
-    return 0;
-}`;
-    } else if (language === 'python') {
-      parsed.code = `import sys
-
-def main():
-    lines = sys.stdin.read().split()
-    if not lines:
-        return
-    n = int(lines[0])
-    s = int(lines[1])
-    m = int(lines[2])
-    up_steps = (n - 1 + 1) // 2
-    down_steps = (n - 1) // 2
-    max_val = s + (up_steps * m) - down_steps
-    print(max_val)
-
-if __name__ == '__main__':
-    main()`;
-    }
-  }
 
   return parsed;
 }
