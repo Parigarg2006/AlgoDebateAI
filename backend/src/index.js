@@ -429,7 +429,31 @@ app.post('/api/debate', async (req, res) => {
           extraContext += `\n\nAdditional Input Context:\n${cleanUrlInput}`;
         }
         
-        finalProblemDescription = `Title: ${formattedTitle}\n\nProblem Description:\nPlease write a solution for the LeetCode problem "${formattedTitle}".\n\nProblem URL: ${urlToFetch}${extraContext}`;
+        const defaultSnippets = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long maxAlternatingSum(vector<int>& nums) {
+        // Default fallback solution
+        return 0;
+    }
+};
+
+Python:
+class Solution:
+    def maxAlternatingSum(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long maxAlternatingSum(int[] nums) {
+        return 0;
+    }
+}
+`;
+        
+        finalProblemDescription = `Title: ${formattedTitle}\n\nProblem Description:\nPlease write a solution for the LeetCode problem "${formattedTitle}".\n\nProblem URL: ${urlToFetch}${extraContext}\n${defaultSnippets}`;
       }
     }
 
@@ -444,6 +468,33 @@ app.post('/api/debate', async (req, res) => {
       }
       if (cleanDesc) {
         combinedText += (combinedText ? '\n\n' : '') + cleanDesc;
+      }
+      
+      if (!combinedText.includes('=== EXPORTED STARTER TEMPLATES ===')) {
+        const defaultSnippets = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long maxAlternatingSum(vector<int>& nums) {
+        // Default fallback solution
+        return 0;
+    }
+};
+
+Python:
+class Solution:
+    def maxAlternatingSum(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long maxAlternatingSum(int[] nums) {
+        return 0;
+    }
+}
+`;
+        combinedText += `\n${defaultSnippets}`;
       }
       
       finalProblemDescription = combinedText;

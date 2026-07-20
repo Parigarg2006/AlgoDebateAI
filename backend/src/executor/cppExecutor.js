@@ -36,7 +36,7 @@ function normalizeOutput(str) {
 /**
  * Helper to extract a starter code snippet for a language from problem description
  */
-function extractLanguageSnippet(problemDescription, language) {
+export function extractLanguageSnippet(problemDescription, language) {
   if (!problemDescription) return '';
   const marker = '=== EXPORTED STARTER TEMPLATES ===';
   const index = problemDescription.indexOf(marker);

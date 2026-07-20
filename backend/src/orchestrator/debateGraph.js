@@ -1,6 +1,6 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
 import { generateDraft, synthesizeTestCases } from '../agents/coderAgent.js';
-import { executeCpp } from '../executor/cppExecutor.js';
+import { executeCpp, extractLanguageSnippet } from '../executor/cppExecutor.js';
 import { critiqueCode } from '../agents/criticAgent.js';
 import { refineCode } from '../agents/refinerAgent.js';
 import { extractSampleTestCases } from '../utils/parser.js';
@@ -65,7 +65,13 @@ async function coderNode(state) {
   console.log(`\n[Node: Coder] Round ${state.currentRound} drafting (${lang.toUpperCase()})...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'coder', round: state.currentRound, message: '[CODER] Coder Agent generating solution...' });
+    const fallbackTemplate = extractLanguageSnippet(state.problemDescription, lang);
+    await state.onProgress({ 
+      node: 'coder', 
+      round: state.currentRound, 
+      code: fallbackTemplate || `// Coder is drafting a solution...`,
+      message: '[CODER] Coder Agent generating solution...' 
+    });
   }
 
   let problemDescForAgent = state.problemDescription;
