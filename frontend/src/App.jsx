@@ -22,7 +22,9 @@ import {
   Network,
   FileText,
   GitFork,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2,
+  Terminal
 } from 'lucide-react';
 import './App.css';
 
@@ -793,15 +795,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       {/* Top Navbar Header */}
       <header className="app-header">
         <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Network size={20} style={{ color: 'var(--accent-green)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="logo-title" style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.2px' }}>
-              AlgoDebate
-            </span>
-            <span className="logo-subtitle" style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: '-2px' }}>
-              Multi-Agent Verification Platform
-            </span>
-          </div>
+          <Network size={22} style={{ color: 'var(--accent-green)' }} />
+          <span className="logo-title" style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px' }}>
+            AlgoDebate
+          </span>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -831,10 +828,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           >
             <Settings size={15} />
           </button>
-          
-          <div className="user-avatar" title="User Profile: Akshit">
-            AK
-          </div>
         </div>
       </header>
 
@@ -1019,7 +1012,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {/* Stage 3: Validate */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(3)}`}>
                 <div className="mission-circle">
-                  <ShieldCheck size={12} />
+                  <CheckCircle2 size={12} />
                 </div>
                 <span className="mission-label">Validate</span>
               </div>
@@ -1267,7 +1260,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               className="btn-trace-footer"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TerminalIcon size={12} style={{ color: 'var(--accent-green)' }} />
+                <Terminal size={13} style={{ color: 'var(--accent-green)' }} />
                 <span>View Full Execution Trace</span>
               </div>
               <ChevronRight size={14} style={{ opacity: 0.6 }} />

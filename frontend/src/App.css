@@ -1,11 +1,11 @@
 /* 3-Column SaaS Grid & Layout */
 .app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: var(--bg-main);
-  overflow: hidden;
-}
+   display: flex;
+   flex-direction: column;
+   min-height: 100vh;
+   background-color: var(--bg-main);
+   overflow-y: auto;
+ }
 
 /* Fixed Header */
 .app-header {
@@ -102,13 +102,14 @@
 .main-container {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
-  padding: 16px 24px; /* py-4 px-6 */
+  gap: 20px; /* gap-5 equivalent */
+  padding: 16px 24px 48px 24px; /* px-6 py-4 mx-auto max-w-[1700px] pb-12 */
   margin: 0 auto; /* mx-auto */
   max-width: 1700px; /* max-w-[1700px] */
   width: 100%;
-  height: calc(100vh - 56px);
-  overflow: hidden;
+  min-height: calc(100vh - 56px);
+  height: auto;
+  overflow: visible;
   flex: 1;
 }
 
@@ -117,30 +118,27 @@
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  height: 100%;
-  overflow-y: auto;
+  gap: 20px; /* gap-5 equivalent */
+  height: auto;
+  overflow: visible;
 }
 
 .panel-center {
   grid-column: span 6; /* col-span-6 */
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  height: 100%;
-  overflow-y: auto;
+  gap: 20px; /* gap-5 equivalent */
+  height: auto;
+  overflow: visible;
 }
 
 .panel-right {
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  height: 100%;
-  overflow-y: auto;
+  gap: 20px; /* gap-5 equivalent */
+  height: auto;
+  overflow: visible;
   padding: 0 4px;
   width: 100%;
 }
@@ -1015,6 +1013,30 @@
 }
 
 /* Run Custom Test button styling */
+.btn-run-custom-test {
+  width: 100% !important;
+  padding: 10px 16px !important; /* py-2.5 px-4 */
+  background: rgba(38, 38, 38, 0.8) !important; /* bg-neutral-800/80 */
+  border: 1px solid #374151 !important; /* border-neutral-700 */
+  color: #CBD5E1 !important; /* text-neutral-200 / slate-300 */
+  font-weight: 500 !important; /* font-medium */
+  font-size: 0.875rem !important; /* text-sm */
+  border-radius: 8px !important; /* rounded-lg */
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  transition: all 0.2s !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.btn-run-custom-test:hover:not(:disabled) {
+  background: #2D2D2D !important; /* hover:bg-neutral-700 */
+  color: #FFFFFF !important;
+}
+
 .btn-run-custom-test:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
