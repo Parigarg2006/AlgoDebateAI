@@ -5,17 +5,17 @@
   --bg-card: #121318;
   --bg-hover: #171921;
   --bg-input: #08090C;
-  --border-slate: #1E2028;
-  --border-focus: #374151;
+  --border-slate: #374151; /* clear dark border, neutral-700 / #374151 */
+  --border-focus: #10B981; /* focus accent */
   
   --accent-green: #10B981;
-  --accent-green-hover: #059669;
+  --accent-green-hover: #34D399;
   --accent-red: #EF4444;
   --accent-orange: #F59E0B;
   
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #475569;
+  --text-primary: #F8FAFC;       /* Crisp White */
+  --text-secondary: #E2E8F0;     /* Crisp Light Gray (neutral-200 equivalent) */
+  --text-muted: #94A3B8;         /* Crisp Medium Gray (neutral-400 equivalent) */
   
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Fira Code', monospace;

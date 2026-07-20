@@ -491,7 +491,11 @@ function App() {
   // Submit problem to API
   const handleStartDebate = async (e) => {
     e.preventDefault();
-    if (!problemDescription.trim() && !problemUrl.trim()) return;
+    if (!problemDescription.trim() && !problemUrl.trim()) {
+      setError('Please enter a problem description or paste a LeetCode URL.');
+      setJobState('failed');
+      return;
+    }
 
     const tempJobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
@@ -835,7 +839,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           <div className="bento-card">
             <h2 className="card-title">
               <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
-              Problem Input
+              PROBLEM INPUT
             </h2>
             <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input
@@ -860,7 +864,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           <div className="bento-card">
             <h2 className="card-title">
               <Settings size={13} style={{ color: 'var(--accent-green)' }} />
-              Configuration & Execution
+              CONFIGURATION & EXECUTION
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -955,7 +959,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 <button
                   onClick={handleStartDebate}
                   className="btn-verify-primary"
-                  disabled={jobState === 'active' || (!problemDescription.trim() && !problemUrl.trim())}
+                  disabled={jobState === 'active'}
                 >
                   <Play size={12} />
                   <span>Run Verification</span>
@@ -1157,23 +1161,29 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         {/* Right Column: Pipeline & Logs */}
         <section className="panel-right">
           
-          {/* Card 1: Pipeline Timeline */}
-          <div className="timeline-horizontal">
-            {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
-              const status = getNodeStatusClass(node);
-              const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
-              const completed = status === 'status-completed';
-              const active = status === 'status-active';
-              
-              return (
-                <div key={node} className={`timeline-step ${completed ? 'completed' : (active ? 'active' : '')}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', borderRadius: '50%', background: completed ? 'var(--accent-green)' : 'var(--bg-card)', border: `1px solid ${completed || active ? 'var(--accent-green)' : 'var(--border-slate)'}` }}>
-                    {completed && <Check size={8} style={{ color: '#000000' }} />}
+          {/* Card 1: VERIFICATION PIPELINE */}
+          <div className="bento-card">
+            <h2 className="card-title">
+              <Workflow size={13} style={{ color: 'var(--accent-green)' }} />
+              VERIFICATION PIPELINE
+            </h2>
+            <div className="timeline-horizontal">
+              {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
+                const status = getNodeStatusClass(node);
+                const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
+                const completed = status === 'status-completed';
+                const active = status === 'status-active';
+                
+                return (
+                  <div key={node} className={`timeline-step ${completed ? 'completed' : (active ? 'active' : '')}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', borderRadius: '50%', background: completed ? 'var(--accent-green)' : 'var(--bg-card)', border: `1px solid ${completed || active ? 'var(--accent-green)' : 'var(--border-slate)'}` }}>
+                      {completed && <Check size={8} style={{ color: '#000000' }} />}
+                    </div>
+                    <span>{label}</span>
                   </div>
-                  <span>{label}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
           
           {/* Card 2: Verification Confidence Progress Bar */}
@@ -1187,11 +1197,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </div>
           </div>
           
-          {/* Card 3: Validation Logs (Terminal style list) */}
+          {/* Card 3: VALIDATION LOGS */}
           <div className="bento-card logs-card">
             <h2 className="card-title">
               <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
-              Validation Logs
+              VALIDATION LOGS
             </h2>
             <div className="logs-terminal">
               {parsedLogs.length === 0 ? (
