@@ -115,27 +115,51 @@ io.on('connection', (socket) => {
 
     try {
       let result;
+      let isFailed = false;
       const { executeCpp } = await import('./executor/cppExecutor.js');
       const execution = await executeCpp(code, [{ input: inputData, expectedOutput: '' }], language);
       const first = execution.results?.[0] || {};
       
       if (!execution.success && !execution.compileSuccess) {
         result = `[COMPILATION ERROR]\n${execution.compileError}`;
+        isFailed = true;
       } else if (first.status === 'COMPILE_ERROR') {
         result = `[COMPILATION ERROR]\n${first.error}`;
+        isFailed = true;
       } else if (first.status === 'RTE') {
         result = `[RUNTIME ERROR]\n${first.error}`;
+        isFailed = true;
       } else if (first.status === 'TLE') {
         result = `[TIMEOUT ERROR]\nExecution timed out.`;
+        isFailed = true;
       } else {
         result = `[SUCCESS]\nExecution Time: ${first.timeMs}ms\nOutput:\n${first.actualOutput}`;
       }
 
-      socket.emit(`custom_test_result:${jobId}`, { result });
+      if (isFailed) {
+        socket.emit(`job-progress:${jobId}`, {
+          roundsHistory: [
+            {
+              node: 'sandbox',
+              round: 0,
+              code: code,
+              customOutput: result
+            },
+            {
+              node: 'sandbox',
+              round: 0,
+              code: code,
+              customOutput: '⚠️ Custom Test Failed -> Re-triggering Agent Debate'
+            }
+          ]
+        });
+      }
+
+      socket.emit(`custom_test_result:${jobId}`, { result, isFailed });
 
     } catch (err) {
       console.error('[Socket] Error running custom test:', err);
-      socket.emit(`custom_test_result:${jobId}`, { result: `[ERROR] Execution failed: ${err.message}` });
+      socket.emit(`custom_test_result:${jobId}`, { result: `[ERROR] Execution failed: ${err.message}`, isFailed: true });
     }
   });
 

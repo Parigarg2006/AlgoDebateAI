@@ -464,15 +464,8 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // 7. Submit problem to API
-  const handleStartDebate = async (e) => {
-    e.preventDefault();
-    if (!problemDescription.trim() && !problemUrl.trim()) return;
-
-    // Generate unique jobId client-side
-    const tempJobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-
-    // Register WebSocket listeners SYNCHRONOUSLY before enqueuing
+  // Helper to register websocket listeners for a given job ID
+  const setupJobWebSocketListeners = (tempJobId) => {
     socket.on(`job-progress:${tempJobId}`, (progress) => {
       const history = progress.roundsHistory || [];
       if (history.length === 0) return;
@@ -519,6 +512,18 @@ function App() {
       socket.off(`job-completed:${tempJobId}`);
       socket.off(`job-failed:${tempJobId}`);
     });
+  };
+
+  // 7. Submit problem to API
+  const handleStartDebate = async (e) => {
+    e.preventDefault();
+    if (!problemDescription.trim() && !problemUrl.trim()) return;
+
+    // Generate unique jobId client-side
+    const tempJobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+    // Register WebSocket listeners SYNCHRONOUSLY before enqueuing
+    setupJobWebSocketListeners(tempJobId);
 
     // Reset UI State and register the jobId
     setJobId(tempJobId);
@@ -581,20 +586,102 @@ function App() {
     setActiveNode('sandbox');
 
     // Register socket listener for the custom test result
-    socket.on(`custom_test_result:${tempJobId}`, (data) => {
+    socket.on(`custom_test_result:${tempJobId}`, async (data) => {
+      const isFailed = data.isFailed || data.result.includes('ERROR');
+      
       // Append the sandbox node run showing the output
-      setRoundsHistory(prev => [
-        ...prev,
-        {
-          node: 'sandbox',
-          round: 0,
-          customOutput: data.result
+      setRoundsHistory(prev => {
+        const next = [
+          ...prev,
+          {
+            node: 'sandbox',
+            round: 0,
+            customOutput: data.result
+          }
+        ];
+        if (isFailed) {
+          next.push({
+            node: 'sandbox',
+            round: 0,
+            customOutput: '⚠️ Custom Test Failed -> Re-triggering Agent Debate'
+          });
         }
-      ]);
+        return next;
+      });
+
       setIsCustomRunning(false);
       setActiveNode(null);
-      setJobState('completed'); // set to completed so visualizer nodes and chime fire!
       socket.off(`custom_test_result:${tempJobId}`);
+
+      if (isFailed) {
+        // Trigger a dynamic debate re-run
+        // Let's create a new unique jobId to avoid collision
+        const newJobId = 'job_' + Date.now();
+        setJobId(newJobId);
+        setJobState('active');
+        setActiveNode('coder');
+        setCurrentRound(1);
+        setFinalResult(null);
+
+        // Prepare the new problem description combining original problem and custom test details
+        const reTriggerDescription = `
+[RE-TRIGGER FEEDBACK]
+The C++ code has failed on a custom test case.
+
+Original Problem Description:
+${problemDescription}
+
+Failing Custom Input:
+${customInput}
+
+Failing Output / Error Stream:
+${data.result}
+
+Current Code Draft:
+\`\`\`cpp
+${liveCode}
+\`\`\`
+
+Please refactor and correct this C++ code so that it compiles and passes this custom test case and all edge cases.
+        `.trim();
+
+        // Register WebSocket listeners SYNCHRONOUSLY before enqueuing
+        setupJobWebSocketListeners(newJobId);
+
+        // Enqueue the new debate
+        try {
+          const response = await fetch('http://localhost:5000/api/debate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              problemDescription: reTriggerDescription,
+              maxRounds: 2,
+              jobId: newJobId,
+              language,
+              coderPrompt,
+              criticPrompt,
+              refinerPrompt
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Failed to submit re-trigger debate.');
+          }
+
+        } catch (err) {
+          setJobState('failed');
+          setError(err.message);
+          
+          socket.off(`job-progress:${newJobId}`);
+          socket.off(`job-completed:${newJobId}`);
+          socket.off(`job-failed:${newJobId}`);
+        }
+      } else {
+        setJobState('completed');
+      }
     });
 
     // Emit socket event to backend
