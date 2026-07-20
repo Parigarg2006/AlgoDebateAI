@@ -51,6 +51,32 @@ const CriticResponseSchema = {
  * @returns {Promise<{approved: boolean, reasoning: string, failingTestCase?: {input: string, expectedOutput: string}}>}
  */
 export async function critiqueCode(problemDescription, code, sandboxResults = [], customSystemInstruction = null, language = 'cpp') {
+  // 1. Programmatic verification against alternating sequence benchmarks
+  const isAlternatingSequenceProblem = /alternating\s+sequence/i.test(problemDescription) || /seq\[0\]\s*=\s*s/i.test(problemDescription);
+  if (isAlternatingSequenceProblem && sandboxResults && sandboxResults.length > 0) {
+    for (const res of sandboxResults) {
+      const cleanInput = res.input ? res.input.trim().replace(/\s+/g, ' ') : '';
+      const actualOut = res.actualOutput ? res.actualOutput.trim() : '';
+      
+      let expected = null;
+      if (cleanInput === '3 7 7') expected = '14';
+      else if (cleanInput === '4 3 5') expected = '12';
+      else if (cleanInput === '1 5 10') expected = '5';
+      
+      if (expected && actualOut !== expected) {
+        console.log(`[Programmatic Critic Hardening] Found failing edge case. Input: ${cleanInput}, Expected: ${expected}, Got: ${actualOut}`);
+        return {
+          approved: false,
+          reasoning: `[CRITICAL EDGE CASE FAILURE] The code failed the mandatory alternating sequence edge case benchmark. Input: ${cleanInput}, Expected: ${expected}, Got: ${actualOut}. Please rewrite your code to correctly simulate the dynamic programming state transitions.`,
+          failingTestCase: {
+            input: res.input,
+            expectedOutput: expected
+          }
+        };
+      }
+    }
+  }
+
   const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
   prompt += `Coder's proposed ${langUpper} Code:\n${code}\n\n`;
@@ -87,6 +113,11 @@ Universal Evaluation Framework:
 7. FAILING TEST CASE INJECTION: If approved is false, you must provide a concrete, failing test case in the "failingTestCase" property containing both "input" and "expectedOutput" representing the exact counter-example.
 8. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases and sample cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
 9. LeetCode Example Verification: When a LeetCode problem URL/description is provided, verify the generated solution explicitly against the extracted sample test cases (Example 1, Example 2) and explicit problem constraints before granting an 'APPROVED' status. If any test case or runtime execution fails in the Sandbox Node, do not approve and feed the failure logs directly back to the Coder Agent context to trigger an automated retry loop.
+10. STRICT BENCHMARKS: For the Alternating Sequence problem, you MUST verify the code against these explicit edge cases:
+    - Input: "3 7 7" -> Expected Output: "14"
+    - Input: "4 3 5" -> Expected Output: "12"
+    - Input: "1 5 10" -> Expected Output: "5"
+    If the code fails any of these or has a logical mismatch, you MUST reject the round immediately (approved = false) and specify the failing case.
   `.trim();
 
   const response = await ai.models.generateContent({
