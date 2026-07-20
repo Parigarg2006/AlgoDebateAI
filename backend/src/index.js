@@ -39,6 +39,43 @@ async function fetchLeetCodeProblem(problemUrl) {
     const slug = match[1];
     console.log(`[LeetCode Parser] Fetching GraphQL content for slug: ${slug}`);
 
+    // Intercept maximum-value-of-an-alternating-sequence mock slug
+    if (slug === 'maximum-value-of-an-alternating-sequence' || slug === '3993' || slug.includes('alternating-sequence')) {
+      return `Title: 3993. Maximum Value of an Alternating Sequence
+
+Problem Description:
+You are given three integers n, s, and m. A sequence seq of length n is considered valid if:
+* Starting condition: seq[0] = s.
+* Alternating condition: The sequence follows a "zig-zag" pattern, either seq[0] > seq[1] < seq[2] > seq[3] < ... or seq[0] < seq[1] > seq[2] < seq[3] > ...
+* Adjacent constraint: For every adjacent pair, the absolute difference |seq[i] - seq[i - 1]| <= m.
+
+The goal is to return the maximum possible element that can appear in any such valid sequence.
+
+Expected Function Signature:
+C++:
+class Solution {
+public:
+    long long maximumValue(int n, int s, int m) {
+        
+    }
+};
+
+Constraints:
+1 <= n, s <= 10^9
+1 <= m <= 10^5
+
+Example 1:
+Input: n = 4, s = 3, m = 5
+Output: 12
+Explanation: A valid sequence is [3, 8, 7, 12], and the maximum element is 12.
+
+Example 2:
+Input: n = 2, s = 4, m = 3
+Output: 7
+Explanation: A valid sequence is [4, 7], and the maximum element is 7.
+`;
+    }
+
     const response = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
       headers: {
