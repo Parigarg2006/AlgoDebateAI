@@ -100,21 +100,33 @@
   color: var(--text-primary);
 }
 
-/* 3-Column Grid */
+/* 3-Column Grid (12-Columns Grid Layout) */
 .main-container {
   display: grid;
-  grid-template-columns: 28% 44% 28%;
+  grid-template-columns: repeat(12, 1fr);
   gap: 16px;
-  padding: 16px;
+  padding: 16px 24px; /* py-4 px-6 */
+  margin: 0 auto; /* mx-auto */
+  max-width: 1700px; /* max-w-[1700px] */
+  width: 100%;
   height: calc(100vh - 56px);
   overflow: hidden;
   flex: 1;
 }
 
-/* Panels */
-.panel-left,
-.panel-center,
-.panel-right {
+/* Panels spanning grid-cols-12 proportions (3 / 6 / 3) */
+.panel-left {
+  grid-column: span 3; /* col-span-3 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.panel-center {
+  grid-column: span 6; /* col-span-6 */
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -124,6 +136,13 @@
 }
 
 .panel-right {
+  grid-column: span 3; /* col-span-3 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
   padding: 0 4px;
   width: 100%;
 }

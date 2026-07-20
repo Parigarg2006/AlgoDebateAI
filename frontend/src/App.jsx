@@ -753,60 +753,15 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           <div className="telemetry-wrapper">
-            <div className="telemetry-item" title="LangGraph depth steps">
-              <span className="telemetry-label">Depth:</span>
-              <span className="telemetry-value">{roundsHistory.length}</span>
-            </div>
             <div className="telemetry-item" title="Active solve run duration">
               <span className="telemetry-label">Latency:</span>
               <span className="telemetry-value">{latencyString}</span>
             </div>
-            <button
-              onClick={() => setIsMuted(prev => !prev)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '4px',
-                marginLeft: '4px',
-                transition: 'color 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-              title={isMuted ? "Unmute execution sounds" : "Mute execution sounds"}
-            >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} style={{ color: 'var(--accent-green)' }} />}
-            </button>
           </div>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a href="https://github.com/Parigarg2006/AlgoDebateAI#readme" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Docs</a>
           <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>GitHub</a>
-          
-          {/* History Vault Icon */}
-          <button
-            onClick={() => setIsVaultOpen(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '4px',
-              transition: 'color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-            title="Session History Vault"
-          >
-            <History size={15} />
-          </button>
           
           {/* Settings config Icon */}
           <button 
