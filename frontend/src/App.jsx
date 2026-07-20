@@ -935,7 +935,7 @@ function App() {
           </div>
 
           {/* Bento Tile 3: Custom Test Cases Widget */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <h2 className="card-header-row">
               <span className="card-title">
                 <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
@@ -943,7 +943,7 @@ function App() {
               </span>
             </h2>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '0px' }}>
               <textarea
                 placeholder="Enter custom inputs here... (e.g. 5 \n 1 2 3 4 5)"
                 value={customInput}
@@ -951,12 +951,12 @@ function App() {
                 disabled={isCustomRunning}
                 style={{
                   width: '100%',
-                  height: '60px',
+                  minHeight: '80px',
                   background: 'rgba(10, 15, 23, 0.4)',
                   border: '1px solid var(--border-slate)',
                   borderRadius: '6px',
                   color: 'var(--text-primary)',
-                  padding: '8px',
+                  padding: '10px',
                   fontFamily: 'var(--font-mono)',
                   fontSize: '0.75rem',
                   resize: 'none',
@@ -965,25 +965,9 @@ function App() {
               />
               <button
                 type="button"
-                className="btn-start-debate-custom"
+                className="btn-run-custom-test"
                 onClick={handleRunCustomTest}
                 disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
-                style={{
-                  height: '34px',
-                  background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  borderRadius: '6px',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)',
-                  marginTop: '12px'
-                }}
               >
                 {isCustomRunning ? (
                   <>

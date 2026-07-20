@@ -959,6 +959,44 @@
   transform: none !important;
 }
 
+/* Custom Test Cases Button Styling */
+.btn-run-custom-test {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+  margin-top: 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-run-custom-test:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-run-custom-test:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-run-custom-test:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Settings Glassmorphic Modal */
 .settings-modal-overlay {
   position: fixed;
