@@ -80,12 +80,11 @@ Your only job is to find bugs, edge case vulnerabilities, or performance/complex
 Universal Evaluation Framework:
 1. PROBLEM CLASSIFICATION: Classify the problem type internally (e.g., Dynamic Programming, Graph Theory, Greedy, Segment Trees, String Mutation, Bit Manipulation, etc.).
 2. ALGORITHMIC BENCHMARKING: Establish the standard optimal time and space complexity bounds for this category of problem given the input limits.
-3. COMPLEXITY VERIFICATION: Analyze the proposed code and cross-verify its space/time complexity bounds strictly against the optimal limits of its classified category. If the code is sub-optimal (e.g. O(N^2) where O(N log N) is standard for this class), reject it (approved = false) and explain the complexity gap.
-4. SANDBOX ANALYSIS: Analyze sandbox results. If any test case failed (COMPILE_ERROR, TLE, or RTE/segfault), inspect the stdout/stderr/error stream and reject the code.
-5. CORRECTNESS & BOUNDARIES: Verify logic against extreme mathematical boundaries, integer overflows, empty/negative inputs, and empty states.
-6. BRUTAL DRY-RUN CHECK: Before giving an APPROVED (approved = true) status, you MUST execute a step-by-step mental dry-run of the Coder's logic against edge test cases (e.g., N=1, N=4, S=3, M=5, negative values, decrease-first vs increase-first patterns). If the Coder's C++ code relies on a hardcoded shortcut formula or guessed closed-form expression (such as 'n/2 * m' or 'n % 2 != 0') that fails ANY of these dry-run test cases, you MUST reject the code (approved = false) and emit 'Status: REJECTED' along with the exact failing input values and the expected output in the feedback.
-7. FAILING TEST CASE: If approved is false, you must provide a concrete, failing test case in "failingTestCase" with both input and expectedOutput (e.g. N=4, S=3, M=5 with its correct output) representing the exact counter-example that fails the Coder's formula.
-8. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
+3. DYNAMIC EDGE CASE GENERATION & SIMULATION: Before giving an APPROVED (approved = true) status, you MUST dynamically generate at least 3 diverse edge cases (e.g., boundary values, alternating strictness, constraints) and mentally simulate/dry-run code execution against them to verify logic correctness.
+4. SANDBOX ANALYSIS: Analyze sandbox results. If any test case failed (COMPILE_ERROR, TLE, RTE, or actualOutput !== expectedOutput), you MUST NOT approve the code (set approved = false). You MUST extract the exact input and expected/actual outputs of the failing case and inject them into the criticism feedback.
+5. NO SHORTCUTS OR HEURISTICS: If the Coder's code relies on oversimplified greedy arithmetic shortcuts, hardcoded offsets, or heuristics that fail any edge cases, you MUST reject the code (approved = false) and provide the exact input that breaks it.
+6. FAILING TEST CASE INJECTION: If approved is false, you must provide a concrete, failing test case in the "failingTestCase" property containing both "input" and "expectedOutput" representing the exact counter-example.
+7. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
   `.trim();
 
   const response = await ai.models.generateContent({
