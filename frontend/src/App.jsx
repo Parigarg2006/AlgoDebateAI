@@ -24,7 +24,9 @@ import {
   GitFork,
   ChevronRight,
   CheckCircle2,
-  Terminal
+  Terminal,
+  Clock,
+  Database
 } from 'lucide-react';
 import './App.css';
 
@@ -36,6 +38,7 @@ const socket = io('http://localhost:5000', {
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isStrategyExpanded, setIsStrategyExpanded] = useState(true);
   
   // Input State
   const [problemDescription, setProblemDescription] = useState('');
@@ -193,6 +196,7 @@ function App() {
               }
             }
             logs.push(`[ROUND ${rd}] [CRITIC] Feedback dispatched to Coder for refactoring.`);
+            logs.push(`[ROUND ${rd}] ⚔️ DEBATE IN PROGRESS: Critic challenged Coder.`);
           }
         }
         return;
@@ -221,6 +225,7 @@ function App() {
             }
           }
           logs.push(`[ROUND ${rd}] [CRITIC] Feedback dispatched to Coder for refactoring.`);
+          logs.push(`[ROUND ${rd}] ⚔️ DEBATE IN PROGRESS: Critic challenged Coder.`);
         }
       } else if (step.node === 'refiner') {
         logs.push(`[ROUND ${rd}] [REFINER] Refiner Agent triggered. Formatting and documenting final code...`);
@@ -792,30 +797,55 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     return '100%';
   };
 
+  const isDebating = useMemo(() => {
+    return jobState === 'active' && roundsHistory.some(step => step.criticApproved === false);
+  }, [roundsHistory, jobState]);
+
   // Validation Logs Badge mapping
   const parsedLogs = useMemo(() => {
     const start = startTimeRef.current || Date.now();
     return terminalLogs.map((log, idx) => {
       let status = 'INFO';
       let msg = log;
-      if (log.startsWith('[ERROR]')) {
-        status = 'ERROR';
-        msg = log.replace('[ERROR]', '').trim();
-      } else if (log.startsWith('[SYSTEM]')) {
-        status = 'SYSTEM';
-        msg = log.replace('[SYSTEM]', '').trim();
-      } else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:') || log.includes('passed')) {
-        status = 'SUCCESS';
+      let badgeType = 'info';
+
+      // Check if it contains a Round indicator
+      const roundMatch = log.match(/\[ROUND\s+(\d+)\]/i);
+      if (roundMatch) {
+        status = `ROUND ${roundMatch[1]}`;
+        badgeType = 'round';
+        msg = log.replace(/\[ROUND\s+\d+\]/i, '').trim();
       }
-      
-      if (log.includes('finished') || log.includes('SUCCESS: Polished') || log.includes('complete')) {
-        status = 'COMPLETE';
+
+      if (log.includes('⚔️ DEBATE IN PROGRESS')) {
+        status = 'BATTLE';
+        badgeType = 'rejected';
+      } else if (log.includes('VERDICT: REJECTED') || log.includes('failed') || log.includes('FAILED') || log.includes('aborted') || log.includes('Error')) {
+        status = 'REJECTED';
+        badgeType = 'rejected';
+        if (roundMatch) {
+          msg = log.replace(/\[ROUND\s+\d+\]/i, '').trim();
+        }
+      } else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:') || log.includes('passed') || log.includes('SUCCESS') || log.includes('COMPLETE')) {
+        status = 'SUCCESS';
+        badgeType = 'success';
+        if (roundMatch) {
+          msg = log.replace(/\[ROUND\s+\d+\]/i, '').trim();
+        }
+      } else if (log.startsWith('[SYSTEM]')) {
+        status = 'INFO';
+        badgeType = 'info';
+        msg = log.replace('[SYSTEM]', '').trim();
+      } else if (log.startsWith('[ERROR]')) {
+        status = 'REJECTED';
+        badgeType = 'rejected';
+        msg = log.replace('[ERROR]', '').trim();
       }
 
       const logTime = new Date(start + idx * 1200);
       const timestamp = logTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      return { timestamp, status, message: msg };
+      return { timestamp, status, badgeType, message: msg };
     });
   }, [terminalLogs]);
 
@@ -885,19 +915,50 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </div>
           </div>
 
-          <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }} title="Open GitHub Repo">
-            GitHub
-          </a>
-          
-          {/* Settings Modal config */}
+          {/* Live Arena Indicator */}
+          <div className="arena-badge" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: '100px',
+            padding: '4px 12px',
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            color: '#10b981'
+          }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              backgroundColor: '#10b981',
+              borderRadius: '50%',
+              display: 'inline-block',
+              animation: 'pulse 1.5s infinite'
+            }}></span>
+            <span>⚔️ AI Arena Mode</span>
+          </div>
+
+          {/* Sound Toggle Button */}
           <button 
-            onClick={() => setIsSettingsOpen(true)}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(30deg)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}
-            title="Configure System Prompts"
+            onClick={() => setIsMuted(prev => !prev)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.1)' : 'rgba(6, 182, 212, 0.1)',
+              border: isMuted ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(6, 182, 212, 0.25)',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: isMuted ? '#ef4444' : '#06b6d4',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
           >
-            <Settings size={15} />
+            {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+            <span>{isMuted ? 'Muted' : '🔊 Battle Sound'}</span>
           </button>
         </div>
       </header>
@@ -941,9 +1002,32 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           
           {/* CONFIGURATION & EXECUTION Section */}
           <div className="bento-card" style={{ gap: '14px' }}>
-            <h2 className="card-title">
-              <Settings size={13} />
-              CONFIGURATION & EXECUTION
+            <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Settings size={13} className="text-[#10B981]" />
+                <span>CONFIGURATION & EXECUTION</span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '0.85rem',
+                  lineHeight: '1',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
+                title="Configure System Prompts"
+              >
+                ⚙️
+              </button>
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -1178,6 +1262,26 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </div>
             
             <div className="workspace-content">
+              {isDebating && (
+                <div className="battle-alert-banner animate-pulse" style={{
+                  background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  boxShadow: '0 0 15px rgba(245, 158, 11, 0.15)',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  marginBottom: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#f59e0b',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}>
+                  <span>⚔️ DEBATE IN PROGRESS: Critic challenged Coder</span>
+                </div>
+              )}
               {jobState === 'idle' ? (
                 <div className="workspace-empty-view">
                   <Atom size={32} />
@@ -1231,20 +1335,106 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
                   
                   {jobState === 'completed' && finalResult && (
-                    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                      <div className="stats-grid">
-                        <div className="stat-card">
-                          <div className="stat-label">TIME COMPLEXITY</div>
-                          <div className="stat-value">{finalResult.timeComplexity}</div>
+                    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="stat-card complexity-cyan-card" style={{
+                          background: 'rgba(13, 14, 18, 0.6)',
+                          backdropFilter: 'blur(10px)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(6, 182, 212, 0.3)',
+                          boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)',
+                          padding: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '14px'
+                        }}>
+                          <div style={{
+                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                            color: '#06b6d4',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Clock size={20} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#06b6d4', marginTop: '2px' }}>{finalResult.timeComplexity}</div>
+                          </div>
                         </div>
-                        <div className="stat-card">
-                          <div className="stat-label">SPACE COMPLEXITY</div>
-                          <div className="stat-value" style={{ color: 'var(--accent-green)' }}>{finalResult.spaceComplexity}</div>
+                        
+                        <div className="stat-card complexity-emerald-card" style={{
+                          background: 'rgba(13, 14, 18, 0.6)',
+                          backdropFilter: 'blur(10px)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          boxShadow: '0 0 15px rgba(16, 185, 129, 0.1)',
+                          padding: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '14px'
+                        }}>
+                          <div style={{
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            color: '#10b981',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Database size={20} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{finalResult.spaceComplexity}</div>
+                          </div>
                         </div>
                       </div>
-                      <div className="strategy-box">
-                        <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Strategy Details</strong>
-                        <span style={{ fontSize: '0.78rem' }}>{finalResult.explanation}</span>
+                      
+                      <div className="strategy-box glass-collapsible" style={{
+                        background: 'rgba(13, 14, 18, 0.4)',
+                        backdropFilter: 'blur(12px)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        overflow: 'hidden'
+                      }}>
+                        <button 
+                          type="button"
+                          onClick={() => setIsStrategyExpanded(!isStrategyExpanded)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 16px',
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#e2e8f0',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                            <Sparkles size={16} className="text-[#10B981]" />
+                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Strategy & Proof Analysis</strong>
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isStrategyExpanded ? 'Collapse ▲' : 'Expand ▼'}</span>
+                        </button>
+                        
+                        {isStrategyExpanded && (
+                          <div style={{
+                            padding: '16px',
+                            fontSize: '0.8rem',
+                            lineHeight: 1.6,
+                            color: '#cbd5e1',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+                          }}>
+                            {finalResult.explanation}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1265,16 +1455,22 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         {/* Right Column (col-span-3): Pipeline & Logs */}
         <section className="panel-right">
           
-          {/* Card 1: VERIFICATION PIPELINE */}
+          {/* Card 1: AI AGENT BATTLE ARENA */}
           <div className="bento-card">
             <h2 className="card-title">
               <GitFork size={13} />
-              VERIFICATION PIPELINE
+              AI AGENT BATTLE ARENA
             </h2>
             <div className="pipeline-steps-container">
               {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
                 const status = getNodeStatusClass(node);
-                const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
+                const agentLabels = {
+                  coder: 'Coder 🤖',
+                  sandbox: 'Compiler ⚙️',
+                  critic: 'Critic ⚖️',
+                  refiner: 'Refiner 🧙‍♂️'
+                };
+                const label = agentLabels[node];
                 const completed = status === 'status-completed';
                 const active = status === 'status-active';
                 
@@ -1308,7 +1504,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div className="logs-terminal">
+            <div className="logs-terminal" style={{ height: '420px', maxHeight: '420px', overflowY: 'auto' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
@@ -1318,7 +1514,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   {parsedLogs.map((log, index) => (
                     <div key={index} className="log-line">
                       <span className="log-timestamp">[{log.timestamp}]</span>
-                      <span className={`log-status-pill ${log.status}`}>{log.status}</span>
+                      <span className={`log-status-pill ${log.badgeType}`}>{log.status}</span>
                       <span className="log-message">{log.message}</span>
                     </div>
                   ))}
