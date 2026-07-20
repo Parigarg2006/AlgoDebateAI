@@ -117,7 +117,7 @@ async function sandboxNode(state) {
     await state.onProgress({ node: 'sandbox', round: state.currentRound, code: state.code });
   }
 
-  const execution = await executeCpp(state.code, state.testCases, lang);
+  const execution = await executeCpp(state.code, state.testCases, lang, 2000, state.problemDescription);
   
   let results = [];
   if (execution.success) {
