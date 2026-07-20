@@ -10,14 +10,15 @@ import {
   Play,
   Atom,
   AlertTriangle,
-  CheckCircle2,
   Loader2,
   Copy,
   Download,
   Volume2,
   VolumeX,
   Settings,
-  History
+  History,
+  Check,
+  Share2
 } from 'lucide-react';
 import './App.css';
 
@@ -34,8 +35,10 @@ function App() {
   const [problemUrl, setProblemUrl] = useState('');
   const [maxRounds, setMaxRounds] = useState(4);
   const [language, setLanguage] = useState('cpp'); // cpp, python, java
+  const [timeoutMs, setTimeoutMs] = useState(2000); // 1000, 2000, 5000, 10000ms
   const [isCopied, setIsCopied] = useState(false);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(true);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
   
   // Custom Test Case States
   const [customInput, setCustomInput] = useState('');
@@ -81,20 +84,9 @@ function App() {
   const startTimeRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const terminalEndRef = useRef(null);
-  const debateEndRef = useRef(null);
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
-
-  // Holographic Glow Cursor Tracker
-  const handleMouseMove = (e) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    containerRef.current.style.setProperty('--mouse-x', `${x}px`);
-    containerRef.current.style.setProperty('--mouse-y', `${y}px`);
-  };
 
   // Sound Engine (Web Audio API synthetically generated clicks and chimes)
   const playTick = useCallback(() => {
@@ -154,9 +146,7 @@ function App() {
     }
   }, [isMuted]);
 
-
-
-  // 3. Generate Terminal Logs Dynamically from Progress State
+  // Generate Terminal Logs Dynamically from Progress State
   const terminalLogs = useMemo(() => {
     if (jobState === 'idle') {
       return ['[SYSTEM] Terminal ready. Awaiting debate execution...'];
@@ -216,7 +206,7 @@ function App() {
     return logs;
   }, [roundsHistory, jobState, jobId, error, language]);
 
-  // 1. Connection Monitoring
+  // Connection Monitoring
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
@@ -251,7 +241,7 @@ function App() {
     }
   }, [jobState, playSuccessChime]);
 
-  // 2. Latency and Tokens/s dynamic tracking
+  // Latency and Tokens/s dynamic tracking
   useEffect(() => {
     if (jobState === 'active') {
       startTimeRef.current = Date.now();
@@ -273,7 +263,6 @@ function App() {
         setElapsedTime(0);
         setTokensPerSecond(0);
       } else {
-        // Stop updating but keep elapsed and reset tokens/s to 0
         setTokensPerSecond(0);
       }
     }
@@ -289,20 +278,14 @@ function App() {
     return (elapsedTime / 1000).toFixed(1) + 's';
   }, [elapsedTime]);
 
-  // 4. Auto-scroll scrollable boxes
+  // Auto-scroll terminal end
   useEffect(() => {
     if (terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [terminalLogs]);
 
-  useEffect(() => {
-    if (debateEndRef.current) {
-      debateEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [roundsHistory]);
-
-  // Session Vault Log Helpers
+  // Session Vault Log History Helpers
   const saveSessionToVault = useCallback((description, rounds, lang, history, result, id, draft) => {
     try {
       const records = JSON.parse(localStorage.getItem('algodebate_history') || '[]');
@@ -365,26 +348,22 @@ function App() {
         oldIdx++;
         newIdx++;
       } else {
-        // Search ahead up to 20 lines to align
         const nextMatchInOld = newIdx < newLines.length ? oldLines.slice(oldIdx, oldIdx + 20).indexOf(newLine) : -1;
         const nextMatchInNew = oldIdx < oldLines.length ? newLines.slice(newIdx, newIdx + 20).indexOf(oldLine) : -1;
         
         if (nextMatchInOld !== -1 && (nextMatchInNew === -1 || nextMatchInOld <= nextMatchInNew)) {
-          // Lines were removed in old code before matching newLine
           for (let k = 0; k < nextMatchInOld; k++) {
             leftLines.push({ type: 'removed', text: oldLines[oldIdx + k] });
             rightLines.push({ type: 'empty', text: '' });
           }
           oldIdx += nextMatchInOld;
         } else if (nextMatchInNew !== -1) {
-          // Lines were added in new code before matching oldLine
           for (let k = 0; k < nextMatchInNew; k++) {
             leftLines.push({ type: 'empty', text: '' });
             rightLines.push({ type: 'added', text: newLines[newIdx + k] });
           }
           newIdx += nextMatchInNew;
         } else {
-          // Mismatch on both, treat as replacement/addition/removal
           if (oldIdx < oldLines.length && newIdx < newLines.length) {
             leftLines.push({ type: 'removed', text: oldLines[oldIdx] });
             rightLines.push({ type: 'added', text: newLines[newIdx] });
@@ -406,9 +385,8 @@ function App() {
     return { leftLines, rightLines };
   }, []);
 
-  // 5. Reset Handler
+  // Reset Handler
   const handleReset = () => {
-    // Clear active socket listeners if there's a running job
     if (jobId) {
       socket.off(`job-progress:${jobId}`);
       socket.off(`job-completed:${jobId}`);
@@ -426,6 +404,7 @@ function App() {
     setFinalResult(null);
     setLiveCode('// Coder is drafting a solution...');
     setLanguage('cpp');
+    setTimeoutMs(2000);
     setIsCopied(false);
     setElapsedTime(0);
     setTokensPerSecond(0);
@@ -437,7 +416,7 @@ function App() {
     setIsDiffView(false);
   };
 
-  // 6. Copy & Download Handlers
+  // Copy & Download Handlers
   const handleCopyCode = (codeText) => {
     if (!codeText) return;
     navigator.clipboard.writeText(codeText);
@@ -464,7 +443,7 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Helper to register websocket listeners for a given job ID
+  // Websocket listeners registration helper
   const setupJobWebSocketListeners = (tempJobId) => {
     socket.on(`job-progress:${tempJobId}`, (progress) => {
       const history = progress.roundsHistory || [];
@@ -472,7 +451,6 @@ function App() {
       
       const latest = history[history.length - 1];
       
-      // Update visualizer state
       if (latest.node && latest.node !== 'critic-done') {
         setActiveNode(latest.node);
         setCurrentRound(latest.round);
@@ -481,13 +459,11 @@ function App() {
         setCurrentRound(latest.round);
       }
       
-      // Update live code display
       if (latest.code) {
         setLiveCode(latest.code);
         setCoderDraft(prev => prev ? prev : latest.code);
       }
 
-      // Save complete progress history for terminal & timeline
       setRoundsHistory(history);
     });
 
@@ -496,7 +472,6 @@ function App() {
       setActiveNode(null);
       setFinalResult(result.finalResult);
       
-      // Clean up
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
       socket.off(`job-failed:${tempJobId}`);
@@ -507,25 +482,21 @@ function App() {
       setActiveNode(null);
       setError(data.error);
       
-      // Clean up
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
       socket.off(`job-failed:${tempJobId}`);
     });
   };
 
-  // 7. Submit problem to API
+  // Submit problem to API
   const handleStartDebate = async (e) => {
     e.preventDefault();
     if (!problemDescription.trim() && !problemUrl.trim()) return;
 
-    // Generate unique jobId client-side
     const tempJobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
-    // Register WebSocket listeners SYNCHRONOUSLY before enqueuing
     setupJobWebSocketListeners(tempJobId);
 
-    // Reset UI State and register the jobId
     setJobId(tempJobId);
     setJobState('active');
     setError(null);
@@ -547,7 +518,7 @@ function App() {
           problemDescription,
           problemUrl,
           maxRounds,
-          jobId: tempJobId, // Send the client-generated ID
+          jobId: tempJobId,
           language,
           coderPrompt,
           criticPrompt,
@@ -556,15 +527,15 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit job to server.');
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to submit job to server.');
       }
 
     } catch (err) {
       setJobState('failed');
-      setJobId(null); // Clear the ID on failure
+      setJobId(null);
       setError(err.message);
       
-      // Clean up on failure
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
       socket.off(`job-failed:${tempJobId}`);
@@ -574,22 +545,18 @@ function App() {
   const handleRunCustomTest = () => {
     if (!customInput.trim()) return;
 
-    // Use current jobId or a transient one
     const tempJobId = jobId || 'job_custom_' + Date.now();
     if (!jobId) {
       setJobId(tempJobId);
     }
     
-    // Switch state to active to focus elements and trigger audio
     setJobState('active');
     setIsCustomRunning(true);
     setActiveNode('sandbox');
 
-    // Register socket listener for the custom test result
     socket.on(`custom_test_result:${tempJobId}`, async (data) => {
       const isFailed = data.isFailed || data.result.includes('ERROR');
       
-      // Append the sandbox node run showing the output
       setRoundsHistory(prev => {
         const next = [
           ...prev,
@@ -614,8 +581,6 @@ function App() {
       socket.off(`custom_test_result:${tempJobId}`);
 
       if (isFailed) {
-        // Trigger a dynamic debate re-run
-        // Let's create a new unique jobId to avoid collision
         const newJobId = 'job_' + Date.now();
         setJobId(newJobId);
         setJobState('active');
@@ -623,7 +588,6 @@ function App() {
         setCurrentRound(1);
         setFinalResult(null);
 
-        // Prepare the new problem description combining original problem and custom test details
         const reTriggerDescription = `
 [RE-TRIGGER FEEDBACK]
 The C++ code has failed on a custom test case.
@@ -645,10 +609,8 @@ ${liveCode}
 Please refactor and correct this C++ code so that it compiles and passes this custom test case and all edge cases.
         `.trim();
 
-        // Register WebSocket listeners SYNCHRONOUSLY before enqueuing
         setupJobWebSocketListeners(newJobId);
 
-        // Enqueue the new debate
         try {
           const response = await fetch('http://localhost:5000/api/debate', {
             method: 'POST',
@@ -684,7 +646,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       }
     });
 
-    // Emit socket event to backend
     socket.emit('run_custom_test', {
       jobId: tempJobId,
       inputData: customInput,
@@ -727,7 +688,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     setRoundsHistory(record.roundsHistory);
     setFinalResult(record.finalResult);
     setJobId(record.jobId);
-    setJobState('completed'); // hydrate past state as completed
+    setJobState('completed');
     setCoderDraft(record.coderDraft || '');
     if (record.finalResult && record.finalResult.finalCode) {
       setLiveCode(record.finalResult.finalCode);
@@ -746,84 +707,59 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   };
   const optPercent = getOptimizationPercentage();
 
-  const getNodeStyle = (node) => {
-    const status = getNodeStatusClass(node);
-    const base = {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '4px',
-      padding: '8px 12px',
-      borderRadius: '8px',
-      fontSize: '0.75rem',
-      fontWeight: '600',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
-      minWidth: '85px',
-      textAlign: 'center',
-      userSelect: 'none'
-    };
+  // Custom log formatter for Validation Logs list
+  const parsedLogs = useMemo(() => {
+    const start = startTimeRef.current || Date.now();
+    return terminalLogs.map((log, idx) => {
+      let status = 'info';
+      let msg = log;
+      if (log.startsWith('[ERROR]')) {
+        status = 'error';
+        msg = log.replace('[ERROR]', '').trim();
+      } else if (log.startsWith('[SYSTEM]')) {
+        status = 'system';
+        msg = log.replace('[SYSTEM]', '').trim();
+      } else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:') || log.includes('passed')) {
+        status = 'success';
+      }
 
-    if (status === 'status-completed') {
-      return {
-        ...base,
-        background: '#10b981',
-        color: '#ffffff',
-        boxShadow: '0 0 12px rgba(16, 185, 129, 0.5)',
-        border: '1px solid #10b981'
-      };
-    }
+      // Stable incremental timestamp formatting
+      const logTime = new Date(start + idx * 1200);
+      const timestamp = logTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    if (status === 'status-active') {
-      const activeColor = (node === 'coder' || node === 'sandbox') ? 'var(--accent-blue)' : 'var(--accent-purple)';
-      const shadowColor = (node === 'coder' || node === 'sandbox') ? 'rgba(56, 189, 248, 0.4)' : 'rgba(192, 132, 252, 0.4)';
-      return {
-        ...base,
-        background: 'rgba(255, 255, 255, 0.02)',
-        color: activeColor,
-        borderColor: activeColor,
-        boxShadow: `0 0 10px ${shadowColor}`,
-        animation: 'pulseActive 1.5s infinite alternate'
-      };
-    }
+      return { timestamp, status, message: msg };
+    });
+  }, [terminalLogs]);
 
-    return {
-      ...base,
-      background: 'rgba(255, 255, 255, 0.02)',
-      color: 'var(--text-secondary)'
-    };
-  };
+  // Code editor lines renderer helper
+  const renderedCodeLines = useMemo(() => {
+    const currentCodeToDisplay = finalResult?.finalCode || liveCode;
+    return currentCodeToDisplay.split('\n');
+  }, [liveCode, finalResult]);
 
   return (
-    <div className="app-container" ref={containerRef} onMouseMove={handleMouseMove}>
-      {/* 1. Header Row */}
+    <div className="app-container" ref={containerRef}>
+      {/* Navbar Header */}
       <header className="app-header">
         <div className="logo-container">
-          <span className="logo-title">AlgoDebate AI</span>
+          <span className="logo-title">AlgoDebate</span>
           <div className="status-indicator">
             <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
-            {isConnected ? 'API Connected' : 'Connecting to API...'}
+            {isConnected ? 'API Connected' : 'Disconnected'}
           </div>
-          {/* Telemetry Indicator */}
+          
           <div className="telemetry-wrapper">
-            <div className="telemetry-item" title="Language processing speed">
+            <div className="telemetry-item" title="Speed of language processing">
               <span className="telemetry-label">Tokens/s:</span>
-              <span className="telemetry-value" style={{ color: tokensPerSecond > 0 ? 'var(--accent-blue)' : 'var(--text-muted)' }}>
-                {tokensPerSecond}
-              </span>
+              <span className="telemetry-value">{tokensPerSecond || '0.0'}</span>
             </div>
-            <div className="telemetry-item" title="LangGraph processed steps count">
-              <span className="telemetry-label">Graph Depth:</span>
-              <span className="telemetry-value">
-                {roundsHistory.length}
-              </span>
+            <div className="telemetry-item" title="LangGraph depth steps">
+              <span className="telemetry-label">Depth:</span>
+              <span className="telemetry-value">{roundsHistory.length}</span>
             </div>
             <div className="telemetry-item" title="Active solve run duration">
               <span className="telemetry-label">Latency:</span>
-              <span className="telemetry-value" style={{ color: elapsedTime > 0 ? 'var(--accent-orange)' : 'var(--text-muted)' }}>
-                {latencyString}
-              </span>
+              <span className="telemetry-value">{latencyString}</span>
             </div>
             <button
               onClick={() => setIsMuted(prev => !prev)}
@@ -843,77 +779,65 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
               title={isMuted ? "Unmute execution sounds" : "Mute execution sounds"}
             >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} style={{ color: 'var(--accent-blue)' }} />}
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} style={{ color: 'var(--accent-green)' }} />}
             </button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            LangGraph Multi-Agent Dashboard
-          </div>
-          {/* History Vault Button */}
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <a href="/docs" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Docs</a>
+          <a href="https://github.com/Parigarg2006/AlgoDebateAI" target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>GitHub</a>
+          
+          {/* History Vault Icon */}
           <button
             onClick={() => setIsVaultOpen(true)}
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'var(--text-muted)',
+              color: 'var(--text-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               padding: '4px',
               transition: 'color 0.2s'
             }}
             onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
             title="Session History Vault"
           >
-            <History size={16} />
+            <History size={15} />
           </button>
-          <button
+          
+          {/* Settings config Icon */}
+          <button 
             onClick={() => setIsSettingsOpen(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '4px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.transform = 'rotate(30deg)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted)';
-              e.currentTarget.style.transform = 'rotate(0deg)';
-            }}
-            title="Configure Agent Prompts"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(30deg)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}
+            title="Configure System Instructions"
           >
-            <Settings size={16} />
+            <Settings size={15} />
           </button>
+          
+          <div className="user-avatar" title="User Profile">
+            PG
+          </div>
         </div>
       </header>
 
-      {/* 2. Bento Grid Layout */}
+      {/* Main 3-Column SaaS Grid */}
       <main className="main-container">
         
-        {/* Left Sidebar Column (25% width) */}
-        <section className="sidebar-column">
+        {/* Left Column: Input & Configuration */}
+        <section className="panel-left">
           
-          {/* Bento Tile 1: Problem Input */}
-          <div className="bento-card" style={{ padding: '16px' }}>
-            <h2 className="card-header-row">
-              <span className="card-title">
-                <TerminalIcon size={14} style={{ color: 'var(--accent-blue)' }} />
-                Problem Input
-              </span>
+          {/* Card 1: Problem Input */}
+          <div className="bento-card">
+            <h2 className="card-title">
+              <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
+              Problem Input
             </h2>
-            <form onSubmit={handleStartDebate}>
+            <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input
                 type="text"
                 className="problem-url-input"
@@ -924,192 +848,203 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               />
               <textarea
                 className="problem-textarea"
-                placeholder="Enter your algorithm problem here...&#10;e.g., Find the maximum subarray sum in O(N)."
+                placeholder="Enter algorithm details or problem description..."
                 value={problemDescription}
                 onChange={(e) => setProblemDescription(e.target.value)}
                 disabled={jobState === 'active'}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', width: '100%' }}>
-                {/* Top Tier: Config Selectors */}
-                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-                  <select
-                    className="bento-select"
-                    value={maxRounds}
-                    onChange={(e) => setMaxRounds(Number(e.target.value))}
-                    disabled={jobState === 'active'}
-                    title="Max Rounds limit"
-                    style={{ flex: 1 }}
-                  >
-                    <option value="2">2 Rounds</option>
-                    <option value="3">3 Rounds</option>
-                    <option value="4">4 Rounds</option>
-                    <option value="5">5 Rounds</option>
-                  </select>
-                  <select
-                    className="bento-select"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    disabled={jobState === 'active'}
-                    title="Target language"
-                    style={{ flex: 1 }}
-                  >
-                    <option value="cpp">C++</option>
-                    <option value="python">Python</option>
-                    <option value="java">Java</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '16px', width: '100%' }}>
-                  <button 
-                    onClick={handleStartDebate} 
-                    style={{ flex: 1, height: '40px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', fontWeight: '600', borderRadius: '8px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)' }}
-                  >
-                    Start Debate
-                  </button>
-                  <button 
-                    onClick={handleReset} 
-                    style={{ flex: 1, height: '40px', background: 'rgba(255, 255, 255, 0.05)', color: '#94a3b8', fontWeight: '500', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer' }}
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
             </form>
           </div>
-
-          {/* Bento Tile 2: LangGraph Mission Path (2x2 Grid) */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 className="card-header-row">
-              <span className="card-title">
-                <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
-                LangGraph Mission Path
-              </span>
+          
+          {/* Card 2: Configuration & Execution */}
+          <div className="bento-card">
+            <h2 className="card-title">
+              <Settings size={13} style={{ color: 'var(--accent-green)' }} />
+              Configuration & Execution
             </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gridTemplateRows: 'auto auto auto', gap: '12px 6px', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
-              {/* Row 1: Coder -> Sandbox */}
-              <div style={getNodeStyle('coder')}>
-                <Code2 size={14} style={{ marginBottom: '4px' }} />
-                <span>Coder</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select
+                  className="bento-select"
+                  value={maxRounds}
+                  onChange={(e) => setMaxRounds(Number(e.target.value))}
+                  disabled={jobState === 'active'}
+                  title="Max Rounds limit"
+                  style={{ flex: 1 }}
+                >
+                  <option value="2">2 Rounds</option>
+                  <option value="3">3 Rounds</option>
+                  <option value="4">4 Rounds</option>
+                  <option value="5">5 Rounds</option>
+                </select>
+                
+                <select
+                  className="bento-select"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  disabled={jobState === 'active'}
+                  title="Target language"
+                  style={{ flex: 1 }}
+                >
+                  <option value="cpp">C++</option>
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                </select>
               </div>
-              <div style={{ color: activeNode === 'sandbox' ? 'var(--accent-blue)' : 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold' }}>→</div>
-              <div style={getNodeStyle('sandbox')}>
-                <Cpu size={14} style={{ marginBottom: '4px' }} />
-                <span>Sandbox</span>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select
+                  className="bento-select"
+                  value={timeoutMs}
+                  onChange={(e) => setTimeoutMs(Number(e.target.value))}
+                  disabled={jobState === 'active'}
+                  title="Timeout limit"
+                  style={{ flex: 1 }}
+                >
+                  <option value="1000">1000ms</option>
+                  <option value="2000">2000ms</option>
+                  <option value="5000">5000ms</option>
+                  <option value="10000">10000ms</option>
+                </select>
               </div>
 
-              {/* Row 2: vertical arrow paths */}
-              <div style={{ color: (activeNode === 'coder' && currentRound > 1) ? 'var(--accent-red)' : 'var(--text-muted)', textAlign: 'center', fontSize: '1rem', fontWeight: 'bold' }}>↑</div>
-              <div></div>
-              <div style={{ color: activeNode === 'critic' ? 'var(--accent-purple)' : 'var(--text-muted)', textAlign: 'center', fontSize: '1rem', fontWeight: 'bold' }}>↓</div>
-
-              {/* Row 3: Refiner <- Critic */}
-              <div style={getNodeStyle('refiner')}>
-                <Sparkles size={14} style={{ marginBottom: '4px' }} />
-                <span>Refiner</span>
+              {/* Custom Test cases text box in Left Panel configuration card */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Custom Test Input</span>
+                <textarea
+                  placeholder="Enter custom inputs (e.g. 4 \n 3 5 8)"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  disabled={isCustomRunning}
+                  style={{
+                    width: '100%',
+                    height: '60px',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-slate)',
+                    borderRadius: '6px',
+                    color: 'var(--text-primary)',
+                    padding: '8px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.72rem',
+                    resize: 'none',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn-run-custom-test"
+                  onClick={handleRunCustomTest}
+                  disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
+                  style={{ margin: 0, height: '32px', fontSize: '0.75rem' }}
+                >
+                  {isCustomRunning ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>Sandbox Running...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={11} />
+                      <span>Run Custom Test</span>
+                    </>
+                  )}
+                </button>
               </div>
-              <div style={{ color: activeNode === 'refiner' ? 'var(--accent-purple)' : 'var(--text-muted)', fontSize: '1rem', fontWeight: 'bold' }}>←</div>
-              <div style={getNodeStyle('critic')}>
-                <ShieldCheck size={14} style={{ marginBottom: '4px' }} />
-                <span>Critic</span>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button
+                  onClick={handleStartDebate}
+                  className="btn-verify-primary"
+                  disabled={jobState === 'active' || (!problemDescription.trim() && !problemUrl.trim())}
+                >
+                  <Play size={12} />
+                  <span>Run Verification</span>
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="btn-reset-secondary"
+                >
+                  <span>Reset</span>
+                </button>
               </div>
             </div>
-            <style>{`
-              @keyframes pulseActive {
-                from { opacity: 0.8; transform: scale(0.96); }
-                to { opacity: 1; transform: scale(1.04); }
-              }
-            `}</style>
           </div>
-
-          {/* Bento Tile 3: Custom Test Cases Widget */}
-          <div className="bento-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <h2 className="card-header-row">
-              <span className="card-title">
-                <Cpu size={14} style={{ color: 'var(--accent-blue)' }} />
-                Run Custom Test Cases
-              </span>
+          
+          {/* Node Flow: LangGraph Mission Path */}
+          <div className="bento-card" style={{ flex: 1 }}>
+            <h2 className="card-title">
+              <Workflow size={13} style={{ color: 'var(--accent-green)' }} />
+              LangGraph Mission Path
             </h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '0px' }}>
-              <textarea
-                placeholder="Enter custom inputs here... (e.g. 5 \n 1 2 3 4 5)"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                disabled={isCustomRunning}
-                style={{
-                  width: '100%',
-                  minHeight: '80px',
-                  background: 'rgba(10, 15, 23, 0.4)',
-                  border: '1px solid var(--border-slate)',
-                  borderRadius: '6px',
-                  color: 'var(--text-primary)',
-                  padding: '10px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.75rem',
-                  resize: 'none',
-                  outline: 'none'
-                }}
-              />
-              <button
-                type="button"
-                className="btn-run-custom-test"
-                onClick={handleRunCustomTest}
-                disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
-              >
-                {isCustomRunning ? (
-                  <>
-                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Running Sandbox...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={12} />
-                    <span>Run Custom Test</span>
-                  </>
-                )}
-              </button>
+            <div className="mission-path-horizontal">
+              {['coder', 'sandbox', 'critic', 'refiner'].map((node, index) => {
+                const status = getNodeStatusClass(node);
+                const active = status === 'status-active';
+                const completed = status === 'status-completed';
+                const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
+                
+                return (
+                  <React.Fragment key={node}>
+                    {index > 0 && <span className="mission-arrow">→</span>}
+                    <div className={`mission-node ${active ? 'active' : (completed ? 'completed' : '')}`}>
+                      <div className="mission-node-dot">
+                        {completed ? <Check size={10} /> : (active ? <Loader2 size={10} className="animate-spin" /> : index + 1)}
+                      </div>
+                      <span>{label}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
         </section>
-
-        {/* Workspace Column (Right, 75% width) */}
-        <section className="workspace-column">
+        
+        {/* Center Column: Verification Workspace */}
+        <section className="panel-center">
           
-          <div className="workspace-panels-grid">
-            
-            {/* Bento Tile 4: Workspace Console */}
-            <div className="bento-card workspace-panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <h2 className="card-header-row">
-                <span className="card-title">
-                  <Code2 size={14} style={{ color: 'var(--accent-blue)' }} />
-                  {jobState === 'active' ? `Active Code Workspace (Round ${currentRound})` : 'Workspace Console'}
-                </span>
-                
-                {/* Diff View Toggle Switch */}
+          {/* VERIFIED Alert Banner */}
+          {jobState === 'completed' && finalResult && (
+            <div className="alert-verified-banner fade-in">
+              <ShieldCheck size={20} style={{ color: 'var(--accent-green)', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="alert-verified-title">VERIFIED - All validation checks passed</span>
+                <span className="alert-verified-subtitle">The C++ solution has been successfully compiled and verified against all adversarial test assertions.</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Bento Card: Verification Workspace */}
+          <div className="bento-card code-workspace-card">
+            <div className="code-editor-header">
+              <span className="card-title" style={{ color: 'var(--text-primary)' }}>
+                <Code2 size={13} style={{ color: 'var(--accent-green)' }} />
+                {jobState === 'active' ? `Verifying Code (Round ${currentRound})` : 'Verification Workspace'}
+              </span>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {coderDraft && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Diff View:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DIFF VIEW:</span>
                     <button
                       type="button"
                       onClick={() => setIsDiffView(!isDiffView)}
                       style={{
                         position: 'relative',
-                        width: '32px',
-                        height: '18px',
-                        borderRadius: '9px',
-                        background: isDiffView ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        width: '28px',
+                        height: '16px',
+                        borderRadius: '8px',
+                        background: isDiffView ? 'var(--accent-green)' : 'var(--border-slate)',
+                        border: 'none',
                         cursor: 'pointer',
                         transition: 'background 0.2s',
                         padding: 0
                       }}
-                      title="Toggle Split-Screen Code Diff"
                     >
                       <div
                         style={{
                           position: 'absolute',
                           top: '2px',
-                          left: isDiffView ? '16px' : '2px',
+                          left: isDiffView ? '14px' : '2px',
                           width: '12px',
                           height: '12px',
                           borderRadius: '50%',
@@ -1120,290 +1055,173 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     </button>
                   </div>
                 )}
-              </h2>
-
-              <div className="workspace-content">
-                {jobState === 'idle' && (
-                  <div className="workspace-empty-view">
-                    <Atom size={36} />
-                    <p>Awaiting Graph execution to load workspace...</p>
-                  </div>
-                )}
-
-                {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                  <div className="diff-view-container fade-in">
-                    {/* Left Column: Initial Coder Draft */}
-                    <div className="diff-panel">
-                      <div className="diff-panel-header">Coder Draft (Initial)</div>
-                      <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                        {(() => {
-                          const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                          return leftLines.map((line, idx) => (
-                            <div key={idx} className={`diff-line ${line.type}`}>
-                              <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                              <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    </div>
-                    {/* Right Column: Refined Output */}
-                    <div className="diff-panel">
-                      <div className="diff-panel-header">Refined Output (Final)</div>
-                      <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                        {(() => {
-                          const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                          return rightLines.map((line, idx) => (
-                            <div key={idx} className={`diff-line ${line.type}`}>
-                              <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                              <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {jobState === 'active' && (
-                      <div className="active-code-box fade-in">
-                        <div className="code-actions-bar">
-                          <div className="panel-header-badge">Coder Draft</div>
-                          <button type="button" className="action-btn" onClick={() => handleCopyCode(liveCode)} title="Copy live code draft">
-                            {isCopied ? <CheckCircle2 size={12} style={{ color: 'var(--accent-green)' }} /> : <Copy size={12} />}
-                            <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                          </button>
-                        </div>
-                        <pre style={{ flex: 1, background: 'rgba(10, 15, 23, 0.5)', border: '1px solid var(--border-slate)', borderRadius: '8px', padding: '14px', overflow: 'auto', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', lineHeight: '1.45', color: 'var(--text-primary)' }}>
-                          <code>{liveCode}</code>
-                        </pre>
-                      </div>
-                    )}
-
-                    {jobState === 'completed' && finalResult && (
-                      <div className="polished-solution-layout fade-in">
-                        {/* Gamified Victory Banner */}
-                        <div style={{
-                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%)',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: '12px',
-                          padding: '16px',
-                          marginBottom: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)'
-                        }}>
-                          <Sparkles size={20} style={{ color: 'var(--accent-green)' }} />
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-green)', letterSpacing: '0.5px' }}>
-                              🎯 COMPILATION VICTORY: OPTIMAL SOLUTION SECURED
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Target Language: {language === 'cpp' ? 'C++' : language.toUpperCase()} | All verification checks passed.
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="code-actions-bar">
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Polished Solution Code
-                          </span>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button type="button" className="action-btn" onClick={() => handleCopyCode(finalResult.finalCode)} title="Copy final polished code">
-                              {isCopied ? <CheckCircle2 size={12} style={{ color: 'var(--accent-green)' }} /> : <Copy size={12} />}
-                              <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                            </button>
-                            <button type="button" className="action-btn" onClick={() => handleDownloadCode(finalResult.finalCode)} title="Download code file">
-                              <Download size={12} />
-                              <span>Download</span>
-                            </button>
-                          </div>
-                        </div>
-                        <pre className="final-code-block">
-                          <code>{finalResult.finalCode}</code>
-                        </pre>
-
-                        {/* High-tech glowing complexity numeric badges */}
-                        <div className="stats-grid" style={{ display: 'flex', gap: '16px', marginBottom: '20px', marginTop: '20px' }}>
-                          <div className="stat-card" style={{ flex: 1, background: 'rgba(56, 189, 248, 0.02)', border: '1px solid rgba(56, 189, 248, 0.15)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 0 15px rgba(56, 189, 248, 0.05)' }}>
-                            <div className="stat-label" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>TIME COMPLEXITY</div>
-                            <div className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--accent-blue)', fontWeight: 800, fontFamily: 'var(--font-mono)', textShadow: '0 0 8px rgba(56, 189, 248, 0.4)' }}>{finalResult.timeComplexity}</div>
-                          </div>
-                          <div className="stat-card" style={{ flex: 1, background: 'rgba(192, 132, 252, 0.02)', border: '1px solid rgba(192, 132, 252, 0.15)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 0 15px rgba(192, 132, 252, 0.05)' }}>
-                            <div className="stat-label" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>SPACE COMPLEXITY</div>
-                            <div className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--accent-purple)', fontWeight: 800, fontFamily: 'var(--font-mono)', textShadow: '0 0 8px rgba(192, 132, 252, 0.4)' }}>{finalResult.spaceComplexity}</div>
-                          </div>
-                        </div>
-
-                        <div className="strategy-box">
-                          <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>Strategy & Explanation:</strong>
-                          {finalResult.explanation}
-                        </div>
-                      </div>
-                    )}
-
-                    {jobState === 'failed' && (
-                      <div className="workspace-empty-view fade-in">
-                        <AlertTriangle size={36} style={{ color: 'var(--accent-red)' }} />
-                        <h3 style={{ color: 'var(--accent-red)', fontSize: '0.9rem', fontWeight: 600 }}>Execution Failed</h3>
-                        <p style={{ fontSize: '0.8rem', maxWidth: '300px', marginTop: '4px' }}>{error}</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Bento Tile 5: Combat Debate Arena */}
-            <div className="bento-card workspace-panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <h2 className="card-header-row">
-                <span className="card-title">
-                  <Workflow size={14} style={{ color: 'var(--accent-purple)' }} />
-                  Combat Debate Arena
-                </span>
-              </h2>
-
-              <div className="workspace-content">
-                {jobState === 'idle' ? (
-                  <div className="workspace-empty-view">
-                    <Workflow size={36} />
-                    <p>Debate timeline will stream here...</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    {/* VS Match Dashboard */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
-                      {/* Agent Coder */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '40%' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', border: '2px solid var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)' }}>
-                          <Code2 size={24} style={{ color: 'var(--accent-blue)' }} />
-                        </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>Agent Coder</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Fighter - Blue Corner</span>
-                      </div>
-
-                      {/* VS */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--accent-orange)', letterSpacing: '2px', textShadow: '0 0 10px rgba(251, 146, 60, 0.3)' }}>VS</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Round {currentRound}</span>
-                      </div>
-
-                      {/* Agent Critic */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '40%' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: jobState === 'completed' ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)', border: `2px solid ${jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${jobState === 'completed' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(248, 113, 113, 0.2)'}` }}>
-                          <ShieldCheck size={24} style={{ color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)' }} />
-                        </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--accent-red)' }}>Agent Critic</span>
-                        <span style={{ fontSize: '0.7rem', color: jobState === 'completed' ? 'var(--accent-green)' : 'var(--text-secondary)' }}>
-                          {jobState === 'completed' ? 'Status: APPROVED / VERIFIED' : 'Red Team Judge'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Code Optimization Meter */}
-                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                        <span>Code Optimization Meter</span>
-                        <span style={{ color: jobState === 'completed' ? '#10b981' : (optPercent > 80 ? 'var(--accent-green)' : (optPercent > 50 ? 'var(--accent-orange)' : 'var(--accent-red)')) }}>{optPercent}% Confidence</span>
-                      </div>
-                      <div style={{ height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden', position: 'relative' }}>
-                        <div 
-                          style={{ 
-                            height: '100%', 
-                            width: `${optPercent}%`, 
-                            background: jobState === 'completed' ? '#10b981' : 'linear-gradient(90deg, #38bdf8 0%, #c084fc 50%, #34d399 100%)', 
-                            borderRadius: '5px',
-                            transition: 'width 0.5s ease-in-out',
-                            boxShadow: jobState === 'completed' ? '0 0 12px rgba(16, 185, 129, 0.6)' : '0 0 10px rgba(52, 211, 153, 0.4)'
-                          }} 
-                        />
-                      </div>
-                    </div>
-
-                    {/* Tactical Log Alerts list */}
-                    <div className="debate-arena-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto' }}>
-                      {roundsHistory.length === 0 ? (
-                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          Awaiting match audit reports...
-                        </div>
-                      ) : (
-                        <>
-                          {roundsHistory.map((round, idx) => {
-                            const isRefinerLog = round.node === 'refiner';
-                            if (isRefinerLog) return null;
-                            
-                            return (
-                              <div 
-                                key={idx} 
-                                style={{
-                                  borderLeft: `4px solid ${round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)'}`,
-                                  background: 'rgba(255, 255, 255, 0.01)',
-                                  border: '1px solid rgba(255, 255, 255, 0.04)',
-                                  borderRadius: '8px',
-                                  padding: '14px',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '8px'
-                                }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: round.criticApproved ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                                    [Round {round.round} Audit Alert]
-                                  </span>
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                    Status: {round.criticApproved ? 'PASSED' : 'REJECTED'}
-                                  </span>
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                                  {round.criticReasoning || `Node ${round.node} execution progress...`}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          
-                          {/* Victory Audit Card at the bottom */}
-                          {jobState === 'completed' && finalResult && (
-                            <div 
-                              style={{
-                                borderLeft: '4px solid #10b981',
-                                background: 'rgba(16, 185, 129, 0.05)',
-                                border: '1px solid rgba(16, 185, 129, 0.15)',
-                                borderRadius: '8px',
-                                padding: '14px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '8px',
-                                boxShadow: '0 0 12px rgba(16, 185, 129, 0.1)'
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#10b981' }}>
-                                  [FINAL VICTORY AUDIT]
-                                </span>
-                                <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
-                                  Status: APPROVED / OPTIMAL CODE SECURED
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                LangGraph debate workflow has terminated successfully. The final solution has been fully compiled, sandbox-tested, and polished by the Refiner Agent. Verification complete.
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+                
+                <div className="code-editor-actions">
+                  <button type="button" className="editor-btn" onClick={() => handleCopyCode(finalResult?.finalCode || liveCode)} title="Copy code">
+                    {isCopied ? <Check size={11} style={{ color: 'var(--accent-green)' }} /> : <Copy size={11} />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                  <button type="button" className="editor-btn" onClick={() => handleDownloadCode(finalResult?.finalCode || liveCode)} title="Download code">
+                    <Download size={11} />
+                    <span>Download</span>
+                  </button>
+                </div>
               </div>
             </div>
             
-          </div>
+            <div className="workspace-content">
+              {jobState === 'idle' ? (
+                <div className="workspace-empty-view">
+                  <Atom size={32} />
+                  <p>Awaiting Graph execution to load workspace...</p>
+                </div>
+              ) : (
+                <>
+                  {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
+                    <div className="diff-view-container fade-in">
+                      {/* Left Column: Initial Coder Draft */}
+                      <div className="diff-panel">
+                        <div className="diff-panel-header">Coder Draft (Initial)</div>
+                        <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                          {(() => {
+                            const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                            return leftLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                      
+                      {/* Right Column: Refined Output */}
+                      <div className="diff-panel">
+                        <div className="diff-panel-header">Refined Output (Final)</div>
+                        <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                          {(() => {
+                            const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                            return rightLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="code-editor-container fade-in">
+                      {renderedCodeLines.map((line, idx) => (
+                        <div key={idx} className="code-line-row">
+                          <span className="code-line-number">{idx + 1}</span>
+                          <span className="code-line-content">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {jobState === 'completed' && finalResult && (
+                    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                      <div className="stats-grid">
+                        <div className="stat-card">
+                          <div className="stat-label">TIME COMPLEXITY</div>
+                          <div className="stat-value">{finalResult.timeComplexity}</div>
+                        </div>
+                        <div className="stat-card">
+                          <div className="stat-label">SPACE COMPLEXITY</div>
+                          <div className="stat-value" style={{ color: 'var(--accent-green)' }}>{finalResult.spaceComplexity}</div>
+                        </div>
+                      </div>
+                      <div className="strategy-box">
+                        <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Strategy Details</strong>
+                        <span style={{ fontSize: '0.78rem' }}>{finalResult.explanation}</span>
+                      </div>
+                    </div>
+                  )}
 
+                  {jobState === 'failed' && (
+                    <div className="workspace-empty-view fade-in">
+                      <AlertTriangle size={32} style={{ color: 'var(--accent-red)' }} />
+                      <h3 style={{ color: 'var(--accent-red)', fontSize: '0.85rem', fontWeight: 700 }}>VERIFICATION FAILED</h3>
+                      <p style={{ fontSize: '0.75rem', marginTop: '4px' }}>{error}</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+        
+        {/* Right Column: Pipeline & Logs */}
+        <section className="panel-right">
+          
+          {/* Card 1: Pipeline Timeline */}
+          <div className="timeline-horizontal">
+            {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
+              const status = getNodeStatusClass(node);
+              const label = node === 'sandbox' ? 'Compiler' : node.charAt(0).toUpperCase() + node.slice(1);
+              const completed = status === 'status-completed';
+              const active = status === 'status-active';
+              
+              return (
+                <div key={node} className={`timeline-step ${completed ? 'completed' : (active ? 'active' : '')}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', borderRadius: '50%', background: completed ? 'var(--accent-green)' : 'var(--bg-card)', border: `1px solid ${completed || active ? 'var(--accent-green)' : 'var(--border-slate)'}` }}>
+                    {completed && <Check size={8} style={{ color: '#000000' }} />}
+                  </div>
+                  <span>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Card 2: Verification Confidence Progress Bar */}
+          <div className="bento-card confidence-card">
+            <div className="confidence-header">
+              <span>VERIFICATION CONFIDENCE</span>
+              <span style={{ color: 'var(--accent-green)' }}>{optPercent}%</span>
+            </div>
+            <div className="confidence-bar-bg">
+              <div className="confidence-bar-fill" style={{ width: `${optPercent}%` }}></div>
+            </div>
+          </div>
+          
+          {/* Card 3: Validation Logs (Terminal style list) */}
+          <div className="bento-card logs-card">
+            <h2 className="card-title">
+              <TerminalIcon size={13} style={{ color: 'var(--accent-green)' }} />
+              Validation Logs
+            </h2>
+            <div className="logs-terminal">
+              {parsedLogs.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
+                  No active logs streamed.
+                </div>
+              ) : (
+                <>
+                  {parsedLogs.map((log, index) => (
+                    <div key={index} className="log-line">
+                      <span className="log-timestamp">[{log.timestamp}]</span>
+                      <span className={`log-status-pill ${log.status}`}>{log.status}</span>
+                      <span className="log-message">{log.message}</span>
+                    </div>
+                  ))}
+                  <div ref={terminalEndRef} />
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setIsTerminalOpen(prev => !prev)}
+              className="btn-trace-footer"
+            >
+              <span>{isTerminalOpen ? 'Hide Full Execution Trace' : 'View Full Execution Trace'}</span>
+            </button>
+          </div>
         </section>
       </main>
 
-      {/* Sliding Execution Terminal Bottom Drawer */}
+      {/* Slide-Up Detailed Execution Terminal Bottom Drawer */}
       <div 
         className={`terminal-widget-drawer ${isTerminalOpen ? 'open' : 'collapsed'}`}
         style={{
@@ -1411,85 +1229,88 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           bottom: 0,
           left: 0,
           right: 0,
-          height: isTerminalOpen ? '120px' : '36px',
-          background: '#0d131f',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          height: isTerminalOpen ? '200px' : '0px',
+          background: '#08090C',
+          borderTop: isTerminalOpen ? '1px solid var(--border-slate)' : 'none',
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.5)'
+          transition: 'all 0.25s ease-in-out',
+          boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.4)',
+          overflow: 'hidden'
         }}
       >
-        <div 
-          className="terminal-header" 
-          onClick={() => setIsTerminalOpen(!isTerminalOpen)}
-          style={{ 
-            cursor: 'pointer', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            padding: '8px 16px',
-            background: '#080d16',
-            userSelect: 'none'
-          }}
-        >
-          <div className="terminal-header-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-            <TerminalIcon size={12} style={{ color: 'var(--accent-blue)' }} />
-            <span>Agent Execution Terminal</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {isTerminalOpen ? '▼ Collapse' : '▲ Expand'}
-            </span>
-            <div className="terminal-header-dots" style={{ display: 'flex', gap: '6px' }}>
-              <span className="terminal-dot red" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
-              <span className="terminal-dot yellow" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-              <span className="terminal-dot green" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
-            </div>
-          </div>
-        </div>
         {isTerminalOpen && (
-          <div 
-            className="terminal-body" 
-            style={{ 
-              flex: 1, 
-              padding: '12px 16px', 
-              overflowY: 'auto', 
-              fontFamily: 'var(--font-mono)', 
-              fontSize: '0.75rem', 
-              lineHeight: '1.5',
-              background: 'rgba(10, 15, 23, 0.95)'
-            }}
-          >
-            {terminalLogs.map((log, index) => {
-              let logClass = 'info';
-              if (log.startsWith('[ERROR]')) logClass = 'error';
-              else if (log.startsWith('[SYSTEM]')) logClass = 'system';
-              else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logClass = 'success';
-
-              return (
-                <div key={index} className={`terminal-log-line ${logClass}`} style={{ marginBottom: '4px' }}>
-                  {log}
+          <>
+            <div 
+              className="terminal-header" 
+              style={{ 
+                padding: '8px 16px',
+                background: 'var(--bg-card)',
+                borderBottom: '1px solid var(--border-slate)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div className="terminal-header-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <TerminalIcon size={12} style={{ color: 'var(--accent-green)' }} />
+                <span>Full Execution Trace Logs</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => setIsTerminalOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer' }}
+                >
+                  Collapse
+                </button>
+                <div className="terminal-header-dots" style={{ display: 'flex', gap: '6px' }}>
+                  <span className="terminal-dot red" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
+                  <span className="terminal-dot yellow" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
+                  <span className="terminal-dot green" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
                 </div>
-              );
-            })}
-            <div ref={terminalEndRef} />
-          </div>
+              </div>
+            </div>
+            <div 
+              className="terminal-body" 
+              style={{ 
+                flex: 1, 
+                padding: '12px 16px', 
+                overflowY: 'auto', 
+                fontFamily: 'var(--font-mono)', 
+                fontSize: '0.72rem', 
+                lineHeight: '1.5',
+                background: 'var(--bg-input)'
+              }}
+            >
+              {terminalLogs.map((log, index) => {
+                let logClass = 'info';
+                if (log.startsWith('[ERROR]')) logClass = 'error';
+                else if (log.startsWith('[SYSTEM]')) logClass = 'system';
+                else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logClass = 'success';
+
+                return (
+                  <div key={index} className={`terminal-log-line ${logClass}`} style={{ marginBottom: '4px' }}>
+                    {log}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Settings Modal Overlay */}
+      {/* Settings Modal (Overlay) */}
       {isSettingsOpen && (
         <div className="settings-modal-overlay fade-in" onClick={() => setIsSettingsOpen(false)}>
           <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Agent System Instructions</h3>
+              <h3 className="modal-title">Agent System Config</h3>
               <button className="modal-close-btn" onClick={() => setIsSettingsOpen(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="prompt-field-group">
-                <label className="prompt-label">Coder Agent System Instructions</label>
+                <label className="prompt-label">Coder Agent Prompt</label>
                 <textarea
                   className="prompt-textarea"
                   value={coderPrompt}
@@ -1497,7 +1318,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 />
               </div>
               <div className="prompt-field-group">
-                <label className="prompt-label">Critic Agent System Instructions</label>
+                <label className="prompt-label">Critic Agent Prompt</label>
                 <textarea
                   className="prompt-textarea"
                   value={criticPrompt}
@@ -1505,7 +1326,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 />
               </div>
               <div className="prompt-field-group">
-                <label className="prompt-label">Refiner Agent System Instructions</label>
+                <label className="prompt-label">Refiner Agent Prompt</label>
                 <textarea
                   className="prompt-textarea"
                   value={refinerPrompt}
@@ -1514,7 +1335,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-start-debate-custom" onClick={() => setIsSettingsOpen(false)} style={{ width: '120px', height: '36px' }}>
+              <button className="btn-verify-primary" onClick={() => setIsSettingsOpen(false)} style={{ width: '100px', height: '32px' }}>
                 Save Config
               </button>
             </div>
@@ -1522,22 +1343,22 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </div>
       )}
 
-      {/* Session Vault Log History Side Drawer */}
+      {/* Session Vault History drawer */}
       {isVaultOpen && (
         <div className="vault-drawer-overlay" onClick={() => setIsVaultOpen(false)}>
           <div className="vault-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="vault-header">
               <span className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <History size={16} style={{ color: 'var(--accent-blue)' }} />
-                Session History Vault
+                <History size={15} style={{ color: 'var(--accent-green)' }} />
+                History Vault
               </span>
               <button className="modal-close-btn" onClick={() => setIsVaultOpen(false)}>×</button>
             </div>
             
             <div className="vault-body">
               {vaultRecords.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', padding: '40px 0' }}>
-                  No completed sessions saved yet.
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '40px 0' }}>
+                  No sessions saved yet.
                 </div>
               ) : (
                 vaultRecords.map((record) => (
@@ -1545,7 +1366,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     key={record.jobId}
                     className="vault-item"
                     onClick={() => handleSelectVaultRecord(record)}
-                    title="Click to restore this session to workspace"
+                    title="Click to restore session"
                   >
                     <span className="vault-item-title">{record.problemDescription}</span>
                     <div className="vault-item-meta">
