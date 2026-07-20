@@ -207,26 +207,115 @@ app.post('/api/debate', async (req, res) => {
     const { problemDescription, problemUrl, maxRounds = 4, jobId, language = 'cpp', coderPrompt, criticPrompt, refinerPrompt } = req.body;
     const maxRoundsClamped = Math.min(Number(maxRounds) || 4, 4);
 
-    let finalProblemDescription = problemDescription;
+    let finalProblemDescription = problemDescription || '';
+    let urlToFetch = '';
+    let extractedTitle = '';
+    let inferRequirements = false;
 
-    if (problemUrl && problemUrl.trim() !== '') {
+    // Helper to strip markdown formatting and sanitize special characters
+    function stripMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '') // Strip invalid control characters
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1') // [text](url) -> text
+        .replace(/^#+\s+/gm, '') // headers
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/__([^_]+)__/g, '$1')
+        .replace(/_([^_]+)_/g, '$1')
+        .replace(/`([^`]+)`/g, '$1')
+        .trim();
+    }
+
+    // Helper to extract LeetCode URL from a string
+    function extractLeetCodeUrl(text) {
+      if (!text) return null;
+      const urlRegex = /(https?:\/\/(?:www\.)?leetcode\.com\/problems\/[a-zA-Z0-9-]+)/i;
+      const match = text.match(urlRegex);
+      return match ? match[1] : null;
+    }
+
+    // Helper to extract Markdown LeetCode link
+    function extractMarkdownLink(text) {
+      if (!text) return null;
+      const mdRegex = /\[([^\]]+)\]\((https?:\/\/(?:www\.)?leetcode\.com\/problems\/[a-zA-Z0-9-]+)\)/i;
+      const match = text.match(mdRegex);
+      if (match) {
+        return { title: match[1], url: match[2] };
+      }
+      return null;
+    }
+
+    // 1. Scan problemUrl and problemDescription for markdown links or plain URLs
+    const urlFromInputUrl = extractLeetCodeUrl(problemUrl);
+    const mdFromInputUrl = extractMarkdownLink(problemUrl);
+
+    const urlFromDesc = extractLeetCodeUrl(problemDescription);
+    const mdFromDesc = extractMarkdownLink(problemDescription);
+
+    if (mdFromInputUrl) {
+      urlToFetch = mdFromInputUrl.url;
+      extractedTitle = mdFromInputUrl.title;
+    } else if (mdFromDesc) {
+      urlToFetch = mdFromDesc.url;
+      extractedTitle = mdFromDesc.title;
+    } else if (urlFromInputUrl) {
+      urlToFetch = urlFromInputUrl;
+    } else if (urlFromDesc) {
+      urlToFetch = urlFromDesc;
+    }
+
+    // 2. Determine final problem description and inference requirements
+    let hasValidFetch = false;
+    if (urlToFetch) {
       try {
-        const fetchedDescription = await fetchLeetCodeProblem(problemUrl);
-        if (problemDescription && problemDescription.trim() !== '') {
-          finalProblemDescription = `${fetchedDescription}\n\nAdditional Input/Context:\n${problemDescription}`;
-        } else {
-          finalProblemDescription = fetchedDescription;
+        console.log(`[API] Attempting to fetch LeetCode problem from extracted URL: ${urlToFetch}`);
+        const fetchedDescription = await fetchLeetCodeProblem(urlToFetch);
+        hasValidFetch = true;
+        
+        let combined = fetchedDescription;
+        if (extractedTitle) {
+          combined = `Title: ${stripMarkdown(extractedTitle)}\n\n${combined}`;
         }
+        
+        // Clean problem description inputs
+        const cleanDesc = stripMarkdown(problemDescription);
+        const cleanUrlInput = stripMarkdown(problemUrl);
+
+        // Include any additional contextual inputs provided by the user
+        let extraContext = '';
+        if (cleanDesc && !cleanDesc.includes(urlToFetch)) {
+          extraContext += `\n\nAdditional Description Context:\n${cleanDesc}`;
+        }
+        if (cleanUrlInput && !cleanUrlInput.includes(urlToFetch)) {
+          extraContext += `\n\nAdditional Input Context:\n${cleanUrlInput}`;
+        }
+        finalProblemDescription = combined + extraContext;
       } catch (err) {
-        console.warn('[API] LeetCode URL fetching failed, checking fallback:', err.message);
-        if (!problemDescription || problemDescription.trim() === '') {
-          return res.status(400).json({ error: `Failed to fetch LeetCode problem: ${err.message}` });
-        }
+        console.warn('[API] Extracted LeetCode URL fetching failed, falling back to text inputs:', err.message);
       }
     }
 
+    if (!hasValidFetch) {
+      // If we couldn't fetch from LeetCode GraphQL, we strip markdown and use raw input text directly
+      const cleanDesc = stripMarkdown(problemDescription);
+      const cleanUrlInput = stripMarkdown(problemUrl);
+      
+      let combinedText = '';
+      if (cleanUrlInput) {
+        combinedText += cleanUrlInput;
+      }
+      if (cleanDesc) {
+        combinedText += (combinedText ? '\n\n' : '') + cleanDesc;
+      }
+      
+      finalProblemDescription = combinedText;
+      inferRequirements = true;
+    }
+
+    // 3. Ensure we have at least some input description text
     if (!finalProblemDescription || finalProblemDescription.trim() === '') {
-      return res.status(400).json({ error: 'Problem description is required.' });
+      return res.status(400).json({ error: 'Problem title or description is required.' });
     }
 
     // Extract sample cases and append them explicitly to the context
@@ -245,11 +334,11 @@ app.post('/api/debate', async (req, res) => {
     // Add debate job to queue with a custom client-generated jobId
     const job = await debateQueue.add(
       'debateJob',
-      { problemDescription: finalProblemDescription, maxRounds: maxRoundsClamped, language, coderPrompt, criticPrompt, refinerPrompt },
+      { problemDescription: finalProblemDescription, maxRounds: maxRoundsClamped, language, coderPrompt, criticPrompt, refinerPrompt, inferRequirements },
       { jobId } // Instructs BullMQ to use the client-generated ID
     );
 
-    console.log(`[API] Enqueued Job ${job.id} for debate.`);
+    console.log(`[API] Enqueued Job ${job.id} for debate. (inferRequirements: ${inferRequirements})`);
     return res.status(202).json({ jobId: job.id });
 
   } catch (err) {

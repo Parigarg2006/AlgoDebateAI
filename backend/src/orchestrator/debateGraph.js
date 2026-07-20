@@ -33,7 +33,8 @@ export const DebateState = Annotation.Root({
   coderPrompt: Annotation({ reducer: (x, y) => y }),
   criticPrompt: Annotation({ reducer: (x, y) => y }),
   refinerPrompt: Annotation({ reducer: (x, y) => y }),
-  language: Annotation({ reducer: (x, y) => y, default: () => 'cpp' })
+  language: Annotation({ reducer: (x, y) => y, default: () => 'cpp' }),
+  inferRequirements: Annotation({ reducer: (x, y) => y, default: () => false })
 });
 
 /**
@@ -47,7 +48,12 @@ async function coderNode(state) {
     await state.onProgress({ node: 'coder', round: state.currentRound });
   }
 
-  const draft = await generateDraft(state.problemDescription, state.criticismHistory, state.coderPrompt, lang);
+  let problemDescForAgent = state.problemDescription;
+  if (state.inferRequirements) {
+    problemDescForAgent += `\n\n[INSTRUCTION] The exact LeetCode problem description was not fetched. You MUST infer the LeetCode problem requirements, description, input/output formats, constraints, and standard edge cases directly from the provided title/text: "${state.problemDescription}". Draw from your knowledge of this problem (e.g. LeetCode titles/numbers) to reconstruct the requirements accurately and write an optimal solver for it.`;
+  }
+
+  const draft = await generateDraft(problemDescForAgent, state.criticismHistory, state.coderPrompt, lang);
   
   if (draft.reasoning) {
     console.log(`[Node: Coder] Chain-of-Thought Reasoning:\n${draft.reasoning}\n`);
