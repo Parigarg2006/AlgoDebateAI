@@ -3,6 +3,7 @@ import { generateDraft, synthesizeTestCases } from '../agents/coderAgent.js';
 import { executeCpp } from '../executor/cppExecutor.js';
 import { critiqueCode } from '../agents/criticAgent.js';
 import { refineCode } from '../agents/refinerAgent.js';
+import { extractSampleTestCases } from '../utils/parser.js';
 
 /**
  * 1. Define the LangGraph State Schema.
@@ -52,18 +53,39 @@ async function coderNode(state) {
     console.log(`[Node: Coder] Chain-of-Thought Reasoning:\n${draft.reasoning}\n`);
   }
 
-  let testCases = draft.testCases;
+  let testCases = draft.testCases || [];
+  
+  // Extract sample test cases from problemDescription
+  const sampleCases = extractSampleTestCases(state.problemDescription);
+  if (sampleCases.length > 0) {
+    console.log(`[Node: Coder] Extracted ${sampleCases.length} sample test cases from description.`);
+  }
+
   if (state.currentRound === 1) {
     console.log('[Node: Coder] Synthesizing 5 adversarial edge-cases dynamically...');
     const synthesized = await synthesizeTestCases(state.problemDescription, lang);
     if (synthesized && synthesized.length > 0) {
-      testCases = synthesized;
+      testCases = [...sampleCases, ...synthesized];
+    } else {
+      testCases = [...sampleCases, ...testCases];
+    }
+  } else {
+    testCases = [...sampleCases, ...testCases];
+  }
+
+  // Deduplicate test cases by input to keep it clean
+  const seenInputs = new Set();
+  const dedupedCases = [];
+  for (const tc of testCases) {
+    if (tc && tc.input && !seenInputs.has(tc.input)) {
+      seenInputs.add(tc.input);
+      dedupedCases.push(tc);
     }
   }
 
   return {
     code: draft.code,
-    testCases: testCases
+    testCases: dedupedCases
   };
 }
 

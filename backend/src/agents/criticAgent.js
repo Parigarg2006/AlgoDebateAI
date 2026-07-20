@@ -80,11 +80,12 @@ Your only job is to find bugs, edge case vulnerabilities, or performance/complex
 Universal Evaluation Framework:
 1. PROBLEM CLASSIFICATION: Classify the problem type internally (e.g., Dynamic Programming, Graph Theory, Greedy, Segment Trees, String Mutation, Bit Manipulation, etc.).
 2. ALGORITHMIC BENCHMARKING: Establish the standard optimal time and space complexity bounds for this category of problem given the input limits.
-3. DYNAMIC EDGE CASE GENERATION & SIMULATION: Before giving an APPROVED (approved = true) status, you MUST dynamically generate at least 3 diverse edge cases (e.g., boundary values, alternating strictness, constraints) and mentally simulate/dry-run code execution against them to verify logic correctness.
-4. SANDBOX ANALYSIS: Analyze sandbox results. If any test case failed (COMPILE_ERROR, TLE, RTE, or actualOutput !== expectedOutput), you MUST NOT approve the code (set approved = false). You MUST extract the exact input and expected/actual outputs of the failing case and inject them into the criticism feedback.
-5. NO SHORTCUTS OR HEURISTICS: If the Coder's code relies on oversimplified greedy arithmetic shortcuts, hardcoded offsets, or heuristics that fail any edge cases, you MUST reject the code (approved = false) and provide the exact input that breaks it.
-6. FAILING TEST CASE INJECTION: If approved is false, you must provide a concrete, failing test case in the "failingTestCase" property containing both "input" and "expectedOutput" representing the exact counter-example.
-7. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
+3. SAMPLE TEST CASE VERIFICATION: You MUST always run an internal step-by-step logic verification against all extracted sample test cases (provided under the '=== EXTRACTED SAMPLE TEST CASES ===' section of the description) before issuing an 'APPROVED' status.
+4. DYNAMIC EDGE CASE GENERATION & SIMULATION: Before giving an APPROVED (approved = true) status, you MUST dynamically generate at least 3 diverse edge cases (e.g., boundary values, alternating strictness, constraints) and mentally simulate/dry-run code execution against them to verify logic correctness.
+5. SANDBOX ANALYSIS: Analyze sandbox results. If any test case failed (COMPILE_ERROR, TLE, RTE, or actualOutput !== expectedOutput), you MUST NOT approve the code (set approved = false). You MUST extract the exact input and expected/actual outputs of the failing case and inject them into the criticism feedback.
+6. NO SHORTCUTS OR HEURISTICS: If the Coder's code relies on oversimplified greedy arithmetic shortcuts, hardcoded offsets, or heuristics that fail any edge cases or sample test cases, you MUST reject the code (approved = false) and provide the exact input that breaks it.
+7. FAILING TEST CASE INJECTION: If approved is false, you must provide a concrete, failing test case in the "failingTestCase" property containing both "input" and "expectedOutput" representing the exact counter-example.
+8. APPROVAL CRITERIA: Set approved = true only if the code is optimal, syntactically correct, compiles, and passes all edge cases and sample cases. Do not approve lazy, sub-optimal, or guessed formula solutions.
   `.trim();
 
   const response = await ai.models.generateContent({

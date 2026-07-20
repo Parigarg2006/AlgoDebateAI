@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { debateQueue, debateWorker } from './orchestrator/queue.js';
+import { extractSampleTestCases } from './utils/parser.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -226,6 +227,15 @@ app.post('/api/debate', async (req, res) => {
 
     if (!finalProblemDescription || finalProblemDescription.trim() === '') {
       return res.status(400).json({ error: 'Problem description is required.' });
+    }
+
+    // Extract sample cases and append them explicitly to the context
+    const sampleCases = extractSampleTestCases(finalProblemDescription);
+    if (sampleCases.length > 0) {
+      finalProblemDescription += `\n\n=== EXTRACTED SAMPLE TEST CASES ===\n`;
+      sampleCases.forEach((tc, idx) => {
+        finalProblemDescription += `Sample ${idx + 1}:\nInput: ${tc.input}\nExpected Output: ${tc.expectedOutput}\n\n`;
+      });
     }
 
     if (!jobId) {
