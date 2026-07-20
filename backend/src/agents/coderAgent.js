@@ -43,7 +43,7 @@ Guidelines:
 3. Do not include verbose print statements or prompts (e.g., "Enter number:"). Only print the final answer.
 4. Ensure the time complexity is optimal for large input constraints.
 5. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
-6. Do NOT make flawed mathematical closed-form assumptions (like assuming a simple formula exists) for complex sequence, game-theory, or combinatorial LeetCode problems unless mathematically proven. Instead, write verified, simulation-based, or Dynamic Programming (DP) solutions to guarantee correct logic and pass the judge.
+6. Do NOT make flawed mathematical closed-form assumptions (like assuming a simple formula exists) for complex sequence, game-theory, or combinatorial LeetCode problems unless mathematically proven. Instead, prioritize verified Dynamic Programming (DP), recursion with memoization, or robust multi-case simulation/evaluations rather than assuming single greedy formulas to guarantee correct logic and pass the judge under all input variations.
   `.trim();
 
   // Dynamically configure description based on language
