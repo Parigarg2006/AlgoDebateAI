@@ -35,6 +35,7 @@ const socket = io('http://localhost:5000', {
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [toastMessage, setToastMessage] = useState(null);
   
   // Input State
   const [problemDescription, setProblemDescription] = useState('');
@@ -173,6 +174,30 @@ function App() {
         }
         return;
       }
+      
+      if (step.message) {
+        logs.push(`[ROUND ${rd}] ${step.message}`);
+        // Support detail logging alongside message
+        if (step.node === 'critic-done') {
+          if (step.criticApproved) {
+            logs.push(`[ROUND ${rd}] [CRITIC] VERDICT: APPROVED. Code satisfies correctness & complexity.`);
+          } else {
+            logs.push(`[ROUND ${rd}] [CRITIC] VERDICT: REJECTED. Found logical or efficiency bugs.`);
+            if (step.sandboxResults && step.sandboxResults.length > 0) {
+              const compileErr = step.sandboxResults.find(t => t.status === 'COMPILE_ERROR');
+              if (compileErr) {
+                logs.push(`[ROUND ${rd}] [SANDBOX] Compilation failed: ${compileErr.error.substring(0, 80)}...`);
+              } else {
+                const failedCases = step.sandboxResults.filter(t => t.status !== 'PASSED');
+                logs.push(`[ROUND ${rd}] [SANDBOX] Executed test cases. Failed: ${failedCases.length}/${step.sandboxResults.length}`);
+              }
+            }
+            logs.push(`[ROUND ${rd}] [CRITIC] Feedback dispatched to Coder for refactoring.`);
+          }
+        }
+        return;
+      }
+
       if (step.node === 'coder') {
         logs.push(`[ROUND ${rd}] [CODER] Coder Agent triggered. Drafting ${language.toUpperCase()} solution...`);
       } else if (step.node === 'sandbox') {
@@ -230,6 +255,15 @@ function App() {
       socket.off('disconnect', onDisconnect);
     };
   }, []);
+
+  // Toast error listener observer
+  useEffect(() => {
+    if (error && (error.includes('LLM API key') || error.includes('network') || error.includes('Execution failed') || error.includes('Unable to fetch'))) {
+      setToastMessage('Execution failed: Check LLM API key / network');
+      const timer = setTimeout(() => setToastMessage(null), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Play synthetic ticks
   useEffect(() => {
@@ -792,6 +826,43 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
   return (
     <div className="app-container" ref={containerRef}>
+      {toastMessage && (
+        <div className="toast-alert fade-in" style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          backgroundColor: '#ef4444',
+          color: '#ffffff',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.4)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <AlertTriangle size={16} />
+          <span>{toastMessage}</span>
+          <button 
+            onClick={() => setToastMessage(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ffffff',
+              marginLeft: '10px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              opacity: 0.8
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Top Navbar Header */}
       <header className="app-header">
         <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

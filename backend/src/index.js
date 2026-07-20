@@ -278,9 +278,33 @@ debateWorker.on('completed', (job, result) => {
 debateWorker.on('failed', (job, err) => {
   console.error(`[Worker] Job ${job ? job.id : 'unknown'} failed:`, err);
   if (job) {
-    io.emit(`job-failed:${job.id}`, { error: err.message });
+    let errorMsg = err.message || String(err);
+    if (errorMsg.includes('API key') || errorMsg.includes('API_KEY') || errorMsg.includes('apiKey') || errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('Timeout') || errorMsg.includes('timeout')) {
+      errorMsg = 'Execution failed: Check LLM API key / network';
+    }
+    io.emit(`job-failed:${job.id}`, { error: errorMsg });
   }
 });
+
+/**
+ * Helper to wrap a promise in a timeout limit
+ */
+function withTimeout(promise, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`LeetCode GraphQL request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    promise
+      .then(res => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch(err => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
 
 // ----------------------------------------------------
 // EXPRESS HTTP API ROUTES
@@ -357,16 +381,17 @@ app.post('/api/debate', async (req, res) => {
     // 2. Determine final problem description and inference requirements
     let hasValidFetch = false;
     if (problemUrl && problemUrl.trim() !== '' && !urlToFetch) {
-      console.error('[API] Invalid LeetCode URL supplied:', problemUrl);
-      const errorMsg = "Unable to fetch problem signature. Please paste problem text directly.";
-      io.emit(`job-failed:${jobId}`, { error: errorMsg });
-      return res.status(400).json({ error: errorMsg });
+      console.warn('[API] Invalid LeetCode URL supplied:', problemUrl, '- switching to default template.');
+      inferRequirements = true;
+      const slug = problemUrl.match(/problems\/([^/]+)/)?.[1] || 'algorithm-problem';
+      const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      finalProblemDescription = `Title: ${formattedTitle}\n\nProblem URL: ${problemUrl}\n\nPlease write a solution for the LeetCode problem "${formattedTitle}".`;
     }
 
     if (urlToFetch) {
       try {
-        console.log(`[API] Attempting to fetch LeetCode problem from extracted URL: ${urlToFetch}`);
-        const fetchedDescription = await fetchLeetCodeProblem(urlToFetch);
+        console.log(`[API] Attempting to fetch LeetCode problem from extracted URL: ${urlToFetch} with 3s timeout`);
+        const fetchedDescription = await withTimeout(fetchLeetCodeProblem(urlToFetch), 3000);
         hasValidFetch = true;
         
         let combined = fetchedDescription;
@@ -388,10 +413,23 @@ app.post('/api/debate', async (req, res) => {
         }
         finalProblemDescription = combined + extraContext;
       } catch (err) {
-        console.error('[API] LeetCode URL fetching failed:', err.message);
-        const errorMsg = "Unable to fetch problem signature. Please paste problem text directly.";
-        io.emit(`job-failed:${jobId}`, { error: errorMsg });
-        return res.status(400).json({ error: errorMsg });
+        console.warn('GraphQL fetch failed, switching to default template:', err.message);
+        inferRequirements = true;
+        
+        const slug = urlToFetch.match(/problems\/([^/]+)/)?.[1] || 'algorithm-problem';
+        const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        
+        const cleanDesc = stripMarkdown(problemDescription);
+        const cleanUrlInput = stripMarkdown(problemUrl);
+        let extraContext = '';
+        if (cleanDesc && !cleanDesc.includes(urlToFetch)) {
+          extraContext += `\n\nAdditional Description Context:\n${cleanDesc}`;
+        }
+        if (cleanUrlInput && !cleanUrlInput.includes(urlToFetch)) {
+          extraContext += `\n\nAdditional Input Context:\n${cleanUrlInput}`;
+        }
+        
+        finalProblemDescription = `Title: ${formattedTitle}\n\nProblem Description:\nPlease write a solution for the LeetCode problem "${formattedTitle}".\n\nProblem URL: ${urlToFetch}${extraContext}`;
       }
     }
 

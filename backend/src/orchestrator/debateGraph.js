@@ -65,7 +65,7 @@ async function coderNode(state) {
   console.log(`\n[Node: Coder] Round ${state.currentRound} drafting (${lang.toUpperCase()})...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'coder', round: state.currentRound });
+    await state.onProgress({ node: 'coder', round: state.currentRound, message: '[CODER] Coder Agent generating solution...' });
   }
 
   let problemDescForAgent = state.problemDescription;
@@ -79,6 +79,10 @@ async function coderNode(state) {
     15000,
     "Coder Agent code generation"
   );
+
+  if (state.onProgress) {
+    await state.onProgress({ node: 'coder', round: state.currentRound, code: draft.code, message: '[CODER] Coder Agent finished generating solution.' });
+  }
   
   if (draft.reasoning) {
     console.log(`[Node: Coder] Chain-of-Thought Reasoning:\n${draft.reasoning}\n`);
@@ -147,10 +151,14 @@ async function sandboxNode(state) {
   console.log(`[Node: Sandbox] Compiling and running tests in ${lang.toUpperCase()}...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'sandbox', round: state.currentRound, code: state.code });
+    await state.onProgress({ node: 'sandbox', round: state.currentRound, code: state.code, message: `[SANDBOX] Compiler executing code in sandbox (${lang.toUpperCase()})...` });
   }
 
   const execution = await executeCpp(state.code, state.testCases, lang, 2000, state.problemDescription);
+
+  if (state.onProgress) {
+    await state.onProgress({ node: 'sandbox', round: state.currentRound, code: state.code, message: '[SANDBOX] Compiler finished executing code.' });
+  }
   
   let results = [];
   if (execution.success) {
@@ -182,7 +190,7 @@ async function criticNode(state) {
   console.log(`[Node: Critic] Reviewing solution logic in ${lang.toUpperCase()}...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code });
+    await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code, message: '[CRITIC] Critic Agent reviewing solution logic...' });
   }
 
   const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, state.criticPrompt, lang);
@@ -208,7 +216,8 @@ async function criticNode(state) {
       code: state.code,
       sandboxResults: state.sandboxResults,
       criticApproved: approved,
-      criticReasoning: reasoning
+      criticReasoning: reasoning,
+      message: '[CRITIC] Critic Agent finished review.'
     });
   }
 
@@ -263,10 +272,15 @@ async function refinerNode(state) {
   console.log(`\n[Node: Refiner] Polishing final ${lang.toUpperCase()} solution...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'refiner', round: state.currentRound });
+    await state.onProgress({ node: 'refiner', round: state.currentRound, message: '[REFINER] Refiner Agent polishing code...' });
   }
 
   const refined = await refineCode(state.problemDescription, state.code, state.criticismHistory, state.refinerPrompt, lang);
+  
+  if (state.onProgress) {
+    await state.onProgress({ node: 'refiner', round: state.currentRound, message: '[REFINER] Refiner Agent finished polishing code.' });
+  }
+  
   return { finalResult: refined };
 }
 
