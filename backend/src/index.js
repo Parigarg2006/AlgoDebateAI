@@ -99,12 +99,16 @@ impl Solution {
 `;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
       },
+      signal: controller.signal,
       body: JSON.stringify({
         query: `
           query questionData($titleSlug: String!) {
@@ -122,6 +126,8 @@ impl Solution {
         variables: { titleSlug: slug }
       })
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`LeetCode API returned status ${response.status}`);
@@ -175,7 +181,7 @@ impl Solution {
     return `Title: ${title}\n\nProblem Description:\n${cleanContent}${snippetsText}`;
   } catch (error) {
     console.error('[LeetCode Parser] Error fetching problem:', error);
-    throw new Error('Unable to fetch problem signature');
+    throw new Error('Unable to fetch problem signature. Please paste problem text directly.');
   }
 }
 
@@ -352,7 +358,9 @@ app.post('/api/debate', async (req, res) => {
     let hasValidFetch = false;
     if (problemUrl && problemUrl.trim() !== '' && !urlToFetch) {
       console.error('[API] Invalid LeetCode URL supplied:', problemUrl);
-      return res.status(400).json({ error: "Unable to fetch problem signature" });
+      const errorMsg = "Unable to fetch problem signature. Please paste problem text directly.";
+      io.emit(`job-failed:${jobId}`, { error: errorMsg });
+      return res.status(400).json({ error: errorMsg });
     }
 
     if (urlToFetch) {
@@ -381,7 +389,9 @@ app.post('/api/debate', async (req, res) => {
         finalProblemDescription = combined + extraContext;
       } catch (err) {
         console.error('[API] LeetCode URL fetching failed:', err.message);
-        return res.status(400).json({ error: "Unable to fetch problem signature" });
+        const errorMsg = "Unable to fetch problem signature. Please paste problem text directly.";
+        io.emit(`job-failed:${jobId}`, { error: errorMsg });
+        return res.status(400).json({ error: errorMsg });
       }
     }
 

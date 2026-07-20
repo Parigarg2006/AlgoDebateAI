@@ -38,6 +38,26 @@ export const DebateState = Annotation.Root({
 });
 
 /**
+ * Helper to wrap a promise in a timeout race
+ */
+async function executeWithTimeout(promise, timeoutMs, name) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout: ${name} execution exceeded ${timeoutMs / 1000} seconds limit.`));
+    }, timeoutMs);
+  });
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+/**
  * 2. Define Node: Coder Agent
  */
 async function coderNode(state) {
@@ -53,7 +73,12 @@ async function coderNode(state) {
     problemDescForAgent += `\n\n[INSTRUCTION] The exact LeetCode problem description was not fetched. You MUST infer the LeetCode problem requirements, description, input/output formats, constraints, and standard edge cases directly from the provided title/text: "${state.problemDescription}". Draw from your knowledge of this problem (e.g. LeetCode titles/numbers) to reconstruct the requirements accurately and write an optimal solver for it.`;
   }
 
-  const draft = await generateDraft(problemDescForAgent, state.criticismHistory, state.coderPrompt, lang);
+  // Set a max timeout of 15 seconds for Coder Agent execution
+  const draft = await executeWithTimeout(
+    generateDraft(problemDescForAgent, state.criticismHistory, state.coderPrompt, lang),
+    15000,
+    "Coder Agent code generation"
+  );
   
   if (draft.reasoning) {
     console.log(`[Node: Coder] Chain-of-Thought Reasoning:\n${draft.reasoning}\n`);
@@ -80,7 +105,15 @@ async function coderNode(state) {
 
   if (state.currentRound === 1) {
     console.log('[Node: Coder] Synthesizing 5 adversarial edge-cases dynamically...');
-    const synthesized = await synthesizeTestCases(state.problemDescription, lang);
+    const synthesized = await executeWithTimeout(
+      synthesizeTestCases(state.problemDescription, lang),
+      15000,
+      "Coder Agent test case synthesis"
+    ).catch(err => {
+      console.warn(`[Node: Coder] Test case synthesis timed out or failed, falling back to draft cases:`, err.message);
+      return [];
+    });
+
     if (synthesized && synthesized.length > 0) {
       testCases = [...alternatingBenchmarks, ...sampleCases, ...synthesized];
     } else {
