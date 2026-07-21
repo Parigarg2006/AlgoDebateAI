@@ -95,6 +95,7 @@ function App() {
   const startTimeRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const terminalEndRef = useRef(null);
+  const terminalContainerRef = useRef(null);
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
@@ -322,10 +323,10 @@ function App() {
     return (elapsedTime / 1000).toFixed(1) + 's';
   }, [elapsedTime]);
 
-  // Auto-scroll logs
+  // Auto-scroll logs strictly within the container (isolating scroll to logs box only)
   useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
     }
   }, [terminalLogs]);
 
@@ -1528,7 +1529,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto', padding: '8px 12px' }}>
+            <div ref={terminalContainerRef} className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto', padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
