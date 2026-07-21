@@ -1631,11 +1631,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               onClick={() => setIsTerminalOpen(prev => !prev)}
               className="btn-trace-footer"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Terminal size={13} style={{ color: 'var(--accent-green)' }} />
-                <span>View Full Execution Trace</span>
-              </div>
-              <ChevronRight size={14} style={{ opacity: 0.6 }} />
+              <Terminal size={16} className="text-emerald-400" style={{ marginRight: '8px' }} />
+              <span className="text-emerald-400 font-semibold tracking-wide" style={{ fontSize: '0.875rem' }}>View Full Execution Trace</span>
+              <ChevronRight size={16} className="text-emerald-400" style={{ marginLeft: 'auto' }} />
             </button>
           </div>
         </section>
