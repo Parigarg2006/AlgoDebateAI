@@ -1095,16 +1095,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 10px;
+  padding: 10px 12px 14px 12px;
   width: 100%;
 }
 
 .mission-path-line {
   position: absolute;
-  top: 25px; /* middle of 26px circle node */
-  left: 24px;
-  right: 24px;
-  height: 2px;
+  top: 34px; /* middle of 48px circle node (padding top is 10px, so 10px + 24px = 34px) */
+  left: 36px;
+  right: 36px;
+  height: 3px;
   background-color: var(--border-slate);
   z-index: 0;
 }
@@ -1115,7 +1115,7 @@
   left: 0;
   height: 100%;
   background-color: var(--accent-green);
-  box-shadow: 0 0 6px var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
   transition: width 0.3s ease-in-out;
 }
 
@@ -1123,52 +1123,54 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 1;
   position: relative;
 }
 
 .mission-circle {
-  width: 26px;
-  height: 26px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-color: var(--bg-card);
-  border: 2px solid var(--border-slate);
+  border: 2.5px solid var(--border-slate);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 }
 
 .mission-label {
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #cbd5e1;
   text-transform: uppercase;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.05em;
 }
 
 .mission-node-wrapper.completed .mission-circle {
-  background-color: var(--accent-green);
-  border-color: var(--accent-green);
-  color: #000000;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  border-color: #34d399 !important;
+  background-color: rgba(2, 44, 34, 0.8) !important;
+  color: #34d399 !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2), 0 0 14px rgba(16, 185, 129, 0.45) !important;
 }
 
 .mission-node-wrapper.completed .mission-label {
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .mission-node-wrapper.active .mission-circle {
-  border-color: var(--accent-green);
-  color: var(--accent-green);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  border-color: #34d399 !important;
+  background-color: rgba(2, 44, 34, 0.8) !important;
+  color: #34d399 !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2), 0 0 14px rgba(16, 185, 129, 0.45) !important;
 }
 
 .mission-node-wrapper.active .mission-label {
-  color: var(--accent-green);
+  color: #ffffff;
 }
+
 
 /* Custom styling for the arena card to increase horizontal padding */
 .bento-card.arena-card {

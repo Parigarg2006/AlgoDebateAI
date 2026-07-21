@@ -791,10 +791,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         completedCount++;
       }
     }
-    if (completedCount === 0) return '0%';
-    if (completedCount === 1) return '16%';
-    if (completedCount === 2) return '50%';
-    if (completedCount === 3) return '83%';
+    if (completedCount === 0 || completedCount === 1) return '0%';
+    if (completedCount === 2) return '33.33%';
+    if (completedCount === 3) return '66.66%';
     return '100%';
   };
 
@@ -1142,7 +1141,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {/* Stage 1: Input */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(1)}`}>
                 <div className="mission-circle">
-                  <FileText size={12} />
+                  <FileText size={18} />
                 </div>
                 <span className="mission-label">Input</span>
               </div>
@@ -1150,7 +1149,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {/* Stage 2: Process */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(2)}`}>
                 <div className="mission-circle">
-                  <Settings size={12} className={getMissionNodeStatus(2) === 'active' ? 'animate-spin' : ''} />
+                  <Cpu size={18} className={getMissionNodeStatus(2) === 'active' ? 'animate-spin' : ''} />
                 </div>
                 <span className="mission-label">Process</span>
               </div>
@@ -1158,7 +1157,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {/* Stage 3: Validate */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(3)}`}>
                 <div className="mission-circle">
-                  <CheckCircle2 size={12} />
+                  <ShieldCheck size={18} />
                 </div>
                 <span className="mission-label">Validate</span>
               </div>
@@ -1166,7 +1165,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {/* Stage 4: Complete */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(4)}`}>
                 <div className="mission-circle">
-                  <Check size={12} />
+                  <Check size={18} />
                 </div>
                 <span className="mission-label">Complete</span>
               </div>
