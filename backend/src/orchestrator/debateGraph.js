@@ -104,6 +104,19 @@ async function coderNode(state) {
     problemDescForAgent += `\n\n[INSTRUCTION] The exact LeetCode problem description was not fetched. If only a URL slug or brief description is provided, infer the LeetCode problem, generate the standard C++ class Solution structure, and write the optimal solution. You MUST infer the LeetCode problem requirements, description, input/output formats, constraints, and standard edge cases directly from the provided title/text: "${state.problemDescription}". Draw from your knowledge of this problem (e.g. LeetCode titles/numbers) to reconstruct the requirements accurately and write an optimal solver for it.`;
   }
 
+  const coderInstructions = `
+[STRICT LEETCODE FUNCTION & TYPE EXTRACTION]
+Before drafting any code, you MUST analyze the problem slug/description to extract:
+- Exact function name expected by LeetCode (e.g. \`trapRainWater\`, \`maxAlternatingSum\`, \`twoSum\`).
+- Exact parameter list and return type.
+- Constraints (e.g., $10^5$ elements require $O(N)$ or $O(N \\log N)$ and \`long long\` to prevent overflow).
+Always map standard problem slugs to their exact standard LeetCode C++ class method names.
+
+[EXAMPLE & TEST CASE DRY-RUN]
+Extract Example 1, Example 2, and hidden edge cases from the problem statement. Include these test cases as internal assertion tests in your sandbox compiler run. Make sure your C++ code includes all necessary standard libraries (e.g. <vector>, <queue>, <algorithm>, <iostream>, <string>, etc.) and uses the 'std' namespace correctly.
+`;
+  problemDescForAgent += `\n\n${coderInstructions}`;
+
   if (/trapping-rain-water-ii/i.test(state.problemDescription) || /trap\s*Rain\s*Water/i.test(state.problemDescription)) {
     problemDescForAgent += `\n\n[CRITICAL INSTRUCTION] Provide the EXACT LeetCode signature (e.g., \`int trapRainWater(vector<vector<int>>& heightMap)\`) and write the full working Min-Heap Priority Queue BFS implementation. Do not output comments or stub placeholders, you MUST generate the complete algorithm logic.`;
   }
@@ -227,8 +240,14 @@ async function criticNode(state) {
   if (state.onProgress) {
     await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code, message: '[CRITIC] Critic Agent reviewing solution logic...' });
   }
+  
+  const criticPromptWithInstructions = (state.criticPrompt || '') + `
+[STRICT CRITIC RULES]
+Simulate the generated code against Example 1, Example 2, and extreme edge cases (min/max constraints, empty inputs, duplicate values). Reject the code (approved = false) if it fails ANY test case or uses incorrect function signatures.
+Only approve if the C++ code successfully compiles and passes all extracted example test cases. If there are sandbox failures, you must set approved = false.
+`;
 
-  const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, state.criticPrompt, lang);
+  const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, criticPromptWithInstructions, lang);
   
   let approved = critique.approved;
   let reasoning = critique.reasoning;
@@ -240,11 +259,11 @@ async function criticNode(state) {
     reasoning = `[CRITIC REJECTION] Code generated is empty or lacks actual logic. You MUST generate the complete algorithm implementation (including headers, variable declarations, loops, and conditions). Do not output placeholder templates or return 0.\n` + reasoning;
   }
 
-  // Enforce Self-Correction Loop: If sandbox execution failed, force approved to false
-  const sandboxFailed = state.sandboxResults && state.sandboxResults.some(r => r.status !== 'PASS');
+  // Enforce Self-Correction Loop: If sandbox execution failed or is empty, force approved to false
+  const sandboxFailed = !state.sandboxResults || state.sandboxResults.length === 0 || state.sandboxResults.some(r => r.status !== 'PASS');
   if (sandboxFailed) {
     approved = false;
-    reasoning = `[SANDBOX FAILURE] The code did not pass all sandbox test cases.\n` + reasoning;
+    reasoning = `[SANDBOX FAILURE] The code did not pass all sandbox test cases or failed to compile.\n` + reasoning;
   }
 
   console.log(`[Node: Critic] Approved: ${approved}`);
