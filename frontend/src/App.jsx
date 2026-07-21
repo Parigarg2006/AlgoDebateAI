@@ -1480,7 +1480,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         <section className="panel-right">
           
           {/* Card 1: AI AGENT BATTLE ARENA */}
-          <div className="bento-card">
+          <div className="bento-card arena-card">
             <h2 className="card-title">
               <GitFork size={13} />
               AI AGENT BATTLE ARENA
