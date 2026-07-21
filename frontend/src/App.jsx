@@ -898,8 +898,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       <header className="app-header">
         <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Network size={22} style={{ color: 'var(--accent-green)' }} />
-          <span className="logo-title" style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px' }}>
-            AlgoDebate
+          <span className="logo-title" style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center' }}>
+            AlgoDebate <span style={{ color: 'var(--accent-green)', fontWeight: 'bold', marginLeft: '6px', textShadow: '0 0 10px rgba(16, 185, 129, 0.5)' }}>AI</span>
           </span>
         </div>
         
