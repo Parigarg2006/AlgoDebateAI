@@ -109,9 +109,103 @@ class Solution {
   }
 
   const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  const methodName = slugToCamelCase(slug);
+  
+  let snippetsText = '';
+  if (slug === 'trapping-rain-water-ii') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        
+    }
+};
 
-  const snippetsText = `
+Python:
+class Solution:
+    def trapRainWater(self, heightMap: List[List[int]]) -> int:
+        pass
+
+Java:
+class Solution {
+    public int trapRainWater(int[][] heightMap) {
+        return 0;
+    }
+}
+`;
+  } else if (slug === 'maximum-alternating-subsequence-sum' || slug === 'maximum-alternating-sum') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    long long maxAlternatingSum(vector<int>& nums) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def maxAlternatingSum(self, nums: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public long maxAlternatingSum(int[] nums) {
+        return 0;
+    }
+}
+`;
+  } else if (slug === 'concatenated-words') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    vector<string> findAllConcatenatedWordsInADict(vector<string>& words) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def findAllConcatenatedWordsInADict(self, words: List[str]) -> List[str]:
+        pass
+
+Java:
+class Solution {
+    public List<String> findAllConcatenatedWordsInADict(String[] words) {
+        return new ArrayList<>();
+    }
+}
+`;
+  } else if (slug === 'minimum-cost-to-hire-k-workers') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    double mincostToHireWorkers(vector<int>& quality, vector<int>& wage, int k) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def mincostToHireWorkers(self, quality: List[int], wage: List[int], k: int) -> float:
+        pass
+
+Java:
+class Solution {
+    public double mincostToHireWorkers(int[] quality, int[] wage, int k) {
+        return 0.0;
+    }
+}
+`;
+  } else {
+    const methodName = slugToCamelCase(slug);
+    snippetsText = `
 === EXPORTED STARTER TEMPLATES ===
 C++:
 class Solution {
@@ -133,6 +227,7 @@ class Solution {
     }
 }
 `;
+  }
 
   return `Title: LeetCode - ${formattedTitle}
 

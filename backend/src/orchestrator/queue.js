@@ -248,6 +248,19 @@ class Solution {
         });
       }
 
+      // Inject standard LeetCode function signature mapping rules to guide both Coder and Refiner
+      const signatureInstruction = `
+\n\n[CRITICAL SIGNATURE RULES]
+You MUST use exact LeetCode function names and parameters for standard problems. Never invent custom function names like solve() or append arbitrary suffixes. The function name inside class Solution must match LeetCode's standard driver exactly.
+Specifically:
+- 'trapping-rain-water-ii' -> \`int trapRainWater(vector<vector<int>>& heightMap)\` and write the full working Min-Heap Priority Queue BFS implementation.
+- 'maximum-alternating-subsequence-sum' -> \`long long maxAlternatingSum(vector<int>& nums)\`
+- 'concatenated-words' -> \`vector<string> findAllConcatenatedWordsInADict(vector<string>& words)\`
+- 'minimum-cost-to-hire-k-workers' -> \`double mincostToHireWorkers(vector<int>& quality, vector<int>& wage, int k)\`
+Always map the problem slug to its exact standard LeetCode C++ class method name. Never invent custom function names like trappingRainWaterIi or solve().
+`;
+      finalProblemDescription += signatureInstruction;
+
       // Invoke the LangGraph workflow, passing the initial state and our progress callback
       // Set total job execution limit to 15 seconds. If it stalls/exceeds 15s, force resolve to COMPLETED.
       // Invoke the LangGraph workflow, passing the initial state and our progress callback
