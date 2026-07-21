@@ -744,7 +744,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
-    if (jobState === 'completed') return 98; // Akshit's reference: 98%
+    if (jobState === 'completed') return 100;
     if (jobState === 'idle') return 0;
     if (activeNode === 'coder') return 35;
     if (activeNode === 'sandbox') return 70;
@@ -1176,27 +1176,60 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         {/* Center Column (col-span-6): Verification Workspace */}
         <section className="panel-center">
           
-          {/* VERIFIED Alert Banner */}
-          {jobState === 'completed' && finalResult && (
-            <div className="alert-verified-banner fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Check size={10} style={{ color: '#000000' }} />
-                </div>
-                <span className="alert-verified-title" style={{ fontWeight: 800 }}>VERIFIED - All validation checks passed</span>
-              </div>
-              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-green)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.65rem', fontWeight: 700 }}>
-                3/3 checks passed
-              </div>
-            </div>
-          )}
-          
           {/* Verification Workspace Card */}
           <div className="bento-card code-workspace-card">
+            {/* VERIFIED Banner */}
+            {jobState === 'completed' && finalResult && (
+              <div className="verified-banner fade-in" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '16px',
+                width: '100%'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#000000',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
+                  }}>
+                    <Check size={18} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <div style={{ color: '#10b981', fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.05em' }}>VERIFIED</div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.72rem', marginTop: '1px' }}>All validation checks passed.</div>
+                  </div>
+                </div>
+                <div style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: '100px',
+                  padding: '4px 12px',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  3/3 checks passed
+                </div>
+              </div>
+            )}
+
             <div className="code-editor-header">
               <span className="card-title" style={{ color: 'var(--text-primary)' }}>
                 <Code2 size={13} />
-                Verification Workspace
+                {jobState === 'completed' ? 'Solution Code' : 'Verification Workspace'}
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1495,20 +1528,101 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto' }}>
+            <div className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto', padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
                 </div>
               ) : (
                 <>
-                  {parsedLogs.map((log, index) => (
-                    <div key={index} className="log-line">
-                      <span className="log-timestamp">[{log.timestamp}]</span>
-                      <span className={`log-status-pill ${log.badgeType}`}>{log.status}</span>
-                      <span className="log-message">{log.message}</span>
-                    </div>
-                  ))}
+                  {parsedLogs.map((log, index) => {
+                    let LogIcon = <TerminalIcon size={12} style={{ color: '#94a3b8', opacity: 0.6 }} />;
+                    if (log.status === 'SUCCESS' || log.status === 'COMPLETE') {
+                      LogIcon = <CheckCircle2 size={12} style={{ color: '#10b981' }} />;
+                    } else if (log.status === 'REJECTED' || log.status === 'BATTLE') {
+                      LogIcon = <AlertTriangle size={12} style={{ color: '#f59e0b' }} />;
+                    }
+                    
+                    let statusStyle = {};
+                    if (log.status === 'INFO' || log.badgeType === 'info') {
+                      statusStyle = {
+                        backgroundColor: '#1e293b',
+                        color: '#cbd5e1',
+                        borderColor: '#334155'
+                      };
+                    } else if (log.status === 'SUCCESS') {
+                      statusStyle = {
+                        backgroundColor: '#022c22',
+                        color: '#34d399',
+                        borderColor: '#064e3b'
+                      };
+                    } else if (log.status === 'COMPLETE' || log.status === 'SUCCESS' && jobState === 'completed') {
+                      statusStyle = {
+                        backgroundColor: '#1a2e05',
+                        color: '#a3e635',
+                        borderColor: '#3f6212'
+                      };
+                    } else if (log.status === 'REJECTED' || log.status === 'BATTLE') {
+                      statusStyle = {
+                        backgroundColor: '#450a0a',
+                        color: '#f87171',
+                        borderColor: '#7f1d1d'
+                      };
+                    } else if (log.status.startsWith('ROUND')) {
+                      statusStyle = {
+                        backgroundColor: '#3b0764',
+                        color: '#c084fc',
+                        borderColor: '#581c87'
+                      };
+                    }
+
+                    return (
+                      <div 
+                        key={index} 
+                        className="log-line-card fade-in" 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px',
+                          borderRadius: '6px',
+                          backgroundColor: 'rgba(23, 23, 23, 0.6)',
+                          border: '1px solid rgba(38, 38, 38, 0.8)',
+                          marginBottom: '8px',
+                          gap: '12px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                          <span style={{ fontSize: '0.68rem', color: '#64748b', fontFamily: 'monospace', flexShrink: 0 }}>
+                            {log.timestamp}
+                          </span>
+                          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                            {LogIcon}
+                          </div>
+                          <span className="log-message" style={{ fontSize: '0.74rem', color: '#cbd5e1', wordBreak: 'break-word', fontFamily: 'monospace' }}>
+                            {log.message}
+                          </span>
+                        </div>
+                        <span 
+                          className="log-status-badge" 
+                          style={{
+                            fontSize: '0.6rem',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            textTransform: 'uppercase',
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            flexShrink: 0,
+                            letterSpacing: '0.05em',
+                            ...statusStyle
+                          }}
+                        >
+                          {log.status}
+                        </span>
+                      </div>
+                    );
+                  })}
                   <div ref={terminalEndRef} />
                 </>
               )}
