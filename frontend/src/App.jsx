@@ -915,50 +915,40 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </div>
           </div>
 
-          {/* Live Arena Indicator */}
-          <div className="arena-badge" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: '100px',
-            padding: '4px 12px',
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            color: '#10b981'
-          }}>
-            <span style={{
-              width: '6px',
-              height: '6px',
-              backgroundColor: '#10b981',
-              borderRadius: '50%',
-              display: 'inline-block',
-              animation: 'pulse 1.5s infinite'
-            }}></span>
-            <span>⚔️ AI Arena Mode</span>
-          </div>
-
           {/* Sound Toggle Button */}
           <button 
-            onClick={() => setIsMuted(prev => !prev)}
+            onClick={() => {
+              const nextMuted = !isMuted;
+              setIsMuted(nextMuted);
+              if (!nextMuted) {
+                try {
+                  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                  const osc = audioCtx.createOscillator();
+                  const gain = audioCtx.createGain();
+                  osc.connect(gain);
+                  gain.connect(audioCtx.destination);
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+                  gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+                  osc.start();
+                  osc.stop(audioCtx.currentTime + 0.15);
+                } catch (_) {}
+              }
+            }}
             style={{
+              background: 'transparent',
+              border: 'none',
+              color: isMuted ? 'var(--text-muted)' : 'var(--accent-green)',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.1)' : 'rgba(6, 182, 212, 0.1)',
-              border: isMuted ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(6, 182, 212, 0.25)',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              color: isMuted ? '#ef4444' : '#06b6d4',
-              cursor: 'pointer',
+              padding: '6px',
               transition: 'all 0.2s'
             }}
+            title={isMuted ? "Unmute Sound" : "Mute Sound"}
           >
-            {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-            <span>{isMuted ? 'Muted' : '🔊 Battle Sound'}</span>
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
         </div>
       </header>
@@ -1465,22 +1455,23 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
                 const status = getNodeStatusClass(node);
                 const agentLabels = {
-                  coder: 'Coder 🤖',
-                  sandbox: 'Compiler ⚙️',
-                  critic: 'Critic ⚖️',
-                  refiner: 'Refiner 🧙‍♂️'
+                  coder: 'Coder',
+                  sandbox: 'Compiler',
+                  critic: 'Critic',
+                  refiner: 'Refiner'
                 };
                 const label = agentLabels[node];
                 const completed = status === 'status-completed';
                 const active = status === 'status-active';
+                const statusText = completed ? 'COMPLETE' : (active ? 'RUNNING' : 'PENDING');
                 
                 return (
                   <div key={node} className={`pipeline-step-node ${completed ? 'completed' : (active ? 'active' : '')}`}>
                     <div className="pipeline-step-circle">
-                      {completed ? <Check size={10} /> : (active ? <Loader2 size={10} className="animate-spin" /> : null)}
+                      {completed ? <Check size={16} /> : (active ? <Loader2 size={16} className="animate-spin" /> : null)}
                     </div>
                     <span className="pipeline-step-label">{label}</span>
-                    <span className="pipeline-step-status-pill">{completed ? 'Complete' : (active ? 'Active' : 'Pending')}</span>
+                    <span className="pipeline-step-status-pill">{statusText}</span>
                   </div>
                 );
               })}
@@ -1504,7 +1495,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div className="logs-terminal" style={{ height: '420px', maxHeight: '420px', overflowY: 'auto' }}>
+            <div className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.

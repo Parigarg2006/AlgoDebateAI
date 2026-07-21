@@ -588,6 +588,25 @@
   gap: 6px;
 }
 
+/* Sleek dark scrollbar for logs terminal */
+.logs-terminal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs-terminal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.logs-terminal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.logs-terminal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .log-line {
   display: flex;
   gap: 8px;
@@ -1157,22 +1176,22 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 8px 0;
-  gap: 12px;
+  padding: 12px 0;
+  gap: 16px;
 }
 
 .pipeline-step-node {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
   text-align: center;
 }
 
 .pipeline-step-circle {
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background-color: var(--bg-input);
   border: 2px solid var(--border-slate);
@@ -1187,17 +1206,17 @@
   background-color: var(--accent-green);
   border-color: var(--accent-green);
   color: #000000;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .pipeline-step-node.active .pipeline-step-circle {
   border-color: var(--accent-green);
   color: var(--accent-green);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
 .pipeline-step-label {
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -1207,9 +1226,9 @@
 }
 
 .pipeline-step-status-pill {
-  font-size: 0.58rem;
-  font-weight: 700;
-  padding: 2px 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 3px 8px;
   border-radius: 4px;
   background-color: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
