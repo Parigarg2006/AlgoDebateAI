@@ -25,6 +25,8 @@ const io = new Server(httpServer, {
   }
 });
 
+global.io = io;
+
 
 
 // Log websocket connection statuses
