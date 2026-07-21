@@ -250,57 +250,17 @@ class Solution {
 
       // Invoke the LangGraph workflow, passing the initial state and our progress callback
       // Set total job execution limit to 15 seconds. If it stalls/exceeds 15s, force resolve to COMPLETED.
-      let finalState;
-      try {
-        finalState = await withTimeout(
-          debateGraph.invoke({
-            problemDescription: finalProblemDescription,
-            maxRounds,
-            language,
-            coderPrompt,
-            criticPrompt,
-            refinerPrompt,
-            inferRequirements,
-            onProgress
-          }),
-          15000
-        );
-      } catch (timeoutErr) {
-        console.warn(`[Worker] Job ${job.id} exceeded 15s limit, auto-resolving with generated code:`, timeoutErr.message);
-        
-        let fallbackCode = '';
-        for (let i = roundsHistory.length - 1; i >= 0; i--) {
-          if (roundsHistory[i] && roundsHistory[i].code) {
-            fallbackCode = roundsHistory[i].code;
-            break;
-          }
-        }
-        
-        if (!fallbackCode) {
-          fallbackCode = `// Fallback code generated prior to timeout\nclass Solution {\npublic:\n    long long maxAlternatingSum(vector<int>& nums) {\n        return 0;\n    }\n};`;
-        }
-
-        // Emit final completion log message
-        await onProgress({
-          node: 'refiner',
-          round: maxRounds,
-          code: fallbackCode,
-          message: '[SYSTEM] Job execution limit (15 seconds) reached. Force resolving successfully with current solution.'
-        });
-
-        const finalResult = {
-          finalCode: fallbackCode,
-          timeComplexity: 'O(N)',
-          spaceComplexity: 'O(1)',
-          explanation: 'Optimal solution draft completed successfully prior to execution limit constraint.'
-        };
-
-        console.log(`[Worker] Job ${job.id} force resolved successfully on timeout.`);
-        return {
-          status: 'COMPLETED',
-          finalResult
-        };
-      }
+      // Invoke the LangGraph workflow, passing the initial state and our progress callback
+      const finalState = await debateGraph.invoke({
+        problemDescription: finalProblemDescription,
+        maxRounds,
+        language,
+        coderPrompt,
+        criticPrompt,
+        refinerPrompt,
+        inferRequirements,
+        onProgress
+      });
 
       const finalResult = finalState.finalResult;
       console.log(`[Worker] Job ${job.id} completed successfully.`);
