@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { safeParseJSON } from '../utils/jsonRepair.js';
 
 // Reconstruct __dirname for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,11 +61,10 @@ export async function critiqueCode(problemDescription, code, sandboxResults = []
       
       let expected = null;
       if (cleanInput === '3 7 7') expected = '14';
-      else if (cleanInput === '4 3 5') expected = '12';
-      else if (cleanInput === '1 5 10') expected = '5';
+      if (cleanInput === '4 3 5') expected = '12';
+      if (cleanInput === '1 5 10') expected = '5';
       
-      if (expected && actualOut !== expected) {
-        console.log(`[Programmatic Critic Hardening] Found failing edge case. Input: ${cleanInput}, Expected: ${expected}, Got: ${actualOut}`);
+      if (expected !== null && actualOut !== expected) {
         return {
           approved: false,
           reasoning: `[CRITICAL EDGE CASE FAILURE] The code failed the mandatory alternating sequence edge case benchmark. Input: ${cleanInput}, Expected: ${expected}, Got: ${actualOut}. Please rewrite your code to correctly simulate the dynamic programming state transitions.`,
@@ -132,16 +132,9 @@ Universal Evaluation Framework:
     }
   });
 
-  let parsed;
-  try {
-    parsed = JSON.parse(response.text);
-  } catch (err) {
-    console.warn('[Critic] JSON parse warning, using fallback:', err.message);
-    parsed = {
-      approved: false,
-      criticism: 'Code output evaluation incomplete.',
-      failingTestCase: null
-    };
-  }
-  return parsed;
+  return safeParseJSON(response.text, {
+    approved: false,
+    reasoning: 'Code output evaluation incomplete.',
+    failingTestCase: null
+  });
 }

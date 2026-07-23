@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { cleanCodeString, cleanMarkdownText } from '../utils/parser.js';
+import { safeParseJSON } from '../utils/jsonRepair.js';
 
 // Reconstruct __dirname for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -112,16 +113,7 @@ Guidelines:
     }
   });
 
-  let parsed;
-  try {
-    parsed = JSON.parse(response.text);
-  } catch (err) {
-    console.warn('[Coder] JSON parse warning, using fallback recovery:', err.message);
-    parsed = {
-      code: cleanCodeString(response.text),
-      reasoning: 'Generated solution'
-    };
-  }
+  const parsed = safeParseJSON(response.text, { code: cleanCodeString(response.text), reasoning: 'Generated solution' });
   if (parsed.code) {
     parsed.code = cleanCodeString(parsed.code);
   }
@@ -186,20 +178,14 @@ Generate test cases covering:
         responseMimeType: 'application/json',
         responseSchema: TestCasesSchema,
         temperature: 0.1,
-        maxOutputTokens: 1024
+        maxOutputTokens: 1500
       }
     });
 
-    let result;
-    try {
-      result = JSON.parse(response.text);
-    } catch (err) {
-      result = { testCases: [] };
-    }
+    const result = safeParseJSON(response.text, { testCases: [] });
     return result.testCases || [];
   } catch (error) {
     console.error('[Test Synthesizer] Error generating test cases:', error);
-    // Return empty array fallback so it doesn't break execution
     return [];
   }
 }

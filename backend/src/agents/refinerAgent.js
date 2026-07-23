@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { cleanCodeString, cleanMarkdownText } from '../utils/parser.js';
+import { safeParseJSON } from '../utils/jsonRepair.js';
 
 // Reconstruct __dirname for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -84,18 +85,13 @@ Universal Polish & Error Rectification Framework:
     }
   });
 
-  let parsed;
-  try {
-    parsed = JSON.parse(response.text);
-  } catch (err) {
-    console.warn('[Refiner] JSON parse warning, using fallback:', err.message);
-    parsed = {
-      finalCode: cleanCodeString(response.text),
-      explanation: 'Refined code generated.',
-      timeComplexity: 'O(N)',
-      spaceComplexity: 'O(1)'
-    };
-  }
+  const parsed = safeParseJSON(response.text, {
+    finalCode: cleanCodeString(response.text),
+    explanation: 'Refined code generated.',
+    timeComplexity: 'O(N)',
+    spaceComplexity: 'O(1)'
+  });
+
   if (parsed.finalCode) {
     parsed.finalCode = cleanCodeString(parsed.finalCode);
   }
