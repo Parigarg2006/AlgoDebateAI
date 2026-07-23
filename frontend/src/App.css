@@ -470,8 +470,9 @@
 }
 
 .code-editor-container {
-  height: 420px;
-  max-height: 420px;
+  min-height: 460px;
+  height: 460px;
+  max-height: 460px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
@@ -483,8 +484,9 @@
 }
 
 .diff-view-container {
-  height: 420px;
-  max-height: 420px;
+  min-height: 460px;
+  height: 460px;
+  max-height: 460px;
   border-radius: 8px;
   overflow: hidden;
   display: flex;
