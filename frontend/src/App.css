@@ -108,8 +108,7 @@
   margin: 0 auto;
   max-width: 1700px;
   width: 100%;
-  height: calc(100vh - 100px);
-  min-height: 640px;
+  height: auto;
   overflow: hidden;
   flex: 1;
 }
@@ -119,9 +118,10 @@
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 16px;
-  height: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  height: 560px;
+  max-height: 560px;
   margin-top: 0;
   padding-top: 0;
   overflow: hidden;
@@ -133,7 +133,8 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  height: 100%;
+  height: 560px;
+  max-height: 560px;
   margin-top: 0;
   padding-top: 0;
   overflow: hidden;
@@ -145,7 +146,8 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  height: 100%;
+  height: 560px;
+  max-height: 560px;
   margin-top: 0;
   padding-top: 0;
   overflow-y: auto;
@@ -454,7 +456,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 560px;
+  max-height: 560px;
   min-height: 0;
   overflow: hidden;
 }
