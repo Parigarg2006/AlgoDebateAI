@@ -2,10 +2,9 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
+  min-height: 100vh;
   background-color: var(--bg-main);
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* Fixed Header */
@@ -103,15 +102,15 @@
 .main-container {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  align-items: stretch;
+  align-items: start;
   gap: 16px;
-  padding: 16px 24px;
+  padding: 20px 24px;
   margin: 0 auto;
   max-width: 1700px;
   width: 100%;
-  height: calc(100vh - 56px);
-  max-height: calc(100vh - 56px);
-  overflow: hidden;
+  min-height: calc(100vh - 56px);
+  height: auto;
+  overflow-y: auto;
   flex: 1;
 }
 
@@ -120,39 +119,40 @@
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  height: 100%;
+  gap: 16px;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
-  overflow: hidden;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
 .panel-center {
   grid-column: span 6; /* col-span-6 */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  height: 100%;
+  gap: 16px;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
-  overflow: hidden;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
 .panel-right {
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  height: 100%;
+  gap: 16px;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
-  overflow-y: auto;
+  overflow: visible;
   padding-left: 0;
-  padding-right: 2px;
+  padding-right: 0;
+  padding-bottom: 32px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 /* Hide scrollbars for panels but allow scrolling */
@@ -453,27 +453,21 @@
 }
 
 .code-workspace-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  height: auto;
+  flex-shrink: 0;
 }
 
 .workspace-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  height: auto;
 }
 
 .code-editor-container {
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-  width: 100%;
+  height: 520px;
+  max-height: 520px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
@@ -485,10 +479,8 @@
 }
 
 .diff-view-container {
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-  width: 100%;
+  height: 520px;
+  max-height: 520px;
   border-radius: 8px;
   overflow: hidden;
   display: flex;
