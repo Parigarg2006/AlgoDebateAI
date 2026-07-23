@@ -1423,10 +1423,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
         
         {/* Center Column (col-span-6): Verification Workspace */}
-        <section className="panel-center" style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', minHeight: '620px' }}>
+        <section className="panel-center" style={{ display: 'flex', flexDirection: 'column' }}>
           
           {/* Verification Workspace Card */}
-          <div className="bento-card code-workspace-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minHeight: '580px' }}>
+          <div className="bento-card code-workspace-card" style={{ display: 'flex', flexDirection: 'column' }}>
             {/* VERIFIED Banner */}
             {jobState === 'completed' && finalResult && (
               <div className="verified-banner fade-in" style={{
@@ -1537,7 +1537,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             
-            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            <div className="workspace-content" style={{ display: 'flex', flexDirection: 'column' }}>
               {isDebating && (
                 <div className="battle-alert-banner animate-pulse" style={{
                   background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
@@ -1566,7 +1566,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               ) : (
                 <>
                   {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                    <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: '380px', overflow: 'hidden' }}>
+                    <div className="diff-view-container fade-in" style={{ height: '520px', maxHeight: '550px', overflow: 'hidden' }}>
                       {/* Left Column: Initial Coder Draft */}
                       <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                         <div className="diff-panel-header">Coder Draft (Initial)</div>
@@ -1600,86 +1600,13 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                       </div>
                     </div>
                   ) : (
-                    <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: '380px', overflowY: 'auto' }}>
+                    <div className="code-editor-container custom-scrollbar fade-in" style={{ height: '520px', maxHeight: '550px', overflowY: 'auto' }}>
                       {renderedCodeLines.map((line, idx) => (
                         <div key={idx} className="code-line-row">
                           <span className="code-line-number">{idx + 1}</span>
                           <span className="code-line-content">{line}</span>
                         </div>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Interactive Quick-Action Cards Below Code Editor */}
-                  {finalResult && (
-                    <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setActiveModal('complexity')}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          boxShadow: '0 4px 15px rgba(6, 182, 212, 0.08)',
-                          borderRadius: '10px',
-                          padding: '10px 14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          cursor: 'pointer',
-                          color: '#f8fafc',
-                          transition: 'all 0.2s ease'
-                        }}
-                        className="hover:border-cyan-400 hover:scale-[1.01]"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                            <Clock size={18} />
-                          </div>
-                          <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Complexity Analysis</div>
-                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>
-                              Time: {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))} | Space: {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
-                            </div>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.7rem', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
-                          View Report →
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveModal('strategy')}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
-                          border: '1px solid rgba(168, 85, 247, 0.35)',
-                          boxShadow: '0 4px 15px rgba(168, 85, 247, 0.08)',
-                          borderRadius: '10px',
-                          padding: '10px 14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          cursor: 'pointer',
-                          color: '#f8fafc',
-                          transition: 'all 0.2s ease'
-                        }}
-                        className="hover:border-purple-400 hover:scale-[1.01]"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                            <Sparkles size={18} />
-                          </div>
-                          <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Strategy & Proof</div>
-                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>
-                              Algorithm design & correctness proof
-                            </div>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.7rem', color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
-                          Read Proof →
-                        </span>
-                      </button>
                     </div>
                   )}
                   {jobState === 'failed' && (
@@ -1879,6 +1806,85 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <ChevronRight size={16} className={`text-emerald-400 transition-transform duration-200 ${isTerminalOpen ? 'rotate-90' : ''}`} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
+
+          {/* Quick-Action Analysis Cards in Right Column */}
+          {finalResult && (
+            <div className="bento-card analysis-card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h2 className="card-title" style={{ marginBottom: '2px' }}>
+                <Sparkles size={13} />
+                ANALYSIS & PROOFS
+              </h2>
+              <button
+                type="button"
+                onClick={() => setActiveModal('complexity')}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  boxShadow: '0 4px 15px rgba(6, 182, 212, 0.08)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  color: '#f8fafc',
+                  transition: 'all 0.2s ease',
+                  width: '100%'
+                }}
+                className="hover:border-cyan-400 hover:scale-[1.01]"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                    <Clock size={16} />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Complexity Analysis</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '1px' }}>
+                      Time: {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))} | Space: {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
+                    </div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.68rem', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
+                  View →
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModal('strategy')}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                  border: '1px solid rgba(168, 85, 247, 0.35)',
+                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.08)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  color: '#f8fafc',
+                  transition: 'all 0.2s ease',
+                  width: '100%'
+                }}
+                className="hover:border-purple-400 hover:scale-[1.01]"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                    <Sparkles size={16} />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Strategy & Proof</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '1px' }}>
+                      Algorithm design & correctness proof
+                    </div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.68rem', color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
+                  Read →
+                </span>
+              </button>
+            </div>
+          )}
         </section>
       </main>
 
