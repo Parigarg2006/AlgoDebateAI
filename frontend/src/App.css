@@ -102,12 +102,12 @@
 .main-container {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
+  align-items: start;
   gap: 20px; /* gap-5 equivalent */
   padding: 16px 24px 48px 24px; /* px-6 py-4 mx-auto max-w-[1700px] pb-12 */
   margin: 0 auto; /* mx-auto */
   max-width: 1700px; /* max-w-[1700px] */
   width: 100%;
-  min-height: calc(100vh - 56px);
   height: auto;
   overflow: visible;
   flex: 1;
@@ -119,8 +119,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
-  justify-content: space-between;
+  height: auto;
   overflow: visible;
 }
 
@@ -129,7 +128,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  height: auto;
   overflow: visible;
 }
 
@@ -138,7 +137,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  height: auto;
   overflow: visible;
   padding: 0 4px;
   width: 100%;
@@ -441,17 +440,14 @@
 }
 
 .code-workspace-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 520px;
+  height: auto;
 }
 
 .code-editor-container {
-  flex: 1;
-  height: 100%;
-  min-height: 480px;
+  height: 480px;
+  max-height: 500px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
@@ -463,9 +459,8 @@
 }
 
 .diff-view-container {
-  flex: 1;
-  height: 100%;
-  min-height: 480px;
+  height: 480px;
+  max-height: 500px;
   border-radius: 8px;
   overflow: hidden;
   display: flex;
