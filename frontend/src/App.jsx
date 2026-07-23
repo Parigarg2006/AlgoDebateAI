@@ -1684,7 +1684,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* Card 3: VALIDATION LOGS */}
-          <div className="bento-card logs-card" style={{ marginTop: '328px' }}>
+          <div className="bento-card logs-card">
             <h2 className="card-title">
               <TerminalIcon size={13} />
               VALIDATION LOGS
