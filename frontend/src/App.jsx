@@ -1408,10 +1408,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
         
         {/* Center Column (col-span-6): Verification Workspace */}
-        <section className="panel-center">
+        <section className="panel-center" style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', minHeight: '620px' }}>
           
           {/* Verification Workspace Card */}
-          <div className="bento-card code-workspace-card">
+          <div className="bento-card code-workspace-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minHeight: '580px' }}>
             {/* VERIFIED Banner */}
             {jobState === 'completed' && finalResult && (
               <div className="verified-banner fade-in" style={{
@@ -1460,27 +1460,29 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             )}
 
-            <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="code-editor-header" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '10px', width: '100%' }}>
+              {/* Left Group: Navigation Tabs */}
+              <div className="workspace-header-tabs custom-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', flexWrap: 'nowrap', flex: 1, minWidth: 0 }}>
                 <button
                   type="button"
                   onClick={() => setActiveWorkspaceTab('code')}
                   style={{
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     border: activeWorkspaceTab === 'code' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
                     background: activeWorkspaceTab === 'code' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'code' ? '#34d399' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease'
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Code2 size={15} />
+                  <Code2 size={14} />
                   <span>Solution Code</span>
                 </button>
 
@@ -1488,24 +1490,25 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   onClick={() => setActiveWorkspaceTab('complexity')}
                   style={{
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     border: activeWorkspaceTab === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
                     background: activeWorkspaceTab === 'complexity' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'complexity' ? '#38bdf8' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease'
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Clock size={15} />
+                  <Clock size={14} />
                   <span>Complexity Analysis</span>
-                  {finalResult && (
-                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.35)', fontWeight: 700, whitespace: 'nowrap' }}>
+                  {finalResult?.timeComplexity && (
+                    <span style={{ marginLeft: '6px', padding: '1px 6px', borderRadius: '9999px', fontSize: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 700, whiteSpace: 'nowrap', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
                     </span>
                   )}
@@ -1515,26 +1518,28 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   onClick={() => setActiveWorkspaceTab('strategy')}
                   style={{
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     border: activeWorkspaceTab === 'strategy' ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
                     background: activeWorkspaceTab === 'strategy' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'strategy' ? '#c084fc' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease'
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Sparkles size={15} />
+                  <Sparkles size={14} />
                   <span>Strategy & Proof</span>
                 </button>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Right Group: Action Controls */}
+              <div className="workspace-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
                 {activeWorkspaceTab === 'code' && coderDraft && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DIFF VIEW:</span>
@@ -1569,7 +1574,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   </div>
                 )}
                 
-                <div className="code-editor-actions">
+                <div className="code-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <button type="button" className="editor-btn" onClick={handleTabCopy} title={`Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity Report' : 'Strategy Explanation')}`}>
                     {isCopied ? <Check size={11} style={{ color: 'var(--accent-green)' }} /> : <Copy size={11} />}
                     <span>{isCopied ? 'Copied' : `Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity' : 'Strategy')}`}</span>
@@ -1586,7 +1591,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             
-            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
               {isDebating && (
                 <div className="battle-alert-banner animate-pulse" style={{
                   background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
@@ -1617,7 +1622,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   {activeWorkspaceTab === 'code' && (
                     <>
                       {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                        <div className="diff-view-container fade-in" style={{ height: '460px', maxHeight: '500px', overflow: 'hidden' }}>
+                        <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: '400px', overflow: 'hidden' }}>
                           {/* Left Column: Initial Coder Draft */}
                           <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                             <div className="diff-panel-header">Coder Draft (Initial)</div>
@@ -1651,7 +1656,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                           </div>
                         </div>
                       ) : (
-                        <div className="code-editor-container custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto' }}>
+                        <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: '400px', overflowY: 'auto' }}>
                           {renderedCodeLines.map((line, idx) => (
                             <div key={idx} className="code-line-row">
                               <span className="code-line-number">{idx + 1}</span>
@@ -1664,7 +1669,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
 
                   {activeWorkspaceTab === 'complexity' && (
-                    <div className="custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="custom-scrollbar fade-in" style={{ flex: 1, height: '100%', overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {!finalResult ? (
                         <div className="workspace-empty-view">
                           <Clock size={28} className="text-cyan-400" />
@@ -1751,7 +1756,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
 
                   {activeWorkspaceTab === 'strategy' && (
-                    <div className="custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto', padding: '16px' }}>
+                    <div className="custom-scrollbar fade-in" style={{ flex: 1, height: '100%', overflowY: 'auto', padding: '16px' }}>
                       {!finalResult || !finalResult.explanation ? (
                         <div className="workspace-empty-view">
                           <Sparkles size={28} className="text-purple-400" />
