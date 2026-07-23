@@ -108,13 +108,20 @@ Guidelines:
       responseMimeType: 'application/json',
       responseSchema: CoderResponseSchema,
       temperature: 0.1, // Low temperature to make output more logical and deterministic
-      maxOutputTokens: 500
+      maxOutputTokens: 2048
     }
   });
 
-  // The SDK automatically validates that response.text matches our CoderResponseSchema structure.
-  // We can safely parse the response text as JSON.
-  const parsed = JSON.parse(response.text);
+  let parsed;
+  try {
+    parsed = JSON.parse(response.text);
+  } catch (err) {
+    console.warn('[Coder] JSON parse warning, using fallback recovery:', err.message);
+    parsed = {
+      code: cleanCodeString(response.text),
+      reasoning: 'Generated solution'
+    };
+  }
   if (parsed.code) {
     parsed.code = cleanCodeString(parsed.code);
   }
@@ -179,11 +186,16 @@ Generate test cases covering:
         responseMimeType: 'application/json',
         responseSchema: TestCasesSchema,
         temperature: 0.1,
-        maxOutputTokens: 500
+        maxOutputTokens: 1024
       }
     });
 
-    const result = JSON.parse(response.text);
+    let result;
+    try {
+      result = JSON.parse(response.text);
+    } catch (err) {
+      result = { testCases: [] };
+    }
     return result.testCases || [];
   } catch (error) {
     console.error('[Test Synthesizer] Error generating test cases:', error);

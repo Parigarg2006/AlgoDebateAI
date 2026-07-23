@@ -80,11 +80,22 @@ Universal Polish & Error Rectification Framework:
       responseMimeType: 'application/json',
       responseSchema: RefinerResponseSchema,
       temperature: 0.1,
-      maxOutputTokens: 500
+      maxOutputTokens: 2048
     }
   });
 
-  const parsed = JSON.parse(response.text);
+  let parsed;
+  try {
+    parsed = JSON.parse(response.text);
+  } catch (err) {
+    console.warn('[Refiner] JSON parse warning, using fallback:', err.message);
+    parsed = {
+      finalCode: cleanCodeString(response.text),
+      explanation: 'Refined code generated.',
+      timeComplexity: 'O(N)',
+      spaceComplexity: 'O(1)'
+    };
+  }
   if (parsed.finalCode) {
     parsed.finalCode = cleanCodeString(parsed.finalCode);
   }

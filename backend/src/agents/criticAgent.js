@@ -128,9 +128,20 @@ Universal Evaluation Framework:
       responseMimeType: 'application/json',
       responseSchema: CriticResponseSchema,
       temperature: 0.1,
-      maxOutputTokens: 500
+      maxOutputTokens: 2048
     }
   });
 
-  return JSON.parse(response.text);
+  let parsed;
+  try {
+    parsed = JSON.parse(response.text);
+  } catch (err) {
+    console.warn('[Critic] JSON parse warning, using fallback:', err.message);
+    parsed = {
+      approved: false,
+      criticism: 'Code output evaluation incomplete.',
+      failingTestCase: null
+    };
+  }
+  return parsed;
 }
