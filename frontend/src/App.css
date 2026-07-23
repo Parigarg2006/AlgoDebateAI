@@ -102,7 +102,7 @@
 .main-container {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  align-items: stretch;
+  align-items: start;
   gap: 16px;
   padding: 20px 24px;
   margin: 0 auto;
@@ -120,7 +120,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
   overflow: visible;
@@ -132,7 +132,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
   overflow: visible;
@@ -144,7 +144,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  height: auto;
   margin-top: 0;
   padding-top: 0;
   overflow: visible;
@@ -453,28 +453,20 @@
 }
 
 .code-workspace-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  height: auto;
   flex-shrink: 0;
 }
 
 .workspace-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  height: auto;
 }
 
 .code-editor-container {
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-  width: 100%;
+  height: 620px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
@@ -486,10 +478,7 @@
 }
 
 .diff-view-container {
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-  width: 100%;
+  height: 620px;
   border-radius: 8px;
   overflow: hidden;
   display: flex;
