@@ -242,7 +242,7 @@ function App() {
   const [finalResult, setFinalResult] = useState(null);
   
   // Live tracking states to display code before critic-done
-  const [liveCode, setLiveCode] = useState('// Coder is drafting a solution...');
+  const [liveCode, setLiveCode] = useState("// Paste a problem link or description and click 'Run Verification' to start debate...");
   const [coderDraft, setCoderDraft] = useState('');
   
   // Dynamic Diff & Vault states
@@ -608,7 +608,7 @@ function App() {
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode('// Coder is drafting a solution...');
+    setLiveCode("// Paste a problem link or description and click 'Run Verification' to start debate...");
     setLanguage('cpp');
     setTimeoutMs(10000);
     setTestCasesCount('0');
@@ -788,7 +788,7 @@ function App() {
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode('// Coder is drafting a solution...');
+    setLiveCode("// Paste a problem link or description and click 'Run Verification' to start debate...");
     setCoderDraft('');
     setIsCopied(false);
 
