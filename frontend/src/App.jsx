@@ -122,6 +122,7 @@ function App() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(230); // Default height: 230px
   const [isResizingTerminal, setIsResizingTerminal] = useState(false);
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('code'); // 'code', 'complexity', 'strategy'
   const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
 
   // Drag-to-Resize mouse event listeners
@@ -1367,14 +1368,82 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             )}
 
-            <div className="code-editor-header">
-              <span className="card-title" style={{ color: 'var(--text-primary)' }}>
-                <Code2 size={13} />
-                {jobState === 'completed' ? 'Solution Code' : 'Verification Workspace'}
-              </span>
+            <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveWorkspaceTab('code')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: activeWorkspaceTab === 'code' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
+                    background: activeWorkspaceTab === 'code' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                    color: activeWorkspaceTab === 'code' ? '#34d399' : '#94a3b8',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Code2 size={14} />
+                  <span>Solution Code</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveWorkspaceTab('complexity')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: activeWorkspaceTab === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid transparent',
+                    background: activeWorkspaceTab === 'complexity' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                    color: activeWorkspaceTab === 'complexity' ? '#38bdf8' : '#94a3b8',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Clock size={14} />
+                  <span>Complexity Analysis</span>
+                  {finalResult && (
+                    <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(6, 182, 212, 0.2)', padding: '1px 6px', borderRadius: '8px', color: '#06b6d4', fontWeight: 700 }}>
+                      {unescapeNewlines(finalResult.timeComplexity)}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveWorkspaceTab('strategy')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: activeWorkspaceTab === 'strategy' ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid transparent',
+                    background: activeWorkspaceTab === 'strategy' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                    color: activeWorkspaceTab === 'strategy' ? '#c084fc' : '#94a3b8',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Sparkles size={14} />
+                  <span>Strategy & Proof</span>
+                </button>
+              </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {coderDraft && (
+                {activeWorkspaceTab === 'code' && coderDraft && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DIFF VIEW:</span>
                     <button
@@ -1425,7 +1494,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             
-            <div className="workspace-content">
+            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               {isDebating && (
                 <div className="battle-alert-banner animate-pulse" style={{
                   background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
@@ -1453,153 +1522,168 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 </div>
               ) : (
                 <>
-                  {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                    <div className="diff-view-container fade-in">
-                      {/* Left Column: Initial Coder Draft */}
-                      <div className="diff-panel">
-                        <div className="diff-panel-header">Coder Draft (Initial)</div>
-                        <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                          {(() => {
-                            const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                            return leftLines.map((line, idx) => (
-                              <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                                <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                  {activeWorkspaceTab === 'code' && (
+                    <>
+                      {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
+                        <div className="diff-view-container fade-in">
+                          {/* Left Column: Initial Coder Draft */}
+                          <div className="diff-panel">
+                            <div className="diff-panel-header">Coder Draft (Initial)</div>
+                            <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                              {(() => {
+                                const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                                return leftLines.map((line, idx) => (
+                                  <div key={idx} className={`diff-line ${line.type}`}>
+                                    <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                    <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          </div>
+                          
+                          {/* Right Column: Refined Output */}
+                          <div className="diff-panel">
+                            <div className="diff-panel-header">Refined Output (Final)</div>
+                            <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                              {(() => {
+                                const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                                return rightLines.map((line, idx) => (
+                                  <div key={idx} className={`diff-line ${line.type}`}>
+                                    <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                    <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="code-editor-container fade-in" style={{ flex: 1, minHeight: '480px' }}>
+                          {renderedCodeLines.map((line, idx) => (
+                            <div key={idx} className="code-line-row">
+                              <span className="code-line-number">{idx + 1}</span>
+                              <span className="code-line-content">{line}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {activeWorkspaceTab === 'complexity' && (
+                    <div className="fade-in" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                      {!finalResult ? (
+                        <div className="workspace-empty-view">
+                          <Clock size={28} className="text-cyan-400" />
+                          <p>Complexity analysis will be generated once debate concludes.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="stat-card complexity-cyan-card" style={{
+                              background: 'rgba(13, 14, 18, 0.6)',
+                              backdropFilter: 'blur(10px)',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)',
+                              padding: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '16px'
+                            }}>
+                              <div style={{
+                                backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                                color: '#06b6d4',
+                                borderRadius: '10px',
+                                padding: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <Clock size={24} />
                               </div>
-                            ));
-                          })()}
-                        </div>
-                      </div>
-                      
-                      {/* Right Column: Refined Output */}
-                      <div className="diff-panel">
-                        <div className="diff-panel-header">Refined Output (Final)</div>
-                        <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                          {(() => {
-                            const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                            return rightLines.map((line, idx) => (
-                              <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                                <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#06b6d4', marginTop: '4px' }}>{unescapeNewlines(finalResult.timeComplexity)}</div>
                               </div>
-                            ));
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="code-editor-container fade-in">
-                      {renderedCodeLines.map((line, idx) => (
-                        <div key={idx} className="code-line-row">
-                          <span className="code-line-number">{idx + 1}</span>
-                          <span className="code-line-content">{line}</span>
-                        </div>
-                      ))}
+                            </div>
+                            
+                            <div className="stat-card complexity-emerald-card" style={{
+                              background: 'rgba(13, 14, 18, 0.6)',
+                              backdropFilter: 'blur(10px)',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              boxShadow: '0 0 15px rgba(16, 185, 129, 0.1)',
+                              padding: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '16px'
+                            }}>
+                              <div style={{
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                color: '#10b981',
+                                borderRadius: '10px',
+                                padding: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <Database size={24} />
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>{unescapeNewlines(finalResult.spaceComplexity)}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{
+                            background: 'rgba(13, 14, 18, 0.4)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            color: '#cbd5e1',
+                            fontSize: '0.82rem',
+                            lineHeight: 1.6
+                          }}>
+                            <h4 style={{ color: '#f8fafc', fontWeight: 700, marginBottom: '8px' }}>Big-O Algorithmic Performance Breakdown</h4>
+                            <p>
+                              The solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.
+                              Time complexity is evaluated at <strong>{unescapeNewlines(finalResult.timeComplexity)}</strong> and space allocation scales at <strong>{unescapeNewlines(finalResult.spaceComplexity)}</strong>.
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
-                  
-                  {jobState === 'completed' && finalResult && (
-                    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div className="stat-card complexity-cyan-card" style={{
-                          background: 'rgba(13, 14, 18, 0.6)',
-                          backdropFilter: 'blur(10px)',
-                          borderRadius: '12px',
-                          border: '1px solid rgba(6, 182, 212, 0.3)',
-                          boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)',
-                          padding: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
-                        }}>
-                          <div style={{
-                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                            color: '#06b6d4',
-                            borderRadius: '8px',
-                            padding: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <Clock size={20} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#06b6d4', marginTop: '2px' }}>{unescapeNewlines(finalResult.timeComplexity)}</div>
-                          </div>
+
+                  {activeWorkspaceTab === 'strategy' && (
+                    <div className="fade-in" style={{ padding: '16px', flex: 1 }}>
+                      {!finalResult || !finalResult.explanation ? (
+                        <div className="workspace-empty-view">
+                          <Sparkles size={28} className="text-purple-400" />
+                          <p>Strategy & proof analysis will be generated once debate concludes.</p>
                         </div>
-                        
-                        <div className="stat-card complexity-emerald-card" style={{
-                          background: 'rgba(13, 14, 18, 0.6)',
-                          backdropFilter: 'blur(10px)',
+                      ) : (
+                        <div style={{
+                          background: 'rgba(13, 14, 18, 0.4)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
                           borderRadius: '12px',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          boxShadow: '0 0 15px rgba(16, 185, 129, 0.1)',
-                          padding: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px'
+                          padding: '20px',
+                          color: '#cbd5e1',
+                          fontSize: '0.82rem',
+                          lineHeight: 1.6
                         }}>
-                          <div style={{
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            color: '#10b981',
-                            borderRadius: '8px',
-                            padding: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <Database size={20} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                            <Sparkles size={18} className="text-purple-400" />
+                            <h3 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                              Strategy & Proof of Correctness
+                            </h3>
                           </div>
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{unescapeNewlines(finalResult.spaceComplexity)}</div>
-                          </div>
+                          {renderFormattedMarkdown(finalResult.explanation)}
                         </div>
-                      </div>
-                      
-                      <div className="strategy-box glass-collapsible" style={{
-                        background: 'rgba(13, 14, 18, 0.4)',
-                        backdropFilter: 'blur(12px)',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        overflow: 'hidden'
-                      }}>
-                        <button 
-                          type="button"
-                          onClick={() => setIsStrategyExpanded(!isStrategyExpanded)}
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '12px 16px',
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#e2e8f0',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                            <Sparkles size={16} className="text-[#10B981]" />
-                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Strategy & Proof Analysis</strong>
-                          </div>
-                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isStrategyExpanded ? 'Collapse ▲' : 'Expand ▼'}</span>
-                        </button>
-                        
-                        {isStrategyExpanded && (
-                          <div style={{
-                            padding: '16px',
-                            fontSize: '0.8rem',
-                            lineHeight: 1.6,
-                            color: '#cbd5e1',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.05)'
-                          }}>
-                            {renderFormattedMarkdown(finalResult.explanation)}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   )}
 

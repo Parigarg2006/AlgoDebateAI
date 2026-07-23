@@ -443,34 +443,45 @@
   flex: 1;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: auto;
   padding: 12px 0;
   display: flex;
   flex-direction: column;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
 }
 
 .code-line-row {
   display: flex;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.5;
-  min-height: 18px;
+  align-items: baseline;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  min-height: 22px;
 }
 
 .code-line-number {
-  width: 32px;
-  color: var(--text-muted);
+  min-width: 3.5rem;
+  width: 3.5rem;
+  flex-shrink: 0;
+  color: #64748b;
   text-align: right;
-  padding-right: 10px;
+  padding-right: 14px;
   user-select: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .code-line-content {
-  padding-left: 12px;
+  padding-left: 14px;
   white-space: pre;
   color: var(--text-primary);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  flex: 1;
 }
 
 /* Custom Test Cases Inputs inside Left Panel */
@@ -921,10 +932,13 @@
 
 .diff-line {
   display: flex;
-  align-items: center;
-  min-height: 18px;
+  align-items: baseline;
+  min-height: 22px;
   white-space: pre;
   padding: 0 4px;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
+  font-size: 0.8rem;
+  line-height: 1.6;
 }
 
 .diff-line.removed {
@@ -940,13 +954,17 @@
 }
 
 .diff-line-number {
-  width: 24px;
+  min-width: 3rem;
+  width: 3rem;
+  flex-shrink: 0;
   text-align: right;
-  color: var(--text-muted);
+  color: #64748b;
   margin-right: 8px;
-  border-right: 1px solid rgba(255, 255, 255, 0.02);
-  padding-right: 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding-right: 10px;
   user-select: none;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
+  font-variant-numeric: tabular-nums;
 }
 
 .diff-line-text {
