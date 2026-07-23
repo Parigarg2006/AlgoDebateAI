@@ -105,9 +105,12 @@ async function coderNode(state) {
   }
 
   const coderInstructions = `
+[MANDATORY TEMPLATE ENFORCEMENT]
+You MUST wrap your code strictly inside the provided LeetCode C++ code template under '=== EXPORTED STARTER TEMPLATES ==='. Do NOT rename, alter, overload, or wrap the main driver function inside custom signatures. Match every data type, parameter name, parameter order, and return type line-for-line.
+
 [STRICT LEETCODE FUNCTION & TYPE EXTRACTION]
 Before drafting any code, you MUST analyze the problem slug/description to extract:
-- Exact function name expected by LeetCode (e.g. \`totalNQueens\`, \`solveNQueens\`, \`trapRainWater\`, \`maxAlternatingSum\`, \`findAllConcatenatedWordsInADict\`, \`mincostToHireWorkers\`, \`mergeKLists\`, \`twoSum\`).
+- Exact function name expected by LeetCode (e.g. \`findLadders\`, \`totalNQueens\`, \`solveNQueens\`, \`trapRainWater\`, \`maxAlternatingSum\`, \`findAllConcatenatedWordsInADict\`, \`mincostToHireWorkers\`, \`mergeKLists\`, \`twoSum\`).
 - Exact parameter list and return type.
 - Constraints (e.g., $10^5$ elements require $O(N)$ or $O(N \\log N)$ and \`long long\` to prevent overflow).
 Always map standard problem slugs to their exact standard LeetCode C++ class method names and parameter signatures.
@@ -116,7 +119,7 @@ Always map standard problem slugs to their exact standard LeetCode C++ class met
 NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an integer array. Always check if the input parameter is a single integer \`int n\`, 2D grid, string array, or custom pointer (e.g. \`ListNode*\`).
 
 [EXAMPLE & TEST CASE DRY-RUN]
-Extract Example 1, Example 2, and hidden edge cases from the problem statement. Include these test cases as internal assertion tests in your sandbox compiler run. Make sure your C++ code includes all necessary standard libraries (e.g. <vector>, <queue>, <algorithm>, <iostream>, <string>, etc.) and uses the 'std' namespace correctly.
+Extract Example 1, Example 2, and Example 3 inputs/outputs directly from the LeetCode problem statement payload. Include these test cases as internal assertion tests in your sandbox compiler run. Make sure your C++ code includes all necessary standard libraries (e.g. <vector>, <queue>, <algorithm>, <iostream>, <string>, etc.) and uses the 'std' namespace correctly.
 `;
   problemDescForAgent += `\n\n${coderInstructions}`;
 
@@ -245,9 +248,10 @@ async function criticNode(state) {
   }
   
   const criticPromptWithInstructions = (state.criticPrompt || '') + `
-[STRICT CRITIC RULES]
-Simulate the generated code against Example 1, Example 2, and extreme edge cases (min/max constraints, empty inputs, duplicate values). Reject the code (approved = false) if it fails ANY test case or uses incorrect function signatures.
-Only approve if the C++ code successfully compiles and passes all extracted example test cases. If there are sandbox failures, you must set approved = false.
+[STRICT CRITIC RULES & COMPILATION ERROR DETECTION]
+1. Mandatory Signature Matching: If the C++ compilation output or signature verification contains 'no member named X', 'parameter mismatch', or signature failure, you MUST reject the code (approved = false) and force the Coder Agent to adopt the exact boilerplate signature line-for-line.
+2. Example Testcase Verification: Execute and simulate the generated code against ALL extracted example test cases (Example 1, Example 2, Example 3) and extreme edge cases. Reject the code (approved = false) if it fails ANY test case or uses incorrect function signatures.
+3. Zero-Error Verification Guarantee: Only set approved = true if the C++ code successfully compiles AND passes all extracted example test cases in the sandbox runner.
 `;
 
   const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, criticPromptWithInstructions, lang);

@@ -294,6 +294,9 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
     const exePath = path.join(TEMP_DIR, `solution_${id}.exe`);
 
     let modifiedCode = code;
+    if (!modifiedCode.includes('#include <vector>') && !modifiedCode.includes('#include<vector>')) {
+      modifiedCode = `#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <queue>\n#include <stack>\n#include <map>\n#include <set>\n#include <unordered_map>\n#include <unordered_set>\n#include <numeric>\n#include <climits>\n#include <cmath>\nusing namespace std;\n\n` + modifiedCode;
+    }
     try {
       const cppTemplate = extractLanguageSnippet(problemDescription, 'cpp');
       if (cppTemplate && code.includes('class Solution')) {

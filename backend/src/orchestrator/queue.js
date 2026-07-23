@@ -126,10 +126,10 @@ class Solution {
 
       if (urlToFetch) {
         try {
-          console.log(`[Worker] Attempting to fetch LeetCode problem from URL: ${urlToFetch} with 3s timeout`);
+          console.log(`[Worker] Attempting to fetch LeetCode problem from URL: ${urlToFetch} with 6s timeout`);
           await onProgress({ node: 'coder', round: 1, message: '[SYSTEM] Parsing problem URL and extracting starter signature templates...' });
           
-          const fetchedDescription = await withTimeout(fetchLeetCodeProblem(urlToFetch), 3000);
+          const fetchedDescription = await withTimeout(fetchLeetCodeProblem(urlToFetch), 6000);
           hasValidFetch = true;
           
           let combined = fetchedDescription;
@@ -250,12 +250,17 @@ class Solution {
 
       // Inject standard LeetCode function signature mapping rules to guide both Coder and Refiner
       const signatureInstruction = `
-\n\n[CRITICAL SIGNATURE RULES]
+\n\n[MANDATORY TEMPLATE ENFORCEMENT]
+You MUST wrap your code strictly inside the provided LeetCode C++ code template under '=== EXPORTED STARTER TEMPLATES ==='. Do NOT rename, alter, overload, or wrap the main driver function inside custom signatures. Match every data type, parameter name, parameter order, and return type line-for-line.
+
+[CRITICAL SIGNATURE RULES]
 You MUST use exact LeetCode function names and parameters for standard problems. Never invent custom function names like solve() or append arbitrary suffixes. The function name inside class Solution must match LeetCode's standard driver exactly.
 Specifically:
+- 'word-ladder-ii' -> \`vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList)\`
+- 'word-ladder' -> \`int ladderLength(string beginWord, string endWord, vector<string>& wordList)\`
 - 'n-queens-ii' -> \`int totalNQueens(int n)\`
 - 'n-queens' -> \`vector<vector<string>> solveNQueens(int n)\`
-- 'trapping-rain-water-ii' -> \`int trapRainWater(vector<vector<int>>& heightMap)\` and write the full working Min-Heap Priority Queue BFS implementation.
+- 'trapping-rain-water-ii' -> \`int trapRainWater(vector<vector<int>>& heightMap)\`
 - 'concatenated-words' -> \`vector<string> findAllConcatenatedWordsInADict(vector<string>& words)\`
 - 'minimum-cost-to-hire-k-workers' -> \`double mincostToHireWorkers(vector<int>& quality, vector<int>& wage, int k)\`
 - 'merge-k-sorted-lists' -> \`ListNode* mergeKLists(vector<ListNode*>& lists)\`
