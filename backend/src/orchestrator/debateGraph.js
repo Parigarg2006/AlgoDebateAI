@@ -107,10 +107,13 @@ async function coderNode(state) {
   const coderInstructions = `
 [STRICT LEETCODE FUNCTION & TYPE EXTRACTION]
 Before drafting any code, you MUST analyze the problem slug/description to extract:
-- Exact function name expected by LeetCode (e.g. \`trapRainWater\`, \`maxAlternatingSum\`, \`twoSum\`).
+- Exact function name expected by LeetCode (e.g. \`totalNQueens\`, \`solveNQueens\`, \`trapRainWater\`, \`maxAlternatingSum\`, \`findAllConcatenatedWordsInADict\`, \`mincostToHireWorkers\`, \`mergeKLists\`, \`twoSum\`).
 - Exact parameter list and return type.
 - Constraints (e.g., $10^5$ elements require $O(N)$ or $O(N \\log N)$ and \`long long\` to prevent overflow).
-Always map standard problem slugs to their exact standard LeetCode C++ class method names.
+Always map standard problem slugs to their exact standard LeetCode C++ class method names and parameter signatures.
+
+[PREVENT GENERIC FALLBACK]
+NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an integer array. Always check if the input parameter is a single integer \`int n\`, 2D grid, string array, or custom pointer (e.g. \`ListNode*\`).
 
 [EXAMPLE & TEST CASE DRY-RUN]
 Extract Example 1, Example 2, and hidden edge cases from the problem statement. Include these test cases as internal assertion tests in your sandbox compiler run. Make sure your C++ code includes all necessary standard libraries (e.g. <vector>, <queue>, <algorithm>, <iostream>, <string>, etc.) and uses the 'std' namespace correctly.

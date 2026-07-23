@@ -111,7 +111,86 @@ class Solution {
   const formattedTitle = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   
   let snippetsText = '';
-  if (slug === 'trapping-rain-water-ii') {
+  if (slug === 'n-queens-ii') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    int totalNQueens(int n) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def totalNQueens(self, n: int) -> int:
+        pass
+
+Java:
+class Solution {
+    public int totalNQueens(int n) {
+        return 0;
+    }
+}
+`;
+  } else if (slug === 'n-queens') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    vector<vector<string>> solveNQueens(int n) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def solveNQueens(self, n: int) -> List[List[str]]:
+        pass
+
+Java:
+class Solution {
+    public List<List<String>> solveNQueens(int n) {
+        return new ArrayList<>();
+    }
+}
+`;
+  } else if (slug === 'merge-k-sorted-lists') {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        pass
+
+Java:
+class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        return null;
+    }
+}
+`;
+  } else if (slug === 'trapping-rain-water-ii') {
     snippetsText = `
 === EXPORTED STARTER TEMPLATES ===
 C++:

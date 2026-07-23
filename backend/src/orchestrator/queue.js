@@ -253,11 +253,16 @@ class Solution {
 \n\n[CRITICAL SIGNATURE RULES]
 You MUST use exact LeetCode function names and parameters for standard problems. Never invent custom function names like solve() or append arbitrary suffixes. The function name inside class Solution must match LeetCode's standard driver exactly.
 Specifically:
+- 'n-queens-ii' -> \`int totalNQueens(int n)\`
+- 'n-queens' -> \`vector<vector<string>> solveNQueens(int n)\`
 - 'trapping-rain-water-ii' -> \`int trapRainWater(vector<vector<int>>& heightMap)\` and write the full working Min-Heap Priority Queue BFS implementation.
-- 'maximum-alternating-subsequence-sum' -> \`long long maxAlternatingSum(vector<int>& nums)\`
 - 'concatenated-words' -> \`vector<string> findAllConcatenatedWordsInADict(vector<string>& words)\`
 - 'minimum-cost-to-hire-k-workers' -> \`double mincostToHireWorkers(vector<int>& quality, vector<int>& wage, int k)\`
-Always map the problem slug to its exact standard LeetCode C++ class method name. Never invent custom function names like trappingRainWaterIi or solve().
+- 'merge-k-sorted-lists' -> \`ListNode* mergeKLists(vector<ListNode*>& lists)\`
+- 'maximum-alternating-subsequence-sum' -> \`long long maxAlternatingSum(vector<int>& nums)\`
+
+[PREVENT GENERIC FALLBACK]
+NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an integer array. Always check if the input parameter is a single integer \`int n\`, 2D grid, string array, or custom pointer (e.g. \`ListNode*\`). Always map the problem slug to its exact standard LeetCode C++ class method name and parameter types.
 `;
       finalProblemDescription += signatureInstruction;
 
