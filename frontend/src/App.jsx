@@ -1378,12 +1378,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* LangGraph Mission Path Node Flow */}
-          <div className="bento-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="bento-card" style={{ height: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: '16px' }}>
             <h2 className="card-title">
               <Workflow size={13} />
               LANGGRAPH MISSION PATH
             </h2>
-            <div className="mission-path-container" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <div className="mission-path-container">
               <div className="mission-path-line">
                 <div className="mission-path-line-fill" style={{ width: getLineFillWidth() }} />
               </div>
