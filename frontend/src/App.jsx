@@ -120,8 +120,52 @@ function App() {
   const [testCasesCount, setTestCasesCount] = useState('0'); // Default/0, Custom/1
   const [isCopied, setIsCopied] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false);
+  const [terminalHeight, setTerminalHeight] = useState(230); // Default height: 230px
+  const [isResizingTerminal, setIsResizingTerminal] = useState(false);
   const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
+
+  // Drag-to-Resize mouse event listeners
+  const handleMouseDownResize = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingTerminal(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizingTerminal) return;
+      const newHeight = window.innerHeight - e.clientY;
+      const minHeight = 120;
+      const maxHeight = Math.floor(window.innerHeight * 0.75); // Max 75% viewport height
+      if (newHeight >= minHeight && newHeight <= maxHeight) {
+        setTerminalHeight(newHeight);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isResizingTerminal) {
+        setIsResizingTerminal(false);
+      }
+    };
+
+    if (isResizingTerminal) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingTerminal]);
+
+  const toggleMaximizeTerminal = useCallback(() => {
+    if (terminalHeight > 320) {
+      setTerminalHeight(230);
+    } else {
+      setTerminalHeight(450);
+    }
+  }, [terminalHeight]);
   
   // Custom Test Case States
   const [customInput, setCustomInput] = useState('');
@@ -949,8 +993,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       className="app-container" 
       ref={containerRef}
       style={{
-        paddingBottom: isTerminalOpen ? (isTerminalMaximized ? '490px' : '260px') : '80px',
-        transition: 'padding-bottom 0.3s ease-in-out'
+        paddingBottom: isTerminalOpen ? `${terminalHeight + 30}px` : '80px',
+        transition: isResizingTerminal ? 'none' : 'padding-bottom 0.3s ease-in-out'
       }}
     >
       {toastMessage && (
@@ -1759,7 +1803,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
       </main>
 
-      {/* Slide-Up Detailed Execution Terminal Bottom Drawer (VS Code Style) */}
+      {/* Slide-Up Detailed Execution Terminal Bottom Drawer (VS Code Style with Drag-to-Resize) */}
       <div 
         className={`terminal-widget-drawer ${isTerminalOpen ? 'open' : 'collapsed'}`}
         style={{
@@ -1767,23 +1811,56 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           bottom: 0,
           left: 0,
           right: 0,
-          height: isTerminalOpen ? (isTerminalMaximized ? '450px' : '230px') : '0px',
+          height: isTerminalOpen ? `${terminalHeight}px` : '0px',
           background: '#060709',
           borderTop: isTerminalOpen ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
-          transition: 'all 0.3s ease-in-out',
+          transition: isResizingTerminal ? 'none' : 'all 0.3s ease-in-out',
           boxShadow: isTerminalOpen ? '0 -10px 30px rgba(0, 0, 0, 0.7)' : 'none',
           overflow: 'hidden'
         }}
       >
+        {/* Top Draggable Border Handle */}
+        {isTerminalOpen && (
+          <div
+            onMouseDown={handleMouseDownResize}
+            style={{
+              height: '8px',
+              width: '100%',
+              cursor: 'ns-resize',
+              background: isResizingTerminal ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.04)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.15s ease',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10
+            }}
+            title="Click and drag UP/DOWN to resize terminal drawer"
+          >
+            <div 
+              style={{
+                width: '40px',
+                height: '3px',
+                borderRadius: '2px',
+                backgroundColor: isResizingTerminal ? '#10b981' : 'rgba(255, 255, 255, 0.3)'
+              }}
+            />
+          </div>
+        )}
+
         {isTerminalOpen && (
           <>
             <div 
               className="terminal-header" 
               style={{ 
                 padding: '8px 16px',
+                marginTop: '4px',
                 background: 'rgba(13, 14, 18, 0.95)',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
@@ -1802,7 +1879,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   <TerminalIcon size={14} style={{ color: '#10b981' }} />
                   <span>FULL EXECUTION TRACE LOGS</span>
                   <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 700 }}>
-                    TERMINAL
+                    {`${terminalHeight}PX`}
                   </span>
                 </div>
               </div>
@@ -1834,8 +1911,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 {/* Toggle Height/Maximize Button */}
                 <button 
                   type="button"
-                  onClick={() => setIsTerminalMaximized(prev => !prev)}
-                  title={isTerminalMaximized ? "Restore Height (230px)" : "Maximize Panel (450px)"}
+                  onClick={toggleMaximizeTerminal}
+                  title={terminalHeight > 320 ? "Restore Height (230px)" : "Maximize Panel (450px)"}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -1850,7 +1927,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   }}
                   className="hover:text-white hover:bg-slate-800/60 transition-colors"
                 >
-                  {isTerminalMaximized ? (
+                  {terminalHeight > 320 ? (
                     <>
                       <Minimize2 size={14} />
                       <span>Restore</span>
@@ -1868,7 +1945,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   onClick={() => {
                     setIsTerminalOpen(false);
-                    setIsTerminalMaximized(false);
+                    setTerminalHeight(230);
                   }}
                   title="Close Panel"
                   style={{
@@ -1894,7 +1971,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 flex: 1, 
                 padding: '12px 16px', 
                 overflowY: 'auto', 
-                maxHeight: isTerminalMaximized ? '400px' : '180px',
+                maxHeight: `${terminalHeight - 44}px`,
                 fontFamily: 'var(--font-mono)', 
                 fontSize: '0.75rem', 
                 lineHeight: '1.6',

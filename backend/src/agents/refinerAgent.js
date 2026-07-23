@@ -46,6 +46,7 @@ Universal Polish & Error Rectification Framework:
 2. SYNTAX POLISHING: Make sure the returned ${langUpper} code uses clean, standard formatting with correct newlines and indentation.
 3. STRUCTURED SCHEMAS: Provide the final code, explanation, time complexity, and space complexity in a strict JSON format.
 4. LEETCODE PACKAGING: For C++, you MUST ensure the returned 'finalCode' is wrapped inside a standard 'class Solution { public: ... }' and contains ONLY the solution class and methods. You MUST completely remove any helper 'main' function, stdin/stdout operations, or '#ifndef ONLINE_JUDGE' preprocessor blocks.
+5. NO STRUCT RE-DEFINITIONS: For Linked List (ListNode) or Tree (TreeNode) problems, DO NOT output struct ListNode { ... }; or struct TreeNode { ... }; in finalCode. Assume they are provided globally by LeetCode.
   `.trim();
 
   const RefinerResponseSchema = {

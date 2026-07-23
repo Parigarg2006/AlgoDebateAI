@@ -51,7 +51,14 @@ export function cleanCodeString(str) {
     cleaned = cleaned.replace(/\\t/g, '\t');
   }
   cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').replace(/```/g, '').trim();
-  return cleaned;
+  
+  // Strip duplicate ListNode and TreeNode struct definitions to prevent re-definition errors in LeetCode
+  cleaned = cleaned.replace(/\/\*\*[\s\S]*?Definition for singly-linked list[\s\S]*?\*\//gi, '');
+  cleaned = cleaned.replace(/\/\*\*[\s\S]*?Definition for a binary tree node[\s\S]*?\*\//gi, '');
+  cleaned = cleaned.replace(/struct\s+ListNode\s*\{[\s\S]*?\};?/g, '');
+  cleaned = cleaned.replace(/struct\s+TreeNode\s*\{[\s\S]*?\};?/g, '');
+
+  return cleaned.trim();
 }
 
 /**

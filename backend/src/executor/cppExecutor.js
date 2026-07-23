@@ -294,8 +294,17 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
     const exePath = path.join(TEMP_DIR, `solution_${id}.exe`);
 
     let modifiedCode = code;
+    let preHeaders = `#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <queue>\n#include <stack>\n#include <map>\n#include <set>\n#include <unordered_map>\n#include <unordered_set>\n#include <numeric>\n#include <climits>\n#include <cmath>\nusing namespace std;\n\n`;
+    
+    if (modifiedCode.includes('ListNode') && !modifiedCode.includes('struct ListNode')) {
+      preHeaders += `struct ListNode {\n    int val;\n    ListNode *next;\n    ListNode() : val(0), next(nullptr) {}\n    ListNode(int x) : val(x), next(nullptr) {}\n    ListNode(int x, ListNode *next) : val(x), next(next) {}\n};\n\n`;
+    }
+    if (modifiedCode.includes('TreeNode') && !modifiedCode.includes('struct TreeNode')) {
+      preHeaders += `struct TreeNode {\n    int val;\n    TreeNode *left;\n    TreeNode *right;\n    TreeNode() : val(0), left(nullptr), right(nullptr) {}\n    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}\n};\n\n`;
+    }
+
     if (!modifiedCode.includes('#include <vector>') && !modifiedCode.includes('#include<vector>')) {
-      modifiedCode = `#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <queue>\n#include <stack>\n#include <map>\n#include <set>\n#include <unordered_map>\n#include <unordered_set>\n#include <numeric>\n#include <climits>\n#include <cmath>\nusing namespace std;\n\n` + modifiedCode;
+      modifiedCode = preHeaders + modifiedCode;
     }
     try {
       const cppTemplate = extractLanguageSnippet(problemDescription, 'cpp');
