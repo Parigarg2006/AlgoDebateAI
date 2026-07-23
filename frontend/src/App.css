@@ -1,11 +1,12 @@
 /* 3-Column SaaS Grid & Layout */
 .app-container {
-   display: flex;
-   flex-direction: column;
-   min-height: 100vh;
-   background-color: var(--bg-main);
-   overflow-y: auto;
- }
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  background-color: var(--bg-main);
+  overflow: hidden;
+}
 
 /* Fixed Header */
 .app-header {
@@ -103,14 +104,14 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   align-items: stretch;
-  gap: 20px;
-  padding: 20px 24px;
+  gap: 16px;
+  padding: 16px 24px;
   margin: 0 auto;
   max-width: 1700px;
   width: 100%;
-  min-height: calc(100vh - 56px);
-  height: auto;
-  overflow-y: auto;
+  height: calc(100vh - 56px);
+  max-height: calc(100vh - 56px);
+  overflow: hidden;
   flex: 1;
 }
 
@@ -119,40 +120,39 @@
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  height: auto;
+  justify-content: space-between;
+  gap: 12px;
+  height: 100%;
   margin-top: 0;
   padding-top: 0;
-  overflow: visible;
-  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .panel-center {
   grid-column: span 6; /* col-span-6 */
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  height: auto;
+  justify-content: space-between;
+  gap: 12px;
+  height: 100%;
   margin-top: 0;
   padding-top: 0;
-  overflow: visible;
-  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .panel-right {
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  height: auto;
+  justify-content: space-between;
+  gap: 12px;
+  height: 100%;
   margin-top: 0;
   padding-top: 0;
-  overflow: visible;
+  overflow-y: auto;
   padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 32px;
+  padding-right: 2px;
   width: 100%;
-  flex-shrink: 0;
 }
 
 /* Hide scrollbars for panels but allow scrolling */
@@ -453,22 +453,26 @@
 }
 
 .code-workspace-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  height: auto;
-  flex-shrink: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .workspace-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  height: auto;
+  height: 100%;
+  min-height: 0;
 }
 
 .code-editor-container {
   flex: 1;
   height: 100%;
-  min-height: 600px;
+  min-height: 0;
   width: 100%;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
@@ -483,7 +487,7 @@
 .diff-view-container {
   flex: 1;
   height: 100%;
-  min-height: 600px;
+  min-height: 0;
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
