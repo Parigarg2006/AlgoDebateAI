@@ -26,7 +26,11 @@ import {
   CheckCircle2,
   Terminal,
   Clock,
-  Database
+  Database,
+  X,
+  Maximize2,
+  Minimize2,
+  ChevronDown
 } from 'lucide-react';
 import './App.css';
 
@@ -116,6 +120,7 @@ function App() {
   const [testCasesCount, setTestCasesCount] = useState('0'); // Default/0, Custom/1
   const [isCopied, setIsCopied] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false);
   const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
   
   // Custom Test Case States
@@ -940,7 +945,14 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, [liveCode, finalResult]);
 
   return (
-    <div className="app-container" ref={containerRef}>
+    <div 
+      className="app-container" 
+      ref={containerRef}
+      style={{
+        paddingBottom: isTerminalOpen ? (isTerminalMaximized ? '490px' : '260px') : '80px',
+        transition: 'padding-bottom 0.3s ease-in-out'
+      }}
+    >
       {toastMessage && (
         <div className="toast-alert fade-in" style={{
           position: 'fixed',
@@ -1726,18 +1738,28 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               )}
             </div>
             <button
-              onClick={() => setIsTerminalOpen(prev => !prev)}
+              type="button"
+              onClick={() => {
+                setIsTerminalOpen(prev => !prev);
+                if (!isTerminalOpen && terminalEndRef.current) {
+                  setTimeout(() => {
+                    terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                  }, 150);
+                }
+              }}
               className="btn-trace-footer"
             >
               <Terminal size={16} className="text-emerald-400" style={{ marginRight: '8px' }} />
-              <span className="text-emerald-400 font-semibold tracking-wide" style={{ fontSize: '0.875rem' }}>View Full Execution Trace</span>
-              <ChevronRight size={16} className="text-emerald-400" style={{ marginLeft: 'auto' }} />
+              <span className="text-emerald-400 font-semibold tracking-wide" style={{ fontSize: '0.875rem' }}>
+                {isTerminalOpen ? 'Hide Execution Trace' : 'View Full Execution Trace'}
+              </span>
+              <ChevronRight size={16} className={`text-emerald-400 transition-transform duration-200 ${isTerminalOpen ? 'rotate-90' : ''}`} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
         </section>
       </main>
 
-      {/* Slide-Up Detailed Execution Terminal Bottom Drawer */}
+      {/* Slide-Up Detailed Execution Terminal Bottom Drawer (VS Code Style) */}
       <div 
         className={`terminal-widget-drawer ${isTerminalOpen ? 'open' : 'collapsed'}`}
         style={{
@@ -1745,14 +1767,14 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           bottom: 0,
           left: 0,
           right: 0,
-          height: isTerminalOpen ? '200px' : '0px',
-          background: '#08090C',
-          borderTop: isTerminalOpen ? '1px solid var(--border-slate)' : 'none',
+          height: isTerminalOpen ? (isTerminalMaximized ? '450px' : '230px') : '0px',
+          background: '#060709',
+          borderTop: isTerminalOpen ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
-          transition: 'all 0.25s ease-in-out',
-          boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.4)',
+          transition: 'all 0.3s ease-in-out',
+          boxShadow: isTerminalOpen ? '0 -10px 30px rgba(0, 0, 0, 0.7)' : 'none',
           overflow: 'hidden'
         }}
       >
@@ -1762,55 +1784,145 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               className="terminal-header" 
               style={{ 
                 padding: '8px 16px',
-                background: 'var(--bg-card)',
-                borderBottom: '1px solid var(--border-slate)',
+                background: 'rgba(13, 14, 18, 0.95)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                userSelect: 'none'
               }}
             >
-              <div className="terminal-header-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                <TerminalIcon size={12} style={{ color: 'var(--accent-green)' }} />
-                <span>Full Execution Trace Logs</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button 
-                  onClick={() => setIsTerminalOpen(false)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer' }}
-                >
-                  Collapse
-                </button>
-                <div className="terminal-header-dots" style={{ display: 'flex', gap: '6px' }}>
-                  <span className="terminal-dot red" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
-                  <span className="terminal-dot yellow" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-                  <span className="terminal-dot green" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="terminal-header-dots" style={{ display: 'flex', gap: '6px', marginRight: '4px' }}>
+                  <span className="terminal-dot red" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }}></span>
+                  <span className="terminal-dot yellow" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }}></span>
+                  <span className="terminal-dot green" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontWeight: 600, color: '#f8fafc', letterSpacing: '0.04em' }}>
+                  <TerminalIcon size={14} style={{ color: '#10b981' }} />
+                  <span>FULL EXECUTION TRACE LOGS</span>
+                  <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 700 }}>
+                    TERMINAL
+                  </span>
                 </div>
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {/* Collapse Button */}
+                <button 
+                  type="button"
+                  onClick={() => setIsTerminalOpen(false)}
+                  title="Collapse Terminal"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem'
+                  }}
+                  className="hover:text-white hover:bg-slate-800/60 transition-colors"
+                >
+                  <ChevronDown size={14} />
+                  <span>Collapse</span>
+                </button>
+
+                {/* Toggle Height/Maximize Button */}
+                <button 
+                  type="button"
+                  onClick={() => setIsTerminalMaximized(prev => !prev)}
+                  title={isTerminalMaximized ? "Restore Height (230px)" : "Maximize Panel (450px)"}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem'
+                  }}
+                  className="hover:text-white hover:bg-slate-800/60 transition-colors"
+                >
+                  {isTerminalMaximized ? (
+                    <>
+                      <Minimize2 size={14} />
+                      <span>Restore</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 size={14} />
+                      <span>Expand</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Close Button */}
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsTerminalOpen(false);
+                    setIsTerminalMaximized(false);
+                  }}
+                  title="Close Panel"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  className="hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
+
             <div 
-              className="terminal-body" 
+              className="terminal-body custom-scrollbar" 
               style={{ 
                 flex: 1, 
                 padding: '12px 16px', 
                 overflowY: 'auto', 
+                maxHeight: isTerminalMaximized ? '400px' : '180px',
                 fontFamily: 'var(--font-mono)', 
-                fontSize: '0.72rem', 
-                lineHeight: '1.5',
-                background: 'var(--bg-input)'
+                fontSize: '0.75rem', 
+                lineHeight: '1.6',
+                background: '#040507',
+                color: '#cbd5e1'
               }}
             >
-              {terminalLogs.map((log, index) => {
-                let logClass = 'info';
-                if (log.startsWith('[ERROR]')) logClass = 'error';
-                else if (log.startsWith('[SYSTEM]')) logClass = 'system';
-                else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logClass = 'success';
+              {terminalLogs.length === 0 ? (
+                <div style={{ color: '#64748b', fontStyle: 'italic', padding: '12px 0' }}>
+                  No trace logs recorded yet. Start a problem debate to view live node traces.
+                </div>
+              ) : (
+                terminalLogs.map((log, index) => {
+                  let logStyle = { color: '#cbd5e1' };
+                  if (log.startsWith('[ERROR]')) logStyle = { color: '#f87171', fontWeight: 600 };
+                  else if (log.startsWith('[SYSTEM]')) logStyle = { color: '#38bdf8', fontWeight: 500 };
+                  else if (log.includes('VERDICT: APPROVED') || log.includes('SUCCESS:')) logStyle = { color: '#34d399', fontWeight: 700 };
+                  else if (log.startsWith('[Node:')) logStyle = { color: '#c084fc', fontWeight: 600 };
 
-                return (
-                  <div key={index} className={`terminal-log-line ${logClass}`} style={{ marginBottom: '4px' }}>
-                    {log}
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={index} className="terminal-log-line" style={{ marginBottom: '4px', display: 'flex', gap: '10px' }}>
+                      <span style={{ color: '#475569', fontSize: '0.7rem', userSelect: 'none', minWidth: '24px' }}>{`${index + 1}.`}</span>
+                      <span style={logStyle}>{log}</span>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={terminalEndRef} />
             </div>
           </>
         )}
