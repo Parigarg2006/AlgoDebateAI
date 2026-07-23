@@ -635,30 +635,41 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Toast notification helper
+  const showToast = useCallback((msg) => {
+    if (!msg) return;
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, []);
+
   // Context-Aware Copy, Download, & Share based on activeWorkspaceTab
   const getTabContentAndFilename = useCallback(() => {
     const ext = language === 'python' ? 'py' : (language === 'java' ? 'java' : 'cpp');
     if (activeWorkspaceTab === 'complexity') {
+      const timeComp = finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)';
+      const spaceComp = finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)';
       const content = finalResult ? 
-        `ALGODEBATE AI - COMPLEXITY ANALYSIS REPORT\n==========================================\nTime Complexity: ${formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}\nSpace Complexity: ${formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}\n\nBig-O Algorithmic Performance Breakdown:\nThe solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.`
+        `ALGODEBATE AI - COMPLEXITY ANALYSIS REPORT\n==========================================\nTime Complexity: ${timeComp}\nSpace Complexity: ${spaceComp}\n\nBig-O Algorithmic Performance Breakdown:\nThe solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.`
         : 'Complexity analysis not generated yet.';
       return { content, filename: 'complexity_analysis.txt' };
     }
     if (activeWorkspaceTab === 'strategy') {
-      const content = finalResult && finalResult.explanation ?
+      const content = finalResult?.explanation ?
         `# Strategy & Proof of Correctness\n\n${formatLatexFormula(unescapeNewlines(finalResult.explanation))}`
         : 'Strategy & proof analysis not generated yet.';
       return { content, filename: 'strategy_proof.md' };
     }
     // Default: Solution Code tab
-    const code = cleanCodeForEditor(finalResult?.finalCode || liveCode);
+    const code = cleanCodeForEditor(finalResult?.finalCode || liveCode || '');
     return { content: code, filename: `solution.${ext}` };
   }, [activeWorkspaceTab, finalResult, liveCode, language]);
 
   const handleTabCopy = useCallback(() => {
     const { content } = getTabContentAndFilename();
+    if (!content) return;
     handleCopyCode(content);
-  }, [getTabContentAndFilename, handleCopyCode]);
+    showToast('Copied to clipboard!');
+  }, [getTabContentAndFilename, handleCopyCode, showToast]);
 
   const handleTabDownload = useCallback(() => {
     const { content, filename } = getTabContentAndFilename();
@@ -677,8 +688,12 @@ function App() {
 
   const handleTabShare = useCallback(() => {
     const { filename } = getTabContentAndFilename();
-    navigator.clipboard.writeText(window.location.href);
-    showToast(`Share link for ${filename} copied to clipboard!`);
+    try {
+      navigator.clipboard.writeText(window.location.href);
+      showToast(`Share link for ${filename} copied to clipboard!`);
+    } catch (e) {
+      showToast('Share link copied to clipboard!');
+    }
   }, [getTabContentAndFilename, showToast]);
 
   // Setup WS listeners
