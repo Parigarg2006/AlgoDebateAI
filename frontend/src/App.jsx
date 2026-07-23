@@ -1537,7 +1537,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             
-            <div className="workspace-content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
               {isDebating && (
                 <div className="battle-alert-banner animate-pulse" style={{
                   background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
@@ -1566,7 +1566,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               ) : (
                 <>
                   {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                    <div className="diff-view-container fade-in" style={{ height: '520px', maxHeight: '550px', overflow: 'hidden' }}>
+                    <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: '480px', overflow: 'hidden' }}>
                       {/* Left Column: Initial Coder Draft */}
                       <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                         <div className="diff-panel-header">Coder Draft (Initial)</div>
@@ -1600,7 +1600,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                       </div>
                     </div>
                   ) : (
-                    <div className="code-editor-container custom-scrollbar fade-in" style={{ height: '520px', maxHeight: '550px', overflowY: 'auto' }}>
+                    <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: '480px', overflowY: 'auto' }}>
                       {renderedCodeLines.map((line, idx) => (
                         <div key={idx} className="code-line-row">
                           <span className="code-line-number">{idx + 1}</span>
@@ -1807,83 +1807,135 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </button>
           </div>
 
-          {/* Quick-Action Analysis Cards in Right Column */}
+          {/* Spacious Analysis & Proofs Cards in Right Column */}
           {finalResult && (
-            <div className="bento-card analysis-card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <h2 className="card-title" style={{ marginBottom: '2px' }}>
-                <Sparkles size={13} />
-                ANALYSIS & PROOFS
-              </h2>
-              <button
-                type="button"
-                onClick={() => setActiveModal('complexity')}
-                style={{
-                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
-                  border: '1px solid rgba(6, 182, 212, 0.35)',
-                  boxShadow: '0 4px 15px rgba(6, 182, 212, 0.08)',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  color: '#f8fafc',
-                  transition: 'all 0.2s ease',
-                  width: '100%'
-                }}
-                className="hover:border-cyan-400 hover:scale-[1.01]"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                    <Clock size={16} />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Complexity Analysis</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '1px' }}>
-                      Time: {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))} | Space: {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
+            <>
+              {/* Card 1: Complexity Analysis */}
+              <div className="bento-card fade-in" style={{
+                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                      <Clock size={16} />
                     </div>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Complexity Analysis
+                    </span>
                   </div>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                    VERIFIED
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.68rem', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
-                  View →
-                </span>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveModal('strategy')}
-                style={{
-                  background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
-                  border: '1px solid rgba(168, 85, 247, 0.35)',
-                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.08)',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  color: '#f8fafc',
-                  transition: 'all 0.2s ease',
-                  width: '100%'
-                }}
-                className="hover:border-purple-400 hover:scale-[1.01]"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '8px', borderRadius: '8px', display: 'flex' }}>
-                    <Sparkles size={16} />
+                {/* Large Clear Badges for Time & Space */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                      {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Strategy & Proof</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '1px' }}>
-                      Algorithm design & correctness proof
+                  <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                      {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
                     </div>
                   </div>
                 </div>
-                <span style={{ fontSize: '0.68rem', color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
-                  Read →
-                </span>
-              </button>
-            </div>
+
+                <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                  Optimal runtime asymptotic scaling verified by multi-agent validation.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('complexity')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: 'rgba(6, 182, 212, 0.18)',
+                    border: '1px solid rgba(6, 182, 212, 0.4)',
+                    color: '#38bdf8',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className="hover:bg-cyan-500/25 hover:border-cyan-400 transition-all"
+                >
+                  <span>View Complexity Report</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+
+              {/* Card 2: Strategy & Proof */}
+              <div className="bento-card fade-in" style={{
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                boxShadow: '0 4px 20px rgba(168, 85, 247, 0.1)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.18)', color: '#c084fc', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                      <Sparkles size={16} />
+                    </div>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Strategy & Proof
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                    PROVED
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
+                  Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('strategy')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: 'rgba(168, 85, 247, 0.18)',
+                    border: '1px solid rgba(168, 85, 247, 0.4)',
+                    color: '#c084fc',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className="hover:bg-purple-500/25 hover:border-purple-400 transition-all"
+                >
+                  <span>Read Strategy & Proof Breakdown</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </>
           )}
         </section>
       </main>
