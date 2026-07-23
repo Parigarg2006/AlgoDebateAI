@@ -65,11 +65,42 @@ const cleanCodeForEditor = (code) => {
 };
 
 /**
+ * Cleanly formats LaTeX formulas into readable plain math notation
+ */
+const formatLatexFormula = (str) => {
+  if (!str) return '';
+  let formatted = String(str);
+
+  // Clean up LaTeX escapes like \text{...}, \ext{...}, \mathrm{...}, \log, \le, \ge, etc.
+  formatted = formatted.replace(/\\(text|ext|mathrm|mathbf|mathsf)\{([^}]+)\}/g, '$2');
+  formatted = formatted.replace(/\\log/g, 'log');
+  formatted = formatted.replace(/\\le/g, '≤');
+  formatted = formatted.replace(/\\ge/g, '≥');
+  formatted = formatted.replace(/\\times/g, '×');
+  formatted = formatted.replace(/\\cdot/g, '·');
+  formatted = formatted.replace(/\\infty/g, '∞');
+  formatted = formatted.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
+
+  // Convert common exponents like ^2, ^3, ^k, ^n, ^5 into superscripts ² ³ ᵏ ⁿ ⁵
+  formatted = formatted.replace(/\^2/g, '²');
+  formatted = formatted.replace(/\^3/g, '³');
+  formatted = formatted.replace(/\^5/g, '⁵');
+  formatted = formatted.replace(/\^k/g, 'ᵏ');
+  formatted = formatted.replace(/\^n/g, 'ⁿ');
+
+  // Strip math delimiters $...$ or $$...$$
+  formatted = formatted.replace(/\$\$([\s\S]*?)\$\$/g, '$1');
+  formatted = formatted.replace(/\$([^$]+)\$/g, '$1');
+
+  return formatted;
+};
+
+/**
  * Renders formatted markdown text with clean line breaks, bullet points, and numbered lists
  */
 const renderFormattedMarkdown = (text) => {
   if (!text) return null;
-  const cleanText = unescapeNewlines(text);
+  const cleanText = formatLatexFormula(unescapeNewlines(text));
   const lines = cleanText.split('\n');
   
   return lines.map((line, idx) => {
@@ -603,6 +634,52 @@ function App() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  // Context-Aware Copy, Download, & Share based on activeWorkspaceTab
+  const getTabContentAndFilename = useCallback(() => {
+    const ext = language === 'python' ? 'py' : (language === 'java' ? 'java' : 'cpp');
+    if (activeWorkspaceTab === 'complexity') {
+      const content = finalResult ? 
+        `ALGODEBATE AI - COMPLEXITY ANALYSIS REPORT\n==========================================\nTime Complexity: ${formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}\nSpace Complexity: ${formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}\n\nBig-O Algorithmic Performance Breakdown:\nThe solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.`
+        : 'Complexity analysis not generated yet.';
+      return { content, filename: 'complexity_analysis.txt' };
+    }
+    if (activeWorkspaceTab === 'strategy') {
+      const content = finalResult && finalResult.explanation ?
+        `# Strategy & Proof of Correctness\n\n${formatLatexFormula(unescapeNewlines(finalResult.explanation))}`
+        : 'Strategy & proof analysis not generated yet.';
+      return { content, filename: 'strategy_proof.md' };
+    }
+    // Default: Solution Code tab
+    const code = cleanCodeForEditor(finalResult?.finalCode || liveCode);
+    return { content: code, filename: `solution.${ext}` };
+  }, [activeWorkspaceTab, finalResult, liveCode, language]);
+
+  const handleTabCopy = useCallback(() => {
+    const { content } = getTabContentAndFilename();
+    handleCopyCode(content);
+  }, [getTabContentAndFilename, handleCopyCode]);
+
+  const handleTabDownload = useCallback(() => {
+    const { content, filename } = getTabContentAndFilename();
+    if (!content) return;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${filename}`);
+  }, [getTabContentAndFilename, showToast]);
+
+  const handleTabShare = useCallback(() => {
+    const { filename } = getTabContentAndFilename();
+    navigator.clipboard.writeText(window.location.href);
+    showToast(`Share link for ${filename} copied to clipboard!`);
+  }, [getTabContentAndFilename, showToast]);
 
   // Setup WS listeners
   const setupJobWebSocketListeners = (tempJobId) => {
@@ -1368,27 +1445,27 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             )}
 
-            <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => setActiveWorkspaceTab('code')}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
                     fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'code' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
-                    background: activeWorkspaceTab === 'code' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                    borderRadius: '8px',
+                    border: activeWorkspaceTab === 'code' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                    background: activeWorkspaceTab === 'code' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'code' ? '#34d399' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '8px',
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <Code2 size={14} />
+                  <Code2 size={15} />
                   <span>Solution Code</span>
                 </button>
 
@@ -1396,25 +1473,25 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   onClick={() => setActiveWorkspaceTab('complexity')}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
                     fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid transparent',
-                    background: activeWorkspaceTab === 'complexity' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                    borderRadius: '8px',
+                    border: activeWorkspaceTab === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                    background: activeWorkspaceTab === 'complexity' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'complexity' ? '#38bdf8' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '8px',
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <Clock size={14} />
+                  <Clock size={15} />
                   <span>Complexity Analysis</span>
                   {finalResult && (
-                    <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(6, 182, 212, 0.2)', padding: '1px 6px', borderRadius: '8px', color: '#06b6d4', fontWeight: 700 }}>
-                      {unescapeNewlines(finalResult.timeComplexity)}
+                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.35)', fontWeight: 700, whitespace: 'nowrap' }}>
+                      {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
                     </span>
                   )}
                 </button>
@@ -1423,21 +1500,21 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   onClick={() => setActiveWorkspaceTab('strategy')}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
                     fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'strategy' ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid transparent',
-                    background: activeWorkspaceTab === 'strategy' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                    borderRadius: '8px',
+                    border: activeWorkspaceTab === 'strategy' ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                    background: activeWorkspaceTab === 'strategy' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                     color: activeWorkspaceTab === 'strategy' ? '#c084fc' : '#94a3b8',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '8px',
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <Sparkles size={14} />
+                  <Sparkles size={15} />
                   <span>Strategy & Proof</span>
                 </button>
               </div>
@@ -1478,15 +1555,15 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 )}
                 
                 <div className="code-editor-actions">
-                  <button type="button" className="editor-btn" onClick={() => handleCopyCode(finalResult?.finalCode || liveCode)} title="Copy code">
+                  <button type="button" className="editor-btn" onClick={handleTabCopy} title={`Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity Report' : 'Strategy Explanation')}`}>
                     {isCopied ? <Check size={11} style={{ color: 'var(--accent-green)' }} /> : <Copy size={11} />}
-                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                    <span>{isCopied ? 'Copied' : `Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity' : 'Strategy')}`}</span>
                   </button>
-                  <button type="button" className="editor-btn" onClick={() => handleDownloadCode(finalResult?.finalCode || liveCode)} title="Download code">
+                  <button type="button" className="editor-btn" onClick={handleTabDownload} title={`Download ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity Report' : 'Strategy Markdown')}`}>
                     <Download size={11} />
                     <span>Download</span>
                   </button>
-                  <button type="button" className="editor-btn" onClick={() => alert('Solution Share Link copied to clipboard!')} title="Share solution link">
+                  <button type="button" className="editor-btn" onClick={handleTabShare} title="Share solution link">
                     <Share2 size={11} />
                     <span>Share</span>
                   </button>
@@ -1525,11 +1602,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   {activeWorkspaceTab === 'code' && (
                     <>
                       {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                        <div className="diff-view-container fade-in">
+                        <div className="diff-view-container fade-in" style={{ height: '460px', maxHeight: '500px', overflow: 'hidden' }}>
                           {/* Left Column: Initial Coder Draft */}
-                          <div className="diff-panel">
+                          <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                             <div className="diff-panel-header">Coder Draft (Initial)</div>
-                            <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                            <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
                               {(() => {
                                 const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
                                 return leftLines.map((line, idx) => (
@@ -1543,9 +1620,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                           </div>
                           
                           {/* Right Column: Refined Output */}
-                          <div className="diff-panel">
+                          <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                             <div className="diff-panel-header">Refined Output (Final)</div>
-                            <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                            <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
                               {(() => {
                                 const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
                                 return rightLines.map((line, idx) => (
@@ -1559,7 +1636,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                           </div>
                         </div>
                       ) : (
-                        <div className="code-editor-container fade-in" style={{ flex: 1, minHeight: '480px' }}>
+                        <div className="code-editor-container custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto' }}>
                           {renderedCodeLines.map((line, idx) => (
                             <div key={idx} className="code-line-row">
                               <span className="code-line-number">{idx + 1}</span>
@@ -1572,7 +1649,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
 
                   {activeWorkspaceTab === 'complexity' && (
-                    <div className="fade-in" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                    <div className="custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {!finalResult ? (
                         <div className="workspace-empty-view">
                           <Clock size={28} className="text-cyan-400" />
@@ -1605,7 +1682,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                               </div>
                               <div>
                                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#06b6d4', marginTop: '4px' }}>{unescapeNewlines(finalResult.timeComplexity)}</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#06b6d4', marginTop: '4px' }}>{formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}</div>
                               </div>
                             </div>
                             
@@ -1633,7 +1710,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                               </div>
                               <div>
                                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>{unescapeNewlines(finalResult.spaceComplexity)}</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>{formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}</div>
                               </div>
                             </div>
                           </div>
@@ -1650,7 +1727,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                             <h4 style={{ color: '#f8fafc', fontWeight: 700, marginBottom: '8px' }}>Big-O Algorithmic Performance Breakdown</h4>
                             <p>
                               The solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.
-                              Time complexity is evaluated at <strong>{unescapeNewlines(finalResult.timeComplexity)}</strong> and space allocation scales at <strong>{unescapeNewlines(finalResult.spaceComplexity)}</strong>.
+                              Time complexity is evaluated at <strong>{formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}</strong> and space allocation scales at <strong>{formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}</strong>.
                             </p>
                           </div>
                         </>
@@ -1659,7 +1736,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
 
                   {activeWorkspaceTab === 'strategy' && (
-                    <div className="fade-in" style={{ padding: '16px', flex: 1 }}>
+                    <div className="custom-scrollbar fade-in" style={{ height: '460px', maxHeight: '500px', overflowY: 'auto', padding: '16px' }}>
                       {!finalResult || !finalResult.explanation ? (
                         <div className="workspace-empty-view">
                           <Sparkles size={28} className="text-purple-400" />

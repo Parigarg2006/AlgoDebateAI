@@ -440,11 +440,12 @@
 }
 
 .code-editor-container {
-  flex: 1;
+  height: 460px;
+  max-height: 500px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
-  overflow: auto;
+  overflow-y: auto;
   padding: 12px 0;
   display: flex;
   flex-direction: column;
