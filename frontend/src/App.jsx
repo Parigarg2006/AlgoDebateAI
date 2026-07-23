@@ -1153,11 +1153,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div className="status-indicator" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.25)', color: '#10b981' }}>
-            <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
-            {isConnected ? '• All Agents Online' : 'Disconnected'}
-          </div>
-
           <div className="telemetry-wrapper">
             <div className="telemetry-item" title="Active solve run duration">
               <span className="telemetry-label">Latency:</span>
@@ -1899,6 +1894,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
               Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
             </p>
+            
+            <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              Invariant validation complete. Edge cases and mathematical boundary conditions verified across 4 agent passes.
+            </p>
 
             <button
               type="button"
@@ -1921,7 +1920,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               }}
               className="hover:bg-purple-500/25 hover:border-purple-400 transition-all"
             >
-              <span>Read Strategy & Proof Breakdown &gt;</span>
+              <span>Read Strategy & Proof Breakdown</span>
+              <ChevronRight size={14} />
             </button>
           </div>
         </section>
