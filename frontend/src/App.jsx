@@ -1147,15 +1147,31 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       <header className="app-header">
         <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Network size={22} style={{ color: 'var(--accent-green)' }} />
-          <span className="logo-title" style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '0.4px', color: '#ffffff', display: 'flex', alignItems: 'center' }}>
+          <span className="logo-title" style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '0.4px', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
             AlgoDebate AI
           </span>
+          <div style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            color: '#10b981',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '100px',
+            padding: '3px 10px',
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            cursor: 'pointer'
+          }}>
+            <span>Multi-Agent Verifier</span>
+            <ChevronDown size={12} />
+          </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div className="status-indicator">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div className="status-indicator" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.25)', color: '#10b981' }}>
             <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
-            {isConnected ? 'API Connected' : 'Disconnected'}
+            {isConnected ? '• All Agents Online' : 'Disconnected'}
           </div>
 
           <div className="telemetry-wrapper">
@@ -1476,8 +1492,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '10px', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Code2 size={16} className="text-emerald-400" />
-                <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>
-                  {jobState === 'completed' ? 'Solution Code Workspace' : 'Verification Workspace'}
+                <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 800, margin: 0 }}>
+                  CODE EDITOR
                 </span>
               </div>
               
@@ -1622,11 +1638,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         {/* Right Column (col-span-3): Pipeline & Logs */}
         <section className="panel-right">
           
-          {/* Card 1: AI AGENT BATTLE ARENA */}
+          {/* Card 1: AGENT STATUS */}
           <div className="bento-card arena-card">
             <h2 className="card-title">
               <GitFork size={13} />
-              AI AGENT BATTLE ARENA
+              AGENT STATUS
             </h2>
             <div className="pipeline-steps-container">
               {['coder', 'sandbox', 'critic', 'refiner'].map((node) => {
