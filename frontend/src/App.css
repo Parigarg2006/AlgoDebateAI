@@ -1205,29 +1205,31 @@
 }
 
 .pipeline-step-circle {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background-color: var(--bg-input);
-  border: 2px solid var(--border-slate);
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 2px solid #334155;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  transition: all 0.25s;
+  color: #94a3b8;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 0 8px rgba(51, 65, 85, 0.4);
+  transition: all 0.25s ease;
 }
 
 .pipeline-step-node.completed .pipeline-step-circle {
   background-color: var(--accent-green);
   border-color: var(--accent-green);
   color: #000000;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
 }
 
 .pipeline-step-node.active .pipeline-step-circle {
-  border-color: var(--accent-green);
-  color: var(--accent-green);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+  background-color: rgba(2, 44, 34, 0.8);
+  border-color: #34d399;
+  color: #34d399;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
 }
 
 .pipeline-step-label {

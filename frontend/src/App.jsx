@@ -1493,7 +1493,14 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   critic: 'Critic',
                   refiner: 'Refiner'
                 };
+                const agentIcons = {
+                  coder: Code2,
+                  sandbox: Cpu,
+                  critic: ShieldCheck,
+                  refiner: Sparkles
+                };
                 const label = agentLabels[node];
+                const IconComponent = agentIcons[node];
                 const completed = status === 'status-completed';
                 const active = status === 'status-active';
                 const statusText = completed ? 'COMPLETE' : (active ? 'RUNNING' : 'PENDING');
@@ -1501,7 +1508,13 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 return (
                   <div key={node} className={`pipeline-step-node ${completed ? 'completed' : (active ? 'active' : '')}`}>
                     <div className="pipeline-step-circle">
-                      {completed ? <Check size={16} /> : (active ? <Loader2 size={16} className="animate-spin" /> : null)}
+                      {completed ? (
+                        <Check size={22} />
+                      ) : active ? (
+                        <Loader2 size={22} className="animate-spin" />
+                      ) : (
+                        <IconComponent size={22} />
+                      )}
                     </div>
                     <span className="pipeline-step-label">{label}</span>
                     <span className="pipeline-step-status-pill">{statusText}</span>
