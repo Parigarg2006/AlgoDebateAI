@@ -1378,12 +1378,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* LangGraph Mission Path Node Flow */}
-          <div className="bento-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="bento-card">
             <h2 className="card-title">
               <Workflow size={13} />
               LANGGRAPH MISSION PATH
             </h2>
-            <div className="mission-path-container" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <div className="mission-path-container">
               <div className="mission-path-line">
                 <div className="mission-path-line-fill" style={{ width: getLineFillWidth() }} />
               </div>
@@ -1538,7 +1538,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             </div>
             
-            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+            <div className="workspace-content" style={{ display: 'flex', flexDirection: 'column' }}>
               {isDebating && (
                 <div className="battle-alert-banner animate-pulse" style={{
                   background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
@@ -1567,7 +1567,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               ) : (
                 <>
                   {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                    <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: 0, overflow: 'hidden' }}>
+                    <div className="diff-view-container fade-in">
                       {/* Left Column: Initial Coder Draft */}
                       <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                         <div className="diff-panel-header">Coder Draft (Initial)</div>
@@ -1601,7 +1601,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                       </div>
                     </div>
                   ) : (
-                    <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: 0, overflowY: 'auto' }}>
+                    <div className="code-editor-container custom-scrollbar fade-in">
                       {renderedCodeLines.map((line, idx) => (
                         <div key={idx} className="code-line-row">
                           <span className="code-line-number">{idx + 1}</span>
