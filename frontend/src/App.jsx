@@ -1821,135 +1821,130 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
 
           {/* Spacious Analysis & Proofs Cards in Right Column */}
-          {finalResult && (
-            <>
-              {/* Card 1: Complexity Analysis */}
-              <div className="bento-card fade-in" style={{
-                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
-                boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
-                borderRadius: '12px',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                      <Clock size={16} />
-                    </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Complexity Analysis
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                    VERIFIED
-                  </span>
+          {/* Card 1: Complexity Analysis */}
+          <div className="bento-card fade-in" style={{
+            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            border: '1px solid rgba(6, 182, 212, 0.35)',
+            boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                  <Clock size={16} />
                 </div>
-
-                {/* Large Clear Badges for Time & Space */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
-                      {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
-                    </div>
-                  </div>
-                  <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                      {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
-                  Optimal runtime asymptotic scaling verified by multi-agent validation.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveModal('complexity')}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: 'rgba(6, 182, 212, 0.18)',
-                    border: '1px solid rgba(6, 182, 212, 0.4)',
-                    color: '#38bdf8',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  className="hover:bg-cyan-500/25 hover:border-cyan-400 transition-all"
-                >
-                  <span>View Complexity Report</span>
-                  <ChevronRight size={14} />
-                </button>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Complexity Analysis
+                </span>
               </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                {finalResult ? 'VERIFIED' : 'ESTIMATED'}
+              </span>
+            </div>
 
-              {/* Card 2: Strategy & Proof */}
-              <div className="bento-card fade-in" style={{
-                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
-                border: '1px solid rgba(168, 85, 247, 0.35)',
-                boxShadow: '0 4px 20px rgba(168, 85, 247, 0.1)',
-                borderRadius: '12px',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.18)', color: '#c084fc', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                      <Sparkles size={16} />
-                    </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Strategy & Proof
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                    PROVED
-                  </span>
+            {/* Large Clear Badges for Time & Space */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                  {finalResult ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N² log N)'}
                 </div>
-
-                <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
-                  Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveModal('strategy')}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: 'rgba(168, 85, 247, 0.18)',
-                    border: '1px solid rgba(168, 85, 247, 0.4)',
-                    color: '#c084fc',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  className="hover:bg-purple-500/25 hover:border-purple-400 transition-all"
-                >
-                  <span>Read Strategy & Proof Breakdown</span>
-                  <ChevronRight size={14} />
-                </button>
               </div>
-            </>
-          )}
+              <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                  {finalResult ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(N)'}
+                </div>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              Optimal runtime asymptotic scaling verified by multi-agent validation.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setActiveModal('complexity')}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(6, 182, 212, 0.18)',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                color: '#38bdf8',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              className="hover:bg-cyan-500/25 hover:border-cyan-400 transition-all"
+            >
+              <span>View Complexity Report</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Card 2: Strategy & Proof */}
+          <div className="bento-card fade-in" style={{
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            border: '1px solid rgba(168, 85, 247, 0.35)',
+            boxShadow: '0 4px 20px rgba(168, 85, 247, 0.1)',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.18)', color: '#c084fc', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                  <Sparkles size={16} />
+                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Strategy & Proof
+                </span>
+              </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                {finalResult ? 'PROVED' : 'ACTIVE'}
+              </span>
+            </div>
+
+            <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
+              Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setActiveModal('strategy')}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(168, 85, 247, 0.18)',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+                color: '#c084fc',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              className="hover:bg-purple-500/25 hover:border-purple-400 transition-all"
+            >
+              <span>Read Strategy & Proof Breakdown &gt;</span>
+            </button>
+          </div>
         </section>
       </main>
 
