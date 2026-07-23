@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { cleanCodeString, cleanMarkdownText } from '../utils/parser.js';
 
 // Reconstruct __dirname for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -112,6 +113,12 @@ Guidelines:
   // The SDK automatically validates that response.text matches our CoderResponseSchema structure.
   // We can safely parse the response text as JSON.
   const parsed = JSON.parse(response.text);
+  if (parsed.code) {
+    parsed.code = cleanCodeString(parsed.code);
+  }
+  if (parsed.reasoning) {
+    parsed.reasoning = cleanMarkdownText(parsed.reasoning);
+  }
 
   return parsed;
 }

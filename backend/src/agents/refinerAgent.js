@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { cleanCodeString, cleanMarkdownText } from '../utils/parser.js';
 
 // Reconstruct __dirname for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -11,8 +12,6 @@ dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey });
-
-
 
 /**
  * Refines the final code solution and provides polished documentation.
@@ -83,5 +82,19 @@ Universal Polish & Error Rectification Framework:
     }
   });
 
-  return JSON.parse(response.text);
+  const parsed = JSON.parse(response.text);
+  if (parsed.finalCode) {
+    parsed.finalCode = cleanCodeString(parsed.finalCode);
+  }
+  if (parsed.explanation) {
+    parsed.explanation = cleanMarkdownText(parsed.explanation);
+  }
+  if (parsed.timeComplexity) {
+    parsed.timeComplexity = cleanMarkdownText(parsed.timeComplexity);
+  }
+  if (parsed.spaceComplexity) {
+    parsed.spaceComplexity = cleanMarkdownText(parsed.spaceComplexity);
+  }
+
+  return parsed;
 }

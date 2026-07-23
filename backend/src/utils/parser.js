@@ -37,3 +37,34 @@ export function extractSampleTestCases(description) {
   }
   return testCases;
 }
+
+/**
+ * Helper to clean code strings by unescaping literal \n and stripping code block backticks.
+ */
+export function cleanCodeString(str) {
+  if (!str || typeof str !== 'string') return '';
+  let cleaned = str;
+  if (cleaned.includes('\\n')) {
+    cleaned = cleaned.replace(/\\n/g, '\n');
+  }
+  if (cleaned.includes('\\t')) {
+    cleaned = cleaned.replace(/\\t/g, '\t');
+  }
+  cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').replace(/```/g, '').trim();
+  return cleaned;
+}
+
+/**
+ * Helper to clean markdown explanations by unescaping literal \n
+ */
+export function cleanMarkdownText(str) {
+  if (!str || typeof str !== 'string') return '';
+  let cleaned = str;
+  if (cleaned.includes('\\n')) {
+    cleaned = cleaned.replace(/\\n/g, '\n');
+  }
+  if (cleaned.includes('\\t')) {
+    cleaned = cleaned.replace(/\\t/g, '\t');
+  }
+  return cleaned.trim();
+}

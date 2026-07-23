@@ -35,6 +35,73 @@ const socket = io('http://localhost:5000', {
   autoConnect: true
 });
 
+/**
+ * Helper to unescape raw literal \n and \t sequences into actual newlines and tabs
+ */
+const unescapeNewlines = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  let s = str;
+  if (s.includes('\\n')) {
+    s = s.replace(/\\n/g, '\n');
+  }
+  if (s.includes('\\t')) {
+    s = s.replace(/\\t/g, '\t');
+  }
+  return s;
+};
+
+/**
+ * Helper to clean code strings for CodeMirror/editor input
+ */
+const cleanCodeForEditor = (code) => {
+  if (!code || typeof code !== 'string') return '';
+  let cleaned = unescapeNewlines(code);
+  cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').replace(/```/g, '').trim();
+  return cleaned;
+};
+
+/**
+ * Renders formatted markdown text with clean line breaks, bullet points, and numbered lists
+ */
+const renderFormattedMarkdown = (text) => {
+  if (!text) return null;
+  const cleanText = unescapeNewlines(text);
+  const lines = cleanText.split('\n');
+  
+  return lines.map((line, idx) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      return (
+        <div key={idx} style={{ display: 'flex', gap: '8px', marginLeft: '8px', marginBottom: '6px', alignItems: 'flex-start' }}>
+          <span style={{ color: '#10B981', fontWeight: 'bold' }}>•</span>
+          <span>{trimmed.substring(2)}</span>
+        </div>
+      );
+    }
+    const matchNumber = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (matchNumber) {
+      return (
+        <div key={idx} style={{ display: 'flex', gap: '8px', marginLeft: '8px', marginBottom: '6px', alignItems: 'flex-start' }}>
+          <span style={{ color: '#10B981', fontWeight: 'bold' }}>{matchNumber[1]}.</span>
+          <span>{matchNumber[2]}</span>
+        </div>
+      );
+    }
+    if (trimmed.startsWith('#')) {
+      const headerText = trimmed.replace(/^#+\s*/, '');
+      return (
+        <div key={idx} style={{ fontWeight: 800, color: '#f8fafc', marginTop: idx > 0 ? '12px' : '0', marginBottom: '6px', fontSize: '0.85rem' }}>
+          {headerText}
+        </div>
+      );
+    }
+    if (trimmed === '') {
+      return <div key={idx} style={{ height: '8px' }} />;
+    }
+    return <div key={idx} style={{ marginBottom: '4px' }}>{line}</div>;
+  });
+};
+
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [toastMessage, setToastMessage] = useState(null);
@@ -504,8 +571,9 @@ function App() {
       }
       
       if (latest.code) {
-        setLiveCode(latest.code);
-        setCoderDraft(prev => prev ? prev : latest.code);
+        const cleaned = cleanCodeForEditor(latest.code);
+        setLiveCode(cleaned);
+        setCoderDraft(prev => prev ? prev : cleaned);
       }
 
       setRoundsHistory(history);
@@ -514,7 +582,17 @@ function App() {
     socket.on(`job-completed:${tempJobId}`, (result) => {
       setJobState('completed');
       setActiveNode(null);
-      setFinalResult(result.finalResult);
+      const cleanedResult = result.finalResult ? {
+        ...result.finalResult,
+        finalCode: cleanCodeForEditor(result.finalResult.finalCode),
+        explanation: unescapeNewlines(result.finalResult.explanation),
+        timeComplexity: unescapeNewlines(result.finalResult.timeComplexity),
+        spaceComplexity: unescapeNewlines(result.finalResult.spaceComplexity)
+      } : null;
+      setFinalResult(cleanedResult);
+      if (cleanedResult?.finalCode) {
+        setLiveCode(cleanedResult.finalCode);
+      }
       
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
@@ -734,12 +812,19 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     setMaxRounds(record.maxRounds);
     setLanguage(record.language);
     setRoundsHistory(record.roundsHistory);
-    setFinalResult(record.finalResult);
+    const cleanedResult = record.finalResult ? {
+      ...record.finalResult,
+      finalCode: cleanCodeForEditor(record.finalResult.finalCode),
+      explanation: unescapeNewlines(record.finalResult.explanation),
+      timeComplexity: unescapeNewlines(record.finalResult.timeComplexity),
+      spaceComplexity: unescapeNewlines(record.finalResult.spaceComplexity)
+    } : null;
+    setFinalResult(cleanedResult);
     setJobId(record.jobId);
     setJobState('completed');
-    setCoderDraft(record.coderDraft || '');
-    if (record.finalResult && record.finalResult.finalCode) {
-      setLiveCode(record.finalResult.finalCode);
+    setCoderDraft(cleanCodeForEditor(record.coderDraft || ''));
+    if (cleanedResult && cleanedResult.finalCode) {
+      setLiveCode(cleanedResult.finalCode);
     }
     setIsVaultOpen(false);
   }, []);
@@ -850,7 +935,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, [terminalLogs]);
 
   const renderedCodeLines = useMemo(() => {
-    const currentCodeToDisplay = finalResult?.finalCode || liveCode;
+    const currentCodeToDisplay = cleanCodeForEditor(finalResult?.finalCode || liveCode);
     return currentCodeToDisplay.split('\n');
   }, [liveCode, finalResult]);
 
@@ -1384,7 +1469,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                           </div>
                           <div>
                             <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#06b6d4', marginTop: '2px' }}>{finalResult.timeComplexity}</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#06b6d4', marginTop: '2px' }}>{unescapeNewlines(finalResult.timeComplexity)}</div>
                           </div>
                         </div>
                         
@@ -1412,7 +1497,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                           </div>
                           <div>
                             <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{finalResult.spaceComplexity}</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{unescapeNewlines(finalResult.spaceComplexity)}</div>
                           </div>
                         </div>
                       </div>
@@ -1455,7 +1540,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                             color: '#cbd5e1',
                             borderTop: '1px solid rgba(255, 255, 255, 0.05)'
                           }}>
-                            {finalResult.explanation}
+                            {renderFormattedMarkdown(finalResult.explanation)}
                           </div>
                         )}
                       </div>
