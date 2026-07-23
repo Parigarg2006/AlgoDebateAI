@@ -127,7 +127,8 @@ Universal Evaluation Framework:
       systemInstruction,
       responseMimeType: 'application/json',
       responseSchema: CriticResponseSchema,
-      temperature: 0.1
+      temperature: 0.1,
+      maxOutputTokens: 500
     }
   });
 

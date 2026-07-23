@@ -107,7 +107,8 @@ Guidelines:
       systemInstruction,
       responseMimeType: 'application/json',
       responseSchema: CoderResponseSchema,
-      temperature: 0.1 // Low temperature to make output more logical and deterministic
+      temperature: 0.1, // Low temperature to make output more logical and deterministic
+      maxOutputTokens: 500
     }
   });
 
@@ -177,7 +178,8 @@ Generate test cases covering:
         systemInstruction,
         responseMimeType: 'application/json',
         responseSchema: TestCasesSchema,
-        temperature: 0.1
+        temperature: 0.1,
+        maxOutputTokens: 500
       }
     });
 

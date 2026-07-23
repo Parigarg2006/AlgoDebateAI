@@ -79,7 +79,8 @@ Universal Polish & Error Rectification Framework:
       systemInstruction,
       responseMimeType: 'application/json',
       responseSchema: RefinerResponseSchema,
-      temperature: 0.1
+      temperature: 0.1,
+      maxOutputTokens: 500
     }
   });
 
