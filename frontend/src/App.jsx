@@ -153,8 +153,22 @@ function App() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(230); // Default height: 230px
   const [isResizingTerminal, setIsResizingTerminal] = useState(false);
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('code'); // 'code', 'complexity', 'strategy'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('code'); // Default solution code
+  const [activeModal, setActiveModal] = useState(null); // null, 'complexity', 'strategy'
+  const [isModalMaximized, setIsModalMaximized] = useState(false);
   const [isCustomTestOpen, setIsCustomTestOpen] = useState(false);
+
+  // Keyboard shortcut listener to dismiss modal with Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveModal(null);
+        setIsModalMaximized(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Drag-to-Resize mouse event listeners
   const handleMouseDownResize = useCallback((e) => {
@@ -642,10 +656,11 @@ function App() {
     setTimeout(() => setToastMessage(null), 3000);
   }, []);
 
-  // Context-Aware Copy, Download, & Share based on activeWorkspaceTab
+  // Context-Aware Copy, Download, & Share based on activeModal or activeWorkspaceTab
   const getTabContentAndFilename = useCallback(() => {
+    const target = activeModal || activeWorkspaceTab;
     const ext = language === 'python' ? 'py' : (language === 'java' ? 'java' : 'cpp');
-    if (activeWorkspaceTab === 'complexity') {
+    if (target === 'complexity') {
       const timeComp = finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)';
       const spaceComp = finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)';
       const content = finalResult ? 
@@ -653,7 +668,7 @@ function App() {
         : 'Complexity analysis not generated yet.';
       return { content, filename: 'complexity_analysis.txt' };
     }
-    if (activeWorkspaceTab === 'strategy') {
+    if (target === 'strategy') {
       const content = finalResult?.explanation ?
         `# Strategy & Proof of Correctness\n\n${formatLatexFormula(unescapeNewlines(finalResult.explanation))}`
         : 'Strategy & proof analysis not generated yet.';
@@ -662,7 +677,7 @@ function App() {
     // Default: Solution Code tab
     const code = cleanCodeForEditor(finalResult?.finalCode || liveCode || '');
     return { content: code, filename: `solution.${ext}` };
-  }, [activeWorkspaceTab, finalResult, liveCode, language]);
+  }, [activeModal, activeWorkspaceTab, finalResult, liveCode, language]);
 
   const handleTabCopy = useCallback(() => {
     const { content } = getTabContentAndFilename();
@@ -1460,87 +1475,18 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
             )}
 
-            <div className="code-editor-header" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '10px', width: '100%' }}>
-              {/* Left Group: Navigation Tabs */}
-              <div className="workspace-header-tabs custom-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', flexWrap: 'nowrap', flex: 1, minWidth: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveWorkspaceTab('code')}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'code' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
-                    background: activeWorkspaceTab === 'code' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                    color: activeWorkspaceTab === 'code' ? '#34d399' : '#94a3b8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Code2 size={14} />
-                  <span>Solution Code</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveWorkspaceTab('complexity')}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
-                    background: activeWorkspaceTab === 'complexity' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                    color: activeWorkspaceTab === 'complexity' ? '#38bdf8' : '#94a3b8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Clock size={14} />
-                  <span>Complexity Analysis</span>
-                  {finalResult?.timeComplexity && (
-                    <span style={{ marginLeft: '6px', padding: '1px 6px', borderRadius: '9999px', fontSize: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 700, whiteSpace: 'nowrap', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveWorkspaceTab('strategy')}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: activeWorkspaceTab === 'strategy' ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
-                    background: activeWorkspaceTab === 'strategy' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                    color: activeWorkspaceTab === 'strategy' ? '#c084fc' : '#94a3b8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Sparkles size={14} />
-                  <span>Strategy & Proof</span>
-                </button>
+            {/* Simplified Workspace Header: Solution Code Indicator & Action Controls */}
+            <div className="code-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13, 14, 18, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', gap: '10px', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code2 size={16} className="text-emerald-400" />
+                <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>
+                  {jobState === 'completed' ? 'Solution Code Workspace' : 'Verification Workspace'}
+                </span>
               </div>
               
-              {/* Right Group: Action Controls */}
+              {/* Right Action Controls */}
               <div className="workspace-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
-                {activeWorkspaceTab === 'code' && coderDraft && (
+                {coderDraft && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DIFF VIEW:</span>
                     <button
@@ -1575,11 +1521,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 )}
                 
                 <div className="code-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button type="button" className="editor-btn" onClick={handleTabCopy} title={`Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity Report' : 'Strategy Explanation')}`}>
+                  <button type="button" className="editor-btn" onClick={handleTabCopy} title="Copy solution code">
                     {isCopied ? <Check size={11} style={{ color: 'var(--accent-green)' }} /> : <Copy size={11} />}
-                    <span>{isCopied ? 'Copied' : `Copy ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity' : 'Strategy')}`}</span>
+                    <span>{isCopied ? 'Copied' : 'Copy Code'}</span>
                   </button>
-                  <button type="button" className="editor-btn" onClick={handleTabDownload} title={`Download ${activeWorkspaceTab === 'code' ? 'Code' : (activeWorkspaceTab === 'complexity' ? 'Complexity Report' : 'Strategy Markdown')}`}>
+                  <button type="button" className="editor-btn" onClick={handleTabDownload} title="Download solution code">
                     <Download size={11} />
                     <span>Download</span>
                   </button>
@@ -1619,171 +1565,123 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 </div>
               ) : (
                 <>
-                  {activeWorkspaceTab === 'code' && (
-                    <>
-                      {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
-                        <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: '400px', overflow: 'hidden' }}>
-                          {/* Left Column: Initial Coder Draft */}
-                          <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                            <div className="diff-panel-header">Coder Draft (Initial)</div>
-                            <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                              {(() => {
-                                const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                                return leftLines.map((line, idx) => (
-                                  <div key={idx} className={`diff-line ${line.type}`}>
-                                    <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                                    <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                                  </div>
-                                ));
-                              })()}
-                            </div>
-                          </div>
-                          
-                          {/* Right Column: Refined Output */}
-                          <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                            <div className="diff-panel-header">Refined Output (Final)</div>
-                            <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-                              {(() => {
-                                const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                                return rightLines.map((line, idx) => (
-                                  <div key={idx} className={`diff-line ${line.type}`}>
-                                    <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                                    <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                                  </div>
-                                ));
-                              })()}
-                            </div>
-                          </div>
+                  {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
+                    <div className="diff-view-container fade-in" style={{ flex: 1, height: '100%', minHeight: '380px', overflow: 'hidden' }}>
+                      {/* Left Column: Initial Coder Draft */}
+                      <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                        <div className="diff-panel-header">Coder Draft (Initial)</div>
+                        <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                          {(() => {
+                            const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                            return leftLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ));
+                          })()}
                         </div>
-                      ) : (
-                        <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: '400px', overflowY: 'auto' }}>
-                          {renderedCodeLines.map((line, idx) => (
-                            <div key={idx} className="code-line-row">
-                              <span className="code-line-number">{idx + 1}</span>
-                              <span className="code-line-content">{line}</span>
-                            </div>
-                          ))}
+                      </div>
+                      
+                      {/* Right Column: Refined Output */}
+                      <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                        <div className="diff-panel-header">Refined Output (Final)</div>
+                        <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                          {(() => {
+                            const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
+                            return rightLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ));
+                          })()}
                         </div>
-                      )}
-                    </>
-                  )}
-
-                  {activeWorkspaceTab === 'complexity' && (
-                    <div className="custom-scrollbar fade-in" style={{ flex: 1, height: '100%', overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {!finalResult ? (
-                        <div className="workspace-empty-view">
-                          <Clock size={28} className="text-cyan-400" />
-                          <p>Complexity analysis will be generated once debate concludes.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="code-editor-container custom-scrollbar fade-in" style={{ flex: 1, height: '100%', minHeight: '380px', overflowY: 'auto' }}>
+                      {renderedCodeLines.map((line, idx) => (
+                        <div key={idx} className="code-line-row">
+                          <span className="code-line-number">{idx + 1}</span>
+                          <span className="code-line-content">{line}</span>
                         </div>
-                      ) : (
-                        <>
-                          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div className="stat-card complexity-cyan-card" style={{
-                              background: 'rgba(13, 14, 18, 0.6)',
-                              backdropFilter: 'blur(10px)',
-                              borderRadius: '12px',
-                              border: '1px solid rgba(6, 182, 212, 0.3)',
-                              boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)',
-                              padding: '20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '16px'
-                            }}>
-                              <div style={{
-                                backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                                color: '#06b6d4',
-                                borderRadius: '10px',
-                                padding: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <Clock size={24} />
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#06b6d4', marginTop: '4px' }}>{formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="stat-card complexity-emerald-card" style={{
-                              background: 'rgba(13, 14, 18, 0.6)',
-                              backdropFilter: 'blur(10px)',
-                              borderRadius: '12px',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              boxShadow: '0 0 15px rgba(16, 185, 129, 0.1)',
-                              padding: '20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '16px'
-                            }}>
-                              <div style={{
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                color: '#10b981',
-                                borderRadius: '10px',
-                                padding: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <Database size={24} />
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>{formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{
-                            background: 'rgba(13, 14, 18, 0.4)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '12px',
-                            padding: '20px',
-                            color: '#cbd5e1',
-                            fontSize: '0.82rem',
-                            lineHeight: 1.6
-                          }}>
-                            <h4 style={{ color: '#f8fafc', fontWeight: 700, marginBottom: '8px' }}>Big-O Algorithmic Performance Breakdown</h4>
-                            <p>
-                              The solution has been refined and verified by the multi-agent system to guarantee optimal runtime asymptotic scaling.
-                              Time complexity is evaluated at <strong>{formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}</strong> and space allocation scales at <strong>{formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}</strong>.
-                            </p>
-                          </div>
-                        </>
-                      )}
+                      ))}
                     </div>
                   )}
 
-                  {activeWorkspaceTab === 'strategy' && (
-                    <div className="custom-scrollbar fade-in" style={{ flex: 1, height: '100%', overflowY: 'auto', padding: '16px' }}>
-                      {!finalResult || !finalResult.explanation ? (
-                        <div className="workspace-empty-view">
-                          <Sparkles size={28} className="text-purple-400" />
-                          <p>Strategy & proof analysis will be generated once debate concludes.</p>
-                        </div>
-                      ) : (
-                        <div style={{
-                          background: 'rgba(13, 14, 18, 0.4)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '12px',
-                          padding: '20px',
-                          color: '#cbd5e1',
-                          fontSize: '0.82rem',
-                          lineHeight: 1.6
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
-                            <Sparkles size={18} className="text-purple-400" />
-                            <h3 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                              Strategy & Proof of Correctness
-                            </h3>
+                  {/* Interactive Quick-Action Cards Below Code Editor */}
+                  {finalResult && (
+                    <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModal('complexity')}
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                          border: '1px solid rgba(6, 182, 212, 0.35)',
+                          boxShadow: '0 4px 15px rgba(6, 182, 212, 0.08)',
+                          borderRadius: '10px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          color: '#f8fafc',
+                          transition: 'all 0.2s ease'
+                        }}
+                        className="hover:border-cyan-400 hover:scale-[1.01]"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                            <Clock size={18} />
                           </div>
-                          {renderFormattedMarkdown(finalResult.explanation)}
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Complexity Analysis</div>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>
+                              Time: {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))} | Space: {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
+                            </div>
+                          </div>
                         </div>
-                      )}
+                        <span style={{ fontSize: '0.7rem', color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
+                          View Report →
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveModal('strategy')}
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                          border: '1px solid rgba(168, 85, 247, 0.35)',
+                          boxShadow: '0 4px 15px rgba(168, 85, 247, 0.08)',
+                          borderRadius: '10px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          color: '#f8fafc',
+                          transition: 'all 0.2s ease'
+                        }}
+                        className="hover:border-purple-400 hover:scale-[1.01]"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '8px', borderRadius: '8px', display: 'flex' }}>
+                            <Sparkles size={18} />
+                          </div>
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Strategy & Proof</div>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>
+                              Algorithm design & correctness proof
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 600, whitespace: 'nowrap' }}>
+                          Read Proof →
+                        </span>
+                      </button>
                     </div>
                   )}
-
                   {jobState === 'failed' && (
                     <div className="workspace-empty-view fade-in">
                       <AlertTriangle size={32} style={{ color: 'var(--accent-red)' }} />
@@ -2261,6 +2159,259 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Interactive Pop-Up Modal Overlay for Complexity & Strategy */}
+      {activeModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => {
+            setActiveModal(null);
+            setIsModalMaximized(false);
+          }}
+          className="fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: isModalMaximized ? '95vw' : '680px',
+              maxWidth: '95vw',
+              maxHeight: isModalMaximized ? '90vh' : '80vh',
+              background: '#090a0f',
+              border: activeModal === 'complexity' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(168, 85, 247, 0.4)',
+              borderRadius: '16px',
+              boxShadow: activeModal === 'complexity' ? '0 0 40px rgba(6, 182, 212, 0.2)' : '0 0 40px rgba(168, 85, 247, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              transition: 'all 0.25s ease-in-out'
+            }}
+          >
+            {/* Modal Header */}
+            <div 
+              style={{
+                padding: '14px 20px',
+                background: 'rgba(13, 14, 18, 0.95)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {activeModal === 'complexity' ? (
+                  <>
+                    <Clock size={20} className="text-cyan-400" />
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                      Algorithmic Complexity Report
+                    </h3>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} className="text-purple-400" />
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                      Strategy & Proof of Correctness
+                    </h3>
+                  </>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Copy Button */}
+                <button
+                  type="button"
+                  onClick={handleTabCopy}
+                  title="Copy Content"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem'
+                  }}
+                  className="hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  <Copy size={12} />
+                  <span>Copy</span>
+                </button>
+
+                {/* Download Button */}
+                <button
+                  type="button"
+                  onClick={handleTabDownload}
+                  title="Download Document"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem'
+                  }}
+                  className="hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  <Download size={12} />
+                  <span>Download</span>
+                </button>
+
+                {/* Maximize / Restore Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalMaximized(prev => !prev)}
+                  title={isModalMaximized ? "Restore Size" : "Maximize Modal"}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                    borderRadius: '4px'
+                  }}
+                  className="hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  {isModalMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveModal(null);
+                    setIsModalMaximized(false);
+                  }}
+                  title="Close (Esc)"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                    borderRadius: '4px'
+                  }}
+                  className="hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div 
+              className="modal-body custom-scrollbar"
+              style={{
+                flex: 1,
+                padding: '24px',
+                overflowY: 'auto',
+                color: '#cbd5e1',
+                fontSize: '0.85rem',
+                lineHeight: 1.6
+              }}
+            >
+              {activeModal === 'complexity' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="stat-card complexity-cyan-card" style={{
+                      background: 'rgba(6, 182, 212, 0.08)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      boxShadow: '0 0 20px rgba(6, 182, 212, 0.1)',
+                      padding: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px'
+                    }}>
+                      <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#06b6d4', borderRadius: '10px', padding: '12px', display: 'flex' }}>
+                        <Clock size={26} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Time Complexity</div>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#06b6d4', marginTop: '4px' }}>
+                          {finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="stat-card complexity-emerald-card" style={{
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)',
+                      padding: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px'
+                    }}>
+                      <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981', borderRadius: '10px', padding: '12px', display: 'flex' }}>
+                        <Database size={26} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Space Complexity</div>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
+                          {finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(13, 14, 18, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    lineHeight: 1.7
+                  }}>
+                    <h4 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Big-O Algorithmic Scaling Analysis
+                    </h4>
+                    <p style={{ color: '#cbd5e1' }}>
+                      The algorithm produced by the Coder Agent and refined by the Critic & Refiner subagents has been verified to adhere to optimal time and space bounds.
+                      Time complexity is evaluated at <strong>{finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)'}</strong> and auxiliary memory consumption scales at <strong>{finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)'}</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeModal === 'strategy' && (
+                <div style={{
+                  background: 'rgba(13, 14, 18, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  lineHeight: 1.7
+                }}>
+                  {finalResult?.explanation ? (
+                    renderFormattedMarkdown(finalResult.explanation)
+                  ) : (
+                    <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                      Strategy & proof analysis will be populated once graph execution concludes.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
