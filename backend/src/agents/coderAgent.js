@@ -41,34 +41,31 @@ You are an expert competitive programmer and algorithms specialist.
 Your task is to write high-quality, optimal, and compilable ${langUpper} code.
 Guidelines:
 1. Write code in ${langUpper}.
-2. MANDATORY TEMPLATE ENFORCEMENT: You MUST dynamically preserve the EXACT function name, return type, parameter types, and parameter names provided in the starter template under '=== EXPORTED STARTER TEMPLATES ===' for ANY problem input. NEVER invent custom function names, change return types, or alter parameter types under any circumstances. Match every data type, parameter name, parameter order, and return type line-for-line.
-- For C++, ensure the solution is wrapped inside 'class Solution { public: ... };'.
-- For Python, ensure the solution is wrapped inside 'class Solution:' with proper indentation and type hints (e.g. class Solution:\n    def methodName(self, ...):).
-- For Java, ensure the solution is wrapped inside 'class Solution { public ReturnType methodName(...) { ... } }'.
-3. You are STRICTLY PROHIBITED from appending any 'int main()', 'if __name__ == "__main__":', 'public static void main(String[] args)', or driver code. Output ONLY the class Solution implementation.
-4. Ensure that you do not write any additional helper code or main function outside of class Solution.
+2. MANDATORY TEMPLATE ENFORCEMENT: You MUST dynamically preserve the EXACT function name, return type, parameter types, and parameter names provided in the starter template under '=== EXPORTED STARTER TEMPLATES ===' for ANY problem input (e.g. vector<string> letterCombinations(string digits), int myAtoi(string s), vector<int> twoSum(vector<int>& nums, int target)). NEVER invent custom function names, change return types, or alter parameter types under any circumstances. Match every data type, parameter name, parameter order, and return type line-for-line. For C++, ensure the solution is wrapped inside 'class Solution { public: ... }'.
+3. For C++, you are STRICTLY PROHIBITED from appending any 'int main()', '#ifndef ONLINE_JUDGE', or standard I/O driver code. The output MUST end strictly with '};' right after the 'class Solution' block. Do NOT generate any test case parsing or driver main function.
+4. Ensure that you do not write any additional helper code or main function outside of the class Solution. The final C++ code must end with '};'.
 5. Do not include verbose print statements or prompts. Only write the class implementation.
 6. Ensure the time complexity is optimal for large input constraints.
-7. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows, index out of bounds, and potential division by zero. Ensure type safety and correctness.
-8. Do NOT write quick hardcoded heuristics, simplified greedy arithmetic shortcuts, or oversimplified formulas. Generate full, robust algorithmic solutions.
+7. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
+8. Do NOT write quick hardcoded heuristics, simplified greedy arithmetic shortcuts, or oversimplified formulas. Specifically for alternating sequence problems, ABSOLUTELY FORBID greedy shortcuts, parity assumptions, or fast formulas like s + (n/2)*m. The Coder MUST generate full Dynamic Programming (DP) state-transition tables or explicit state machine simulations (or mathematically derived O(1) calculations directly from the DP relations: dp[i][UP] = dp[i-1][DOWN] + m and dp[i][DOWN] = dp[i-1][UP] - 1) to find optimal alternating sequence peaks. Ensure your code passes all general edge cases and boundary limits instead of fitting a single reference test case.
 9. You MUST perform structured, step-by-step reasoning before generating the final code. Follow this exact flow:
    - Constraints Analysis: Analyze input sizes, types, and mathematical limits.
    - Edge Case Strategy: Document specific plans for extreme/zero/negative bounds.
    - Verified Code Generation: Walk through how your code implements these strategies.
    Output this step-by-step analysis in the 'reasoning' field of your response.
 10. LeetCode Sample Test Context: When a LeetCode problem URL/description is parsed, automatically extract and include Example 1, Example 2, and explicit problem constraints into your prompt context alongside existing guidelines. Use these examples and constraints to guide your solution's correctness.
-11. DO NOT RE-DEFINE PRE-COMPILED LEETCODE STRUCTS: When generating solutions for Linked List (ListNode) or Tree (TreeNode) problems, DO NOT write struct/class ListNode or TreeNode definitions in the code block. Assume ListNode and TreeNode are already available globally.
+11. DO NOT RE-DEFINE PRE-COMPILED LEETCODE STRUCTS: When generating solutions for Linked List (ListNode) or Tree (TreeNode) problems, DO NOT write or output struct ListNode or struct TreeNode definitions in the final C++ code block. Assume ListNode and TreeNode are already available globally in the LeetCode header context.
 12. FULL IMPLEMENTATION MANDATE: You are STRICTLY PROHIBITED from returning boilerplate stubs, placeholder comments, or empty function shells (such as 'pass' in Python, 'return null;' or 'return new ArrayList<>()' in Java, or empty function bodies in C++). You MUST generate the COMPLETE, FULL WORKING ALGORITHMIC LOGIC inside the function/method body for ${langUpper} that fully solves the problem.
   `.trim();
 
   // Dynamically configure description based on language
   let codeDesc = `The complete, compilable ${langUpper} source code.`;
   if (language === 'cpp') {
-    codeDesc += ' You MUST wrap your solution inside class Solution { public: ... }; and use the exact expected function signature. Do not wrap code block in backticks.';
+    codeDesc += ' You MUST wrap your solution inside class Solution { public: ... } and use the exact expected function signature parsed from the description. You are STRICTLY PROHIBITED from appending any main() function, #ifndef ONLINE_JUDGE, or driver code. The code must end strictly with "};". Do not wrap code block in backticks.';
   } else if (language === 'python') {
-    codeDesc += ' You MUST wrap your solution inside class Solution: with valid Python 3 syntax (e.g. class Solution:\\n    def methodName(self, ...):). Do not wrap in backticks.';
+    codeDesc += ' Ensure it reads inputs from sys.stdin or input() and prints to stdout. Do not wrap in backticks.';
   } else if (language === 'java') {
-    codeDesc += ' You MUST wrap your solution inside class Solution { public ReturnType methodName(...) { ... } }. Do not wrap in backticks.';
+    codeDesc += ' Ensure it has a public class (Main or Solution) reading from Scanner or BufferedReader. Do not wrap in backticks.';
   }
 
   const CoderResponseSchema = {

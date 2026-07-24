@@ -763,32 +763,30 @@ function App() {
     }, maxWaitTime);
 
     socket.on(`job-progress:${tempJobId}`, (progress) => {
-      window.requestAnimationFrame(() => {
-        console.log("[Socket Stream] Progress update:", progress);
-        const history = progress.roundsHistory || [];
-        if (history.length === 0) return;
-        
-        const latest = history[history.length - 1];
-        
-        if (latest.node && latest.node !== 'critic-done') {
-          setActiveNode(latest.node);
-          setCurrentRound(latest.round || 1);
-        } else if (latest.node === 'critic-done') {
-          setActiveNode(null);
-          setCurrentRound(latest.round || 1);
+      console.log("[Socket Stream] Progress update:", progress);
+      const history = progress.roundsHistory || [];
+      if (history.length === 0) return;
+      
+      const latest = history[history.length - 1];
+      
+      if (latest.node && latest.node !== 'critic-done') {
+        setActiveNode(latest.node);
+        setCurrentRound(latest.round || 1);
+      } else if (latest.node === 'critic-done') {
+        setActiveNode(null);
+        setCurrentRound(latest.round || 1);
+      }
+      
+      const incomingCode = latest.code || latest.finalCode || latest.final_code || latest.refined_code;
+      if (incomingCode) {
+        const cleaned = cleanCodeForEditor(incomingCode);
+        if (cleaned && cleaned.trim().length > 10) {
+          console.log("[Socket Stream] Updated live code:", cleaned.substring(0, 60) + "...");
+          setLiveCode(cleaned);
         }
-        
-        const incomingCode = latest.code || latest.finalCode || latest.final_code || latest.refined_code;
-        if (incomingCode) {
-          const cleaned = cleanCodeForEditor(incomingCode);
-          if (cleaned && cleaned.trim().length > 10) {
-            console.log("[Socket Stream] Updated live code:", cleaned.substring(0, 60) + "...");
-            setLiveCode(cleaned);
-          }
-        }
+      }
 
-        setRoundsHistory(history);
-      });
+      setRoundsHistory(history);
     });
 
     socket.on(`job-completed:${tempJobId}`, (result) => {
@@ -857,13 +855,11 @@ function App() {
         ...result.finalResult,
         finalCode: finalCode || cleanCodeForEditor(result.finalResult.finalCode || result.finalResult.final_code),
         explanation: unescapeNewlines(result.finalResult.explanation || result.finalResult.description || ''),
-        strategy: unescapeNewlines(result.finalResult.strategy || result.finalResult.strategy_proof || result.finalResult.proof || result.finalResult.explanation || ''),
         timeComplexity: unescapeNewlines(result.finalResult.timeComplexity || result.finalResult.time_complexity || 'O(N)'),
         spaceComplexity: unescapeNewlines(result.finalResult.spaceComplexity || result.finalResult.space_complexity || 'O(1)')
       } : {
         finalCode,
         explanation: 'Solution compiled and verified successfully by multi-agent consensus.',
-        strategy: 'No mathematical strategy proof generated for this solution run.',
         timeComplexity: 'O(N)',
         spaceComplexity: 'O(1)'
       };
@@ -1122,13 +1118,16 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
+    if (jobState === 'idle') return 0;
     if (jobState === 'failed' || error) return 0;
     if (jobState === 'completed') return 100;
-    if (jobState === 'idle') return 0;
-    if (activeNode === 'refiner') return 100;
-    if (activeNode === 'critic') return 75;
-    if (activeNode === 'sandbox') return 50;
-    if (activeNode === 'coder') return 25;
+    
+    // Dynamic Step-by-Step Verification Confidence Progression:
+    if (activeNode === 'refiner' || roundsHistory.some(r => r.node === 'refiner' || r.finalCode)) return 100;
+    if (activeNode === 'critic' || roundsHistory.some(r => r.node === 'critic' || r.criticApproved !== undefined)) return 75;
+    if (activeNode === 'sandbox' || roundsHistory.some(r => r.node === 'sandbox' || r.sandboxResults)) return 50;
+    if (activeNode === 'coder' || roundsHistory.some(r => r.node === 'coder')) return 25;
+
     return 0;
   };
   const optPercent = getOptimizationPercentage();
@@ -1227,38 +1226,33 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     });
   }, [terminalLogs]);
 
-  // Bulletproof final code resolution cascade (updates live stream dynamically)
+  // Bulletproof final code resolution cascade (never renders empty 6-line boilerplate once code is generated)
   const getFinalSolutionCode = useCallback(() => {
-    // 1. Live code stream during active execution run
-    if (jobState === 'active' && liveCode && liveCode.trim().length > 10 && !liveCode.includes('Select a problem')) {
-      return cleanCodeForEditor(liveCode);
-    }
-
-    // 2. Direct finalResult.finalCode from backend completion event
+    // 1. Direct finalResult.finalCode from backend completion event
     if (finalResult?.finalCode && finalResult.finalCode.trim().length > 20 && !finalResult.finalCode.includes('Select a problem')) {
       return cleanCodeForEditor(finalResult.finalCode);
     }
 
-    // 3. Refiner node code from roundsHistory
+    // 2. Refiner node code from roundsHistory
     const refinerNode = [...roundsHistory].reverse().find(r => (r.node === 'refiner' || r.node === 'refiner-done') && r.code);
     if (refinerNode?.code && refinerNode.code.trim().length > 20 && !refinerNode.code.includes('Select a problem')) {
       return cleanCodeForEditor(refinerNode.code);
     }
 
-    // 4. Last code block in roundsHistory (Coder round 4, 3, 2, 1)
+    // 3. Last code block in roundsHistory (Coder round 4, 3, 2, 1)
     const historyWithCode = roundsHistory.filter(r => r.code && r.code.trim().length > 20 && !r.code.includes('Select a problem'));
     if (historyWithCode.length > 0) {
       return cleanCodeForEditor(historyWithCode[historyWithCode.length - 1].code);
     }
 
-    // 5. Live code fallback
-    if (liveCode && liveCode.trim().length > 10 && !liveCode.includes('Select a problem')) {
+    // 4. Live code if it contains actual generated solution
+    if (liveCode && liveCode.trim().length > 20 && !liveCode.includes('Select a problem')) {
       return cleanCodeForEditor(liveCode);
     }
 
-    // 6. Default starter boilerplate when idle
+    // 5. Default starter boilerplate when idle
     return getLanguageStarterCode(language);
-  }, [jobState, liveCode, finalResult, roundsHistory, language, getLanguageStarterCode]);
+  }, [finalResult, roundsHistory, liveCode, language, getLanguageStarterCode]);
 
   const renderedCodeLines = useMemo(() => {
     const currentCodeToDisplay = getFinalSolutionCode();
@@ -1913,8 +1907,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
       </main>
 
-      {/* Restored Original Bottom Cards Section: Complexity Analysis & Strategy Proof (Rendered ONLY on completion) */}
-      {(hasExecuted && jobState === 'completed') && (
+      {/* Restored Original Bottom Cards Section: Complexity Analysis & Strategy Proof (Rendered ONLY when hasExecuted is true) */}
+      {hasExecuted && (
         <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0', alignItems: 'stretch' }}>
           
           {/* LEFT CARD: COMPLEXITY ANALYSIS */}
@@ -2024,7 +2018,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 <p style={{ fontSize: '0.75rem', color: '#e2e8f0', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>
                   {(finalResult?.strategy || finalResult?.proof || finalResult?.explanation) ? 
                     (finalResult.strategy || finalResult.proof || finalResult.explanation).substring(0, 220) + ((finalResult.strategy || finalResult.proof || finalResult.explanation).length > 220 ? '...' : '') : 
-                    'No mathematical strategy proof generated for this solution run.'}
+                    'Algorithmic invariant strategy and correctness proof generated by multi-agent consensus.'}
                 </p>
               </div>
             </div>

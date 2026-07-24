@@ -67,15 +67,7 @@ export function extractLanguageSnippet(problemDescription, language) {
   const escapedLangLabel = langLabel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
   const regex = new RegExp(`${escapedLangLabel}:\\s*\\n([\\s\\S]*?)(?:\\n\\n|$)`);
   const match = templatesSection.match(regex);
-  if (match) return match[1].trim();
-
-  if (language === 'python' || language === 'python3') {
-    return `class Solution:\n    def solution(self) -> None:\n        pass`;
-  }
-  if (language === 'java') {
-    return `class Solution {\n    public void solution() {\n    }\n}`;
-  }
-  return `class Solution {\npublic:\n};`;
+  return match ? match[1].trim() : '';
 }
 
 /**
