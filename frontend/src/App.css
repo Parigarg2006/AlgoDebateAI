@@ -125,9 +125,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 630px;
-  height: 630px;
-  max-height: 630px;
+  min-height: 700px;
+  height: 700px;
+  max-height: 700px;
   justify-content: space-between;
   margin-top: 0;
   padding-top: 0;
@@ -140,9 +140,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 630px;
-  height: 630px;
-  max-height: 630px;
+  min-height: 700px;
+  height: 700px;
+  max-height: 700px;
   margin-top: 0;
   padding-top: 0;
   overflow: hidden;
@@ -154,9 +154,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 630px;
-  height: 630px;
-  max-height: 630px;
+  min-height: 700px;
+  height: 700px;
+  max-height: 700px;
   justify-content: space-between;
   margin-top: 0;
   padding-top: 0;
@@ -467,9 +467,9 @@
 .code-workspace-card {
   display: flex;
   flex-direction: column;
-  min-height: 630px;
-  height: 630px;
-  max-height: 630px;
+  min-height: 700px;
+  height: 700px;
+  max-height: 700px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -644,7 +644,7 @@
 .logs-terminal {
   flex: 1;
   min-height: 0;
-  max-height: 380px;
+  max-height: 440px;
   background: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 6px;
