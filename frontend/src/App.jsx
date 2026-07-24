@@ -1671,7 +1671,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div ref={terminalContainerRef} className="logs-terminal" style={{ height: '280px', maxHeight: '300px', overflowY: 'auto', padding: '8px 12px' }}>
+            <div ref={terminalContainerRef} className="logs-terminal" style={{ height: '330px', maxHeight: '350px', overflowY: 'auto', padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
@@ -1794,7 +1794,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
       {/* Bottom Section: Dedicated Grid for Complexity Analysis & Strategy & Proof (Shown ONLY when finalResult is available) */}
       {finalResult && (
-        <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
+        <div className="grid grid-cols-2 gap-4 w-full mt-2 max-w-[1750px] mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '8px auto 0' }}>
           {/* Card 1: Complexity Analysis (Left Column 50%) */}
           <div className="bento-card fade-in col-span-1 h-full flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
@@ -1856,8 +1856,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               }}
               className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center h-9 hover:bg-cyan-500/25 hover:border-cyan-400"
             >
-              <span>View Complexity Report</span>
-              <ChevronRight size={14} />
+              <span className="inline-flex items-center justify-center gap-1.5 leading-none">
+                View Complexity Report <span className="inline-block text-sm translate-y-[1px]">&gt;</span>
+              </span>
             </button>
           </div>
 
@@ -1910,8 +1911,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               }}
               className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center h-9 hover:bg-purple-500/25 hover:border-purple-400"
             >
-              <span>Read Strategy & Proof Breakdown</span>
-              <ChevronRight size={14} />
+              <span className="inline-flex items-center justify-center gap-1.5 leading-none">
+                Read Strategy & Proof Breakdown <span className="inline-block text-sm translate-y-[1px]">&gt;</span>
+              </span>
             </button>
           </div>
         </div>
