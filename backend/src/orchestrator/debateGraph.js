@@ -36,7 +36,7 @@ function isCodeEmptyOrPlaceholder(code, language) {
  */
 export const DebateState = Annotation.Root({
   problemDescription: Annotation(),
-  maxRounds: Annotation({ default: () => 4 }),
+  maxRounds: Annotation({ default: () => 1 }),
   currentRound: Annotation({
     reducer: (x, y) => y,
     default: () => 1

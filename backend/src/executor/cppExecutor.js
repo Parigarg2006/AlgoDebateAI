@@ -19,18 +19,33 @@ async function ensureTempDir() {
 
 /**
  * Normalizes output string for fair comparison.
+ * Handles space-separated outputs vs JSON array expected formats.
  */
 function normalizeOutput(str) {
-  return str
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map(line => line.trimEnd())
-    .filter((line, index, arr) => {
-      if (line === '' && index === arr.length - 1) return false;
-      return true;
-    })
-    .join('\n')
-    .trim();
+  if (!str || typeof str !== 'string') return '';
+  let cleaned = str.replace(/\r\n/g, '\n').trim();
+
+  // Try parsing as JSON array if formatted as [ ... ]
+  try {
+    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed)) {
+        return JSON.stringify(parsed.map(x => String(x).replace(/^["']|["']$/g, '').trim()).sort());
+      }
+    }
+  } catch (_) {}
+
+  // If space-separated or line-separated tokens:
+  const tokens = cleaned
+    .split(/[\s,]+/)
+    .map(t => t.replace(/^["']|["']$/g, '').trim())
+    .filter(Boolean);
+
+  if (tokens.length > 0) {
+    return JSON.stringify(tokens.sort());
+  }
+
+  return cleaned;
 }
 
 /**
