@@ -109,7 +109,7 @@ Universal Polish & Error Rectification Framework:
     const parsed = safeParseJSON(response.text, {
       finalCode: cleanCodeString(response.text),
       explanation: 'Refined code generated.',
-      strategy: 'Algorithmic invariant strategy and correctness proof generated for the verified solution.',
+      strategy: 'No mathematical strategy proof generated for this solution run.',
       timeComplexity: 'O(N)',
       spaceComplexity: 'O(1)'
     });
