@@ -55,6 +55,7 @@ Guidelines:
    Output this step-by-step analysis in the 'reasoning' field of your response.
 10. LeetCode Sample Test Context: When a LeetCode problem URL/description is parsed, automatically extract and include Example 1, Example 2, and explicit problem constraints into your prompt context alongside existing guidelines. Use these examples and constraints to guide your solution's correctness.
 11. DO NOT RE-DEFINE PRE-COMPILED LEETCODE STRUCTS: When generating solutions for Linked List (ListNode) or Tree (TreeNode) problems, DO NOT write or output struct ListNode or struct TreeNode definitions in the final C++ code block. Assume ListNode and TreeNode are already available globally in the LeetCode header context.
+12. FULL IMPLEMENTATION MANDATE: You are STRICTLY PROHIBITED from returning boilerplate stubs, placeholder comments, or empty function shells (such as 'pass' in Python, 'return null;' or 'return new ArrayList<>()' in Java, or empty function bodies in C++). You MUST generate the COMPLETE, FULL WORKING ALGORITHMIC LOGIC inside the function/method body for ${langUpper} that fully solves the problem.
   `.trim();
 
   // Dynamically configure description based on language
