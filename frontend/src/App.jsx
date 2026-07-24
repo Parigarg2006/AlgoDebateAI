@@ -1202,15 +1202,15 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       <main className="main-container">
         
         {/* Left Column (col-span-3): Input, Configuration, Mission Path */}
-        <section className="panel-left h-[700px] max-h-[700px] flex flex-col justify-between">
+        <section className="panel-left h-[700px] max-h-[700px] flex flex-col justify-start gap-3 overflow-hidden">
           
           {/* PROBLEM INPUT Section */}
-          <div className="bento-card">
+          <div className="bento-card" style={{ padding: '12px 14px', gap: '10px' }}>
             <h2 className="card-title">
               <FileText size={13} />
               PROBLEM INPUT
             </h2>
-            <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <form onSubmit={handleStartDebate} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Problem Source
@@ -1230,13 +1230,13 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 value={problemDescription}
                 onChange={(e) => setProblemDescription(e.target.value)}
                 disabled={jobState === 'active'}
-                style={{ height: '90px' }}
+                style={{ height: '65px' }}
               />
             </form>
           </div>
           
           {/* CONFIGURATION & EXECUTION Section */}
-          <div className="bento-card" style={{ gap: '14px' }}>
+          <div className="bento-card" style={{ padding: '12px 14px', gap: '10px' }}>
             <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Settings size={13} className="text-[#10B981]" />
@@ -1264,9 +1264,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 ⚙️
               </button>
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Max Iterations</label>
                   <div className="select-wrapper">
                     <select className="bento-select" value={maxRounds} onChange={(e) => setMaxRounds(Number(e.target.value))} disabled={jobState === 'active'}>
@@ -1277,7 +1277,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     </select>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Language</label>
                   <div className="select-wrapper">
                     <select className="bento-select" value={language} onChange={(e) => setLanguage(e.target.value)} disabled={jobState === 'active'}>
@@ -1289,8 +1289,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Timeout [sec]</label>
                   <div className="select-wrapper">
                     <select className="bento-select" value={timeoutMs / 1000} onChange={(e) => setTimeoutMs(Number(e.target.value) * 1000)} disabled={jobState === 'active'}>
@@ -1301,7 +1301,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     </select>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Test Cases</label>
                   <div className="select-wrapper">
                     <select className="bento-select" value={testCasesCount} onChange={(e) => setTestCasesCount(e.target.value)} disabled={jobState === 'active'}>
@@ -1313,7 +1313,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               </div>
 
               {/* Custom Test Cases Box inside card */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
                 <textarea
                   placeholder="Enter custom inputs (e.g. 4 \n 3 5 8)"
                   value={customInput}
@@ -1321,12 +1321,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   disabled={isCustomRunning}
                   style={{
                     width: '100%',
-                    height: '50px',
+                    height: '38px',
                     background: 'var(--bg-input)',
                     border: '1px solid var(--border-slate)',
                     borderRadius: '4px',
                     color: 'var(--text-primary)',
-                    padding: '8px',
+                    padding: '6px 8px',
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.72rem',
                     resize: 'none',
@@ -1353,7 +1353,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
                 <button
                   onClick={handleStartDebate}
                   className="btn-verify-primary"
@@ -1373,12 +1373,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* LangGraph Mission Path Node Flow */}
-          <div className="bento-card">
+          <div className="bento-card" style={{ padding: '12px 14px', gap: '10px' }}>
             <h2 className="card-title">
               <Workflow size={13} />
               LANGGRAPH MISSION PATH
             </h2>
-            <div className="mission-path-container">
+            <div className="mission-path-container" style={{ padding: '12px 16px' }}>
               {/* Stage 1: Input */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(1)}`}>
                 <div className="mission-circle">
