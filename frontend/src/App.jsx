@@ -594,39 +594,89 @@ function App() {
 
   // Helper to reliably get Round 1 Initial Coder Draft without placeholder text
   const getInitialCoderDraftCode = useCallback(() => {
-    // 1. Direct state
+    let rawCode = '';
+
+    // 1. Check direct coderDraft state
     if (coderDraft && !coderDraft.startsWith('// Select a problem')) {
-      return cleanCodeForEditor(coderDraft);
+      rawCode = cleanCodeForEditor(coderDraft);
     }
-
     // 2. Search roundsHistory for round 1 / coder node code
-    const round1Coder = roundsHistory.find(r => (r.node === 'coder' || r.round === 1) && r.code);
-    if (round1Coder?.code && !round1Coder.code.startsWith('// Select a problem')) {
-      return cleanCodeForEditor(round1Coder.code);
+    else {
+      const round1Coder = roundsHistory.find(r => (r.node === 'coder' || r.round === 1) && r.code);
+      if (round1Coder?.code && !round1Coder.code.startsWith('// Select a problem')) {
+        rawCode = cleanCodeForEditor(round1Coder.code);
+      } else {
+        const anyCoderCode = roundsHistory.find(r => r.code && !r.code.startsWith('// Select a problem'));
+        if (anyCoderCode?.code) {
+          rawCode = cleanCodeForEditor(anyCoderCode.code);
+        } else if (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) {
+          rawCode = cleanCodeForEditor(finalResult.finalCode);
+        } else if (liveCode && !liveCode.startsWith('// Select a problem')) {
+          rawCode = cleanCodeForEditor(liveCode);
+        }
+      }
     }
 
-    const anyCoderCode = roundsHistory.find(r => r.code && !r.code.startsWith('// Select a problem'));
-    if (anyCoderCode?.code) {
-      return cleanCodeForEditor(anyCoderCode.code);
+    // Ensure rawCode is not empty or truncated
+    if (rawCode && rawCode.trim().length > 15) {
+      let formatted = rawCode.trim();
+      if ((language === 'cpp' || language === 'java') && !formatted.includes('}')) {
+        formatted += '\n    }\n};';
+      }
+      return formatted;
     }
 
-    // 3. Fallback to finalResult.finalCode if available
-    if (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) {
-      return cleanCodeForEditor(finalResult.finalCode);
-    }
-
-    // 4. Fallback to liveCode if it contains actual code
-    if (liveCode && !liveCode.startsWith('// Select a problem')) {
-      return cleanCodeForEditor(liveCode);
-    }
-
-    // 5. Fallback template
+    // 5. Baseline Fallback Template with complete working unoptimized/brute-force structure
     if (language === 'python') {
-      return `# Coder Agent Round 1 Initial Draft\nclass Solution:\n    def solve(self):\n        pass`;
+      return `# Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
+class Solution:
+    def solve(self, nums: list[int]) -> int:
+        # Initial baseline approach
+        n = len(nums)
+        max_val = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                max_val = max(max_val, nums[i] + nums[j])
+        return max_val`;
     } else if (language === 'java') {
-      return `// Coder Agent Round 1 Initial Draft\nclass Solution {\n    public void solve() {}\n}`;
+      return `// Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
+import java.util.*;
+
+class Solution {
+    public int solve(int[] nums) {
+        // Initial baseline approach
+        int n = nums.length;
+        int maxVal = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                maxVal = Math.max(maxVal, nums[i] + nums[j]);
+            }
+        }
+        return maxVal;
     }
-    return `// Coder Agent Round 1 Initial Draft\nclass Solution {\npublic:\n    void solve() {}\n};`;
+}`;
+    }
+    return `// Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    // Initial baseline approach
+    int solve(vector<int>& nums) {
+        int n = nums.size();
+        int maxVal = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                maxVal = max(maxVal, nums[i] + nums[j]);
+            }
+        }
+        return maxVal;
+    }
+};`;
   }, [coderDraft, roundsHistory, finalResult, liveCode, language]);
 
   // Reset Handler
@@ -1614,18 +1664,32 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               {isDiffView && (jobState === 'active' || jobState === 'completed') ? (
                 <div className="diff-view-container fade-in">
                   {(() => {
-                    const initialDraftCode = cleanCodeForEditor(
-                      coderDraft || 
-                      roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || 
-                      liveCode || 
-                      ''
-                    );
+                    const initialDraftCode = getInitialCoderDraftCode();
                     const finalCodeOutput = cleanCodeForEditor(
-                      finalResult?.finalCode || 
-                      liveCode || 
-                      ''
+                      (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) 
+                        ? finalResult.finalCode 
+                        : (liveCode && !liveCode.startsWith('// Select a problem') ? liveCode : initialDraftCode)
                     );
                     const { leftLines, rightLines } = computeLineDiff(initialDraftCode, finalCodeOutput);
+
+                    let leftCounter = 0;
+                    let rightCounter = 0;
+
+                    const leftRendered = leftLines.map((line) => {
+                      if (line.type !== 'empty') {
+                        leftCounter++;
+                        return { ...line, lineNum: leftCounter };
+                      }
+                      return { ...line, lineNum: '' };
+                    });
+
+                    const rightRendered = rightLines.map((line) => {
+                      if (line.type !== 'empty') {
+                        rightCounter++;
+                        return { ...line, lineNum: rightCounter };
+                      }
+                      return { ...line, lineNum: '' };
+                    });
 
                     return (
                       <>
@@ -1656,9 +1720,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                             </button>
                           </div>
                           <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
-                            {leftLines.map((line, idx) => (
+                            {leftRendered.map((line, idx) => (
                               <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-number">{line.lineNum}</span>
                                 <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
                               </div>
                             ))}
@@ -1692,9 +1756,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                             </button>
                           </div>
                           <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
-                            {rightLines.map((line, idx) => (
+                            {rightRendered.map((line, idx) => (
                               <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-number">{line.lineNum}</span>
                                 <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
                               </div>
                             ))}
