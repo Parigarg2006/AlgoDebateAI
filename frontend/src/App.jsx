@@ -1118,14 +1118,15 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
-    if (jobState === 'failed' || error || !hasExecuted) return 0;
-    if (jobState === 'completed' && hasExecuted) return 100;
+    if (jobState === 'failed' || error) return 0;
     if (jobState === 'idle') return 0;
-    if (activeNode === 'coder') return 35;
-    if (activeNode === 'sandbox') return 70;
-    if (activeNode === 'critic') return 85;
-    if (activeNode === 'refiner') return 95;
-    return 35;
+    if (jobState === 'completed' && hasExecuted) return 100;
+    if (activeNode === 'coder') return 25;
+    if (activeNode === 'sandbox' || activeNode === 'compiler') return 50;
+    if (activeNode === 'critic') return 75;
+    if (activeNode === 'refiner') return 90;
+    if (hasExecuted) return 100;
+    return 0;
   };
   const optPercent = getOptimizationPercentage();
 

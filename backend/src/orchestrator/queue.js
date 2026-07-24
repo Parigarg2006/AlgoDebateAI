@@ -293,16 +293,20 @@ NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an in
           onProgress
         }, { recursionLimit: 50 });
       } catch (graphErr) {
-        console.warn(`[Worker] LangGraph execution limit / recursion warning: ${graphErr.message}`);
-        const fallbackCode = roundsHistory.map(r => r.code || r.finalCode).filter(c => c && c.length > 20).pop() || cleanCodeString(fallbackTemplate);
-        finalState = {
-          finalResult: {
-            finalCode: fallbackCode,
-            timeComplexity: 'O(N)',
-            spaceComplexity: 'O(1)',
-            explanation: 'Execution finished cleanly (MAX_STEPS_EXCEEDED / Fallback resolution).'
-          }
-        };
+        console.warn(`[Worker] LangGraph execution error: ${graphErr.message}`);
+        const fallbackCode = roundsHistory.map(r => r.code || r.finalCode).filter(c => c && c.length > 20).pop();
+        if (fallbackCode) {
+          finalState = {
+            finalResult: {
+              finalCode: fallbackCode,
+              timeComplexity: 'O(N)',
+              spaceComplexity: 'O(1)',
+              explanation: `Execution completed with warning: ${graphErr.message}`
+            }
+          };
+        } else {
+          throw graphErr;
+        }
       }
 
       const finalResult = finalState.finalResult;

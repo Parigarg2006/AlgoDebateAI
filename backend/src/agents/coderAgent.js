@@ -63,9 +63,9 @@ Guidelines:
   if (language === 'cpp') {
     codeDesc += ' You MUST wrap your solution inside class Solution { public: ... } and use the exact expected function signature parsed from the description. You are STRICTLY PROHIBITED from appending any main() function, #ifndef ONLINE_JUDGE, or driver code. The code must end strictly with "};". Do not wrap code block in backticks.';
   } else if (language === 'python') {
-    codeDesc += ' Ensure it reads inputs from sys.stdin or input() and prints to stdout. Do not wrap in backticks.';
+    codeDesc += ' You MUST wrap your solution inside class Solution: with a method (e.g. def methodName(self, ...)) matching the exact LeetCode signature. Include typing imports (from typing import List, Dict, Optional) if needed. Do not wrap in backticks.';
   } else if (language === 'java') {
-    codeDesc += ' Ensure it has a public class (Main or Solution) reading from Scanner or BufferedReader. Do not wrap in backticks.';
+    codeDesc += ' You MUST wrap your solution inside class Solution { public ReturnType methodName(...) { ... } } matching the exact LeetCode signature. Include java.util.* imports if needed. Do not wrap in backticks.';
   }
 
   const CoderResponseSchema = {
