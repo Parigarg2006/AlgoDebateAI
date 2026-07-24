@@ -241,13 +241,10 @@ function App() {
   const [roundsHistory, setRoundsHistory] = useState([]);
   const [finalResult, setFinalResult] = useState(null);
   
-  // Live tracking states to display code before critic-done
+  // Live tracking states
   const [liveCode, setLiveCode] = useState("// Select a problem and click Run Verification...");
-  const [coderDraft, setCoderDraft] = useState('');
   
-  // Dynamic Diff & Vault states
-  const [isDiffView, setIsDiffView] = useState(false);
-  const [expandedDiffPane, setExpandedDiffPane] = useState(null); // 'initial' | 'final' | null
+  // Vault states
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [vaultRecords, setVaultRecords] = useState([]);
 
@@ -264,28 +261,68 @@ function App() {
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
 
-  // Synchronized Diff View Scroll Refs & Handlers
-  const diffLeftScrollRef = useRef(null);
-  const diffRightScrollRef = useRef(null);
-  const isSyncingScrollRef = useRef(false);
-
-  const handleLeftDiffScroll = (e) => {
-    if (isSyncingScrollRef.current) return;
-    isSyncingScrollRef.current = true;
-    if (diffRightScrollRef.current) {
-      diffRightScrollRef.current.scrollTop = e.target.scrollTop;
+  // Helper for language starter code
+  const getLanguageStarterCode = useCallback((lang) => {
+    if (lang === 'python') {
+      return `# Select a problem and click Run Verification...\n\nclass Solution:\n    def solve(self, nums: list[int]) -> int:\n        return 0`;
+    } else if (lang === 'java') {
+      return `// Select a problem and click Run Verification...\n\nimport java.util.*;\n\nclass Solution {\n    public int solve(int[] nums) {\n        return 0;\n    }\n}`;
     }
-    setTimeout(() => { isSyncingScrollRef.current = false; }, 40);
-  };
+    return `// Select a problem and click Run Verification...\n\n#include <iostream>\n#include <vector>\n\nusing namespace std;\n\nclass Solution {\npublic:\n    int solve(vector<int>& nums) {\n        return 0;\n    }\n};`;
+  }, []);
 
-  const handleRightDiffScroll = (e) => {
-    if (isSyncingScrollRef.current) return;
-    isSyncingScrollRef.current = true;
-    if (diffLeftScrollRef.current) {
-      diffLeftScrollRef.current.scrollTop = e.target.scrollTop;
+  // Multi-Language Syntax Highlighter
+  const renderSyntaxHighlightedLine = useCallback((lineText, lang) => {
+    if (!lineText) return <span className="code-line-content">&nbsp;</span>;
+
+    const commentSymbol = lang === 'python' ? '#' : '//';
+    const commentIdx = lineText.indexOf(commentSymbol);
+
+    let codePart = lineText;
+    let commentPart = '';
+
+    if (commentIdx !== -1) {
+      codePart = lineText.slice(0, commentIdx);
+      commentPart = lineText.slice(commentIdx);
     }
-    setTimeout(() => { isSyncingScrollRef.current = false; }, 40);
-  };
+
+    let keywords = [];
+    let types = [];
+
+    if (lang === 'python') {
+      keywords = ['def', 'class', 'return', 'if', 'else', 'elif', 'for', 'in', 'while', 'import', 'from', 'as', 'pass', 'self', 'None', 'True', 'False', 'and', 'or', 'not', 'is', 'lambda', 'try', 'except', 'raise', 'with', 'yield', 'async', 'await'];
+      types = ['int', 'str', 'list', 'dict', 'set', 'tuple', 'bool', 'float', 'len', 'range', 'print', 'max', 'min', 'sum', 'abs'];
+    } else if (lang === 'java') {
+      keywords = ['class', 'public', 'private', 'protected', 'static', 'final', 'return', 'if', 'else', 'for', 'while', 'import', 'package', 'new', 'void', 'try', 'catch', 'throw', 'throws'];
+      types = ['int', 'long', 'double', 'float', 'char', 'boolean', 'String', 'List', 'ArrayList', 'Map', 'HashMap', 'Set', 'HashSet', 'Arrays', 'Math', 'Integer'];
+    } else {
+      keywords = ['class', 'public', 'private', 'protected', 'return', 'if', 'else', 'for', 'while', 'using', 'namespace', 'template', 'typename', 'const', 'auto', 'void', 'struct', 'new', 'delete', 'typedef'];
+      types = ['int', 'long', 'double', 'float', 'char', 'bool', 'vector', 'string', 'unordered_map', 'map', 'set', 'unordered_set', 'pair', 'size_t'];
+    }
+
+    const tokens = codePart.split(/(\s+|[{}()\[\];,.<>:+\-*\/=&#!|])/);
+
+    return (
+      <span className="code-line-content">
+        {tokens.map((token, i) => {
+          if (keywords.includes(token)) {
+            return <span key={i} style={{ color: '#38bdf8', fontWeight: 600 }}>{token}</span>;
+          }
+          if (types.includes(token)) {
+            return <span key={i} style={{ color: '#a78bfa', fontWeight: 600 }}>{token}</span>;
+          }
+          if (/^".*"$|^'.*'$/.test(token)) {
+            return <span key={i} style={{ color: '#fde047' }}>{token}</span>;
+          }
+          if (lang === 'cpp' && token.startsWith('#')) {
+            return <span key={i} style={{ color: '#f472b6', fontWeight: 600 }}>{token}</span>;
+          }
+          return token;
+        })}
+        {commentPart && <span style={{ color: '#64748b', fontStyle: 'italic' }}>{commentPart}</span>}
+      </span>
+    );
+  }, []);
 
   // Sound Engine
   const playTick = useCallback(() => {
@@ -553,133 +590,9 @@ function App() {
 
   useEffect(() => {
     if (jobState === 'completed' && finalResult && jobId) {
-      saveSessionToVault(problemDescription, maxRounds, language, roundsHistory, finalResult, jobId, coderDraft);
+      saveSessionToVault(problemDescription, maxRounds, language, roundsHistory, finalResult, jobId);
     }
-  }, [jobState, finalResult, jobId, problemDescription, maxRounds, language, roundsHistory, coderDraft, saveSessionToVault]);
-
-  // Positional 1-to-1 Side-by-Side Diff Aligner (Zero Empty Gap Voids)
-  const computeLineDiff = useCallback((oldText, newText) => {
-    const oldLines = oldText ? oldText.split('\n') : [];
-    const newLines = newText ? newText.split('\n') : [];
-    
-    const leftLines = [];
-    const rightLines = [];
-    
-    const maxLen = Math.max(oldLines.length, newLines.length);
-
-    for (let i = 0; i < maxLen; i++) {
-      const hasOld = i < oldLines.length;
-      const hasNew = i < newLines.length;
-
-      const oldLine = hasOld ? oldLines[i] : null;
-      const newLine = hasNew ? newLines[i] : null;
-
-      if (hasOld && hasNew) {
-        if (oldLine === newLine) {
-          leftLines.push({ type: 'unchanged', text: oldLine });
-          rightLines.push({ type: 'unchanged', text: newLine });
-        } else {
-          leftLines.push({ type: 'removed', text: oldLine });
-          rightLines.push({ type: 'added', text: newLine });
-        }
-      } else if (hasOld) {
-        leftLines.push({ type: 'removed', text: oldLine });
-        rightLines.push({ type: 'empty', text: '' });
-      } else if (hasNew) {
-        leftLines.push({ type: 'empty', text: '' });
-        rightLines.push({ type: 'added', text: newLine });
-      }
-    }
-    
-    return { leftLines, rightLines };
-  }, []);
-
-  // Helper to reliably get Round 1 Initial Coder Draft without placeholder text
-  const getInitialCoderDraftCode = useCallback(() => {
-    let rawCode = '';
-
-    // 1. Check direct coderDraft state
-    if (coderDraft && !coderDraft.startsWith('// Select a problem')) {
-      rawCode = cleanCodeForEditor(coderDraft);
-    }
-    // 2. Search roundsHistory for round 1 / coder node code
-    else {
-      const round1Coder = roundsHistory.find(r => (r.node === 'coder' || r.round === 1) && r.code);
-      if (round1Coder?.code && !round1Coder.code.startsWith('// Select a problem')) {
-        rawCode = cleanCodeForEditor(round1Coder.code);
-      } else {
-        const anyCoderCode = roundsHistory.find(r => r.code && !r.code.startsWith('// Select a problem'));
-        if (anyCoderCode?.code) {
-          rawCode = cleanCodeForEditor(anyCoderCode.code);
-        } else if (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) {
-          rawCode = cleanCodeForEditor(finalResult.finalCode);
-        } else if (liveCode && !liveCode.startsWith('// Select a problem')) {
-          rawCode = cleanCodeForEditor(liveCode);
-        }
-      }
-    }
-
-    // Ensure rawCode is not empty or truncated
-    if (rawCode && rawCode.trim().length > 15) {
-      let formatted = rawCode.trim();
-      if ((language === 'cpp' || language === 'java') && !formatted.includes('}')) {
-        formatted += '\n    }\n};';
-      }
-      return formatted;
-    }
-
-    // 5. Baseline Fallback Template with complete working unoptimized/brute-force structure
-    if (language === 'python') {
-      return `# Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
-class Solution:
-    def solve(self, nums: list[int]) -> int:
-        # Initial baseline approach
-        n = len(nums)
-        max_val = 0
-        for i in range(n):
-            for j in range(i + 1, n):
-                max_val = max(max_val, nums[i] + nums[j])
-        return max_val`;
-    } else if (language === 'java') {
-      return `// Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
-import java.util.*;
-
-class Solution {
-    public int solve(int[] nums) {
-        // Initial baseline approach
-        int n = nums.length;
-        int maxVal = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                maxVal = Math.max(maxVal, nums[i] + nums[j]);
-            }
-        }
-        return maxVal;
-    }
-}`;
-    }
-    return `// Coder Agent (Round 1 Initial Draft - Unoptimized Baseline)
-#include <iostream>
-#include <vector>
-#include <algorithm>
-
-using namespace std;
-
-class Solution {
-public:
-    // Initial baseline approach
-    int solve(vector<int>& nums) {
-        int n = nums.size();
-        int maxVal = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                maxVal = max(maxVal, nums[i] + nums[j]);
-            }
-        }
-        return maxVal;
-    }
-};`;
-  }, [coderDraft, roundsHistory, finalResult, liveCode, language]);
+  }, [jobState, finalResult, jobId, problemDescription, maxRounds, language, roundsHistory, saveSessionToVault]);
 
   // Reset Handler
   const handleReset = () => {
@@ -698,8 +611,7 @@ public:
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode("// Select a problem and click Run Verification...");
-    setLanguage('cpp');
+    setLiveCode(getLanguageStarterCode(language));
     setTimeoutMs(10000);
     setTestCasesCount('0');
     setIsCopied(false);
@@ -709,8 +621,6 @@ public:
     setIsCustomRunning(false);
     setIsCustomTestOpen(false);
     setIsSettingsOpen(false);
-    setCoderDraft('');
-    setIsDiffView(false);
   };
 
   // Copy & Download
@@ -823,19 +733,9 @@ public:
         setCurrentRound(latest.round);
       }
       
-      // Capture initial Round 1 Coder draft
-      const firstCoderInHistory = history.find(h => (h.node === 'coder' || h.round === 1) && h.code)?.code;
-      if (firstCoderInHistory) {
-        const cleanedFirst = cleanCodeForEditor(firstCoderInHistory);
-        if (!cleanedFirst.startsWith('// Select a problem')) {
-          setCoderDraft(cleanedFirst);
-        }
-      }
-
       if (latest.code) {
         const cleaned = cleanCodeForEditor(latest.code);
         setLiveCode(cleaned);
-        setCoderDraft(prev => (prev && !prev.startsWith('// Select a problem')) ? prev : cleaned);
       }
 
       setRoundsHistory(history);
@@ -854,12 +754,6 @@ public:
       setFinalResult(cleanedResult);
       if (cleanedResult?.finalCode) {
         setLiveCode(cleanedResult.finalCode);
-      }
-      
-      const firstCoderInCompleted = result.roundsHistory?.find(h => (h.node === 'coder' || h.round === 1) && h.code)?.code;
-      const initialDraft = cleanCodeForEditor(result.finalResult?.coderDraft || firstCoderInCompleted || result.coderDraft || '');
-      if (initialDraft && !initialDraft.startsWith('// Select a problem')) {
-        setCoderDraft(initialDraft);
       }
       
       socket.off(`job-progress:${tempJobId}`);
@@ -1393,7 +1287,18 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Language</label>
                   <div className="select-wrapper">
-                    <select className="bento-select" value={language} onChange={(e) => setLanguage(e.target.value)} disabled={jobState === 'active'}>
+                    <select 
+                      className="bento-select" 
+                      value={language} 
+                      onChange={(e) => {
+                        const newLang = e.target.value;
+                        setLanguage(newLang);
+                        if (jobState === 'idle' || liveCode.startsWith('// Select a problem') || liveCode.startsWith('# Select a problem')) {
+                          setLiveCode(getLanguageStarterCode(newLang));
+                        }
+                      }} 
+                      disabled={jobState === 'active'}
+                    >
                       <option value="cpp">C++</option>
                       <option value="python">Python</option>
                       <option value="java">Java</option>
@@ -1585,46 +1490,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Code2 size={16} className="text-emerald-400" />
                 <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 800, margin: 0 }}>
-                  CODE EDITOR
+                  CODE EDITOR ({language.toUpperCase()})
                 </span>
               </div>
               
               {/* Right Action Controls */}
               <div className="workspace-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
-                {coderDraft && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DIFF VIEW:</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsDiffView(!isDiffView)}
-                      style={{
-                        position: 'relative',
-                        width: '28px',
-                        height: '16px',
-                        borderRadius: '8px',
-                        background: isDiffView ? 'var(--accent-green)' : 'var(--border-slate)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s',
-                        padding: 0
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          left: isDiffView ? '14px' : '2px',
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          background: '#ffffff',
-                          transition: 'left 0.2s'
-                        }}
-                      />
-                    </button>
-                  </div>
-                )}
-                
                 <div className="code-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <button type="button" className="editor-btn" onClick={handleTabCopy} title="Copy solution code">
                     {isCopied ? <Check size={11} style={{ color: 'var(--accent-green)' }} /> : <Copy size={11} />}
@@ -1663,133 +1534,15 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   <span>⚔️ DEBATE IN PROGRESS: Critic challenged Coder</span>
                 </div>
               )}
-              {isDiffView && (jobState === 'active' || jobState === 'completed') ? (
-                <div className="diff-view-container fade-in">
-                  {(() => {
-                    const initialDraftCode = getInitialCoderDraftCode();
-                    const finalCodeOutput = cleanCodeForEditor(
-                      (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) 
-                        ? finalResult.finalCode 
-                        : (liveCode && !liveCode.startsWith('// Select a problem') ? liveCode : initialDraftCode)
-                    );
-                    const { leftLines, rightLines } = computeLineDiff(initialDraftCode, finalCodeOutput);
-
-                    let leftCounter = 0;
-                    let rightCounter = 0;
-
-                    const leftRendered = leftLines.map((line) => {
-                      if (line.type !== 'empty') {
-                        leftCounter++;
-                        return { ...line, lineNum: leftCounter };
-                      }
-                      return { ...line, lineNum: '' };
-                    });
-
-                    const rightRendered = rightLines.map((line) => {
-                      if (line.type !== 'empty') {
-                        rightCounter++;
-                        return { ...line, lineNum: rightCounter };
-                      }
-                      return { ...line, lineNum: '' };
-                    });
-
-                    return (
-                      <>
-                        {/* Left Column: Initial Coder Draft */}
-                        <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                          <div className="diff-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>Coder Draft (Initial)</span>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedDiffPane('initial')}
-                              title="Expand Coder Draft (Initial)"
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-secondary)',
-                                cursor: 'pointer',
-                                padding: '2px 4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.65rem',
-                                fontWeight: 600
-                              }}
-                              className="hover:text-emerald-400 transition-colors"
-                            >
-                              <Maximize2 size={11} />
-                              <span>Expand</span>
-                            </button>
-                          </div>
-                          <div 
-                            ref={diffLeftScrollRef}
-                            onScroll={handleLeftDiffScroll}
-                            className="custom-scrollbar" 
-                            style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}
-                          >
-                            {leftRendered.map((line, idx) => (
-                              <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.lineNum}</span>
-                                <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Right Column: Refined Output */}
-                        <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                          <div className="diff-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>Refined Output (Final)</span>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedDiffPane('final')}
-                              title="Expand Refined Output (Final)"
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-secondary)',
-                                cursor: 'pointer',
-                                padding: '2px 4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.65rem',
-                                fontWeight: 600
-                              }}
-                              className="hover:text-emerald-400 transition-colors"
-                            >
-                              <Maximize2 size={11} />
-                              <span>Expand</span>
-                            </button>
-                          </div>
-                          <div 
-                            ref={diffRightScrollRef}
-                            onScroll={handleRightDiffScroll}
-                            className="custom-scrollbar" 
-                            style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}
-                          >
-                            {rightRendered.map((line, idx) => (
-                              <div key={idx} className={`diff-line ${line.type}`}>
-                                <span className="diff-line-number">{line.lineNum}</span>
-                                <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="code-editor-container custom-scrollbar fade-in">
-                  {renderedCodeLines.map((line, idx) => (
-                    <div key={idx} className="code-line-row">
-                      <span className="code-line-number">{idx + 1}</span>
-                      <span className="code-line-content">{line}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              
+              <div className="code-editor-container custom-scrollbar fade-in">
+                {renderedCodeLines.map((line, idx) => (
+                  <div key={idx} className="code-line-row">
+                    <span className="code-line-number">{idx + 1}</span>
+                    {renderSyntaxHighlightedLine(line, language)}
+                  </div>
+                ))}
+              </div>
               {jobState === 'failed' && (
                 <div className="workspace-empty-view fade-in">
                   <AlertTriangle size={32} style={{ color: 'var(--accent-red)' }} />
@@ -2646,145 +2399,6 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Expanded Overlay Modal for Diff View Panes (Initial Coder Draft or Refined Output) */}
-      {expandedDiffPane && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 2050,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px'
-          }}
-          onClick={() => setExpandedDiffPane(null)}
-          className="fade-in"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '900px',
-              maxWidth: '95vw',
-              maxHeight: '85vh',
-              background: '#090a0f',
-              border: expandedDiffPane === 'initial' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '16px',
-              boxShadow: expandedDiffPane === 'initial' ? '0 0 40px rgba(239, 68, 68, 0.2)' : '0 0 40px rgba(16, 185, 129, 0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
-          >
-            {/* Modal Header */}
-            <div 
-              style={{
-                padding: '14px 20px',
-                background: 'rgba(13, 14, 18, 0.95)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Code2 size={20} className={expandedDiffPane === 'initial' ? 'text-red-400' : 'text-emerald-400'} />
-                <h3 style={{
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  color: expandedDiffPane === 'initial' ? '#fca5a5' : '#6ee7b7',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  margin: 0
-                }}>
-                  {expandedDiffPane === 'initial' ? 'Coder Draft (Initial Round 1 Code)' : 'Refined Output (Final Polished Code)'}
-                </h3>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const codeToCopy = expandedDiffPane === 'initial'
-                      ? cleanCodeForEditor(coderDraft || roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || liveCode)
-                      : cleanCodeForEditor(finalResult?.finalCode || liveCode);
-                    handleCopyCode(codeToCopy);
-                    showToast('Copied to clipboard!');
-                  }}
-                  title="Copy Code"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.72rem'
-                  }}
-                  className="hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  <Copy size={12} />
-                  <span>Copy Code</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setExpandedDiffPane(null)}
-                  title="Close"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                  className="hover:text-white transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body: Code Display */}
-            <div 
-              className="custom-scrollbar"
-              style={{
-                flex: 1,
-                padding: '16px 20px',
-                overflowY: 'auto',
-                background: 'var(--bg-input)',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: '0.82rem',
-                lineHeight: 1.6
-              }}
-            >
-              {(() => {
-                const targetCode = expandedDiffPane === 'initial'
-                  ? cleanCodeForEditor(coderDraft || roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || liveCode)
-                  : cleanCodeForEditor(finalResult?.finalCode || liveCode);
-                const codeLines = (targetCode || '').split('\n');
-                return codeLines.map((line, idx) => (
-                  <div key={idx} className="code-line-row">
-                    <span className="code-line-number">{idx + 1}</span>
-                    <span className="code-line-content">{line}</span>
-                  </div>
-                ));
-              })()}
             </div>
           </div>
         </div>
