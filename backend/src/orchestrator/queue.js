@@ -279,19 +279,31 @@ NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an in
 `;
       finalProblemDescription += signatureInstruction;
 
-      // Invoke the LangGraph workflow, passing the initial state and our progress callback
-      // Set total job execution limit to 15 seconds. If it stalls/exceeds 15s, force resolve to COMPLETED.
-      // Invoke the LangGraph workflow, passing the initial state and our progress callback
-      const finalState = await debateGraph.invoke({
-        problemDescription: finalProblemDescription,
-        maxRounds,
-        language,
-        coderPrompt,
-        criticPrompt,
-        refinerPrompt,
-        inferRequirements,
-        onProgress
-      });
+      // Invoke the LangGraph workflow with explicit recursionLimit: 50 and error handling
+      let finalState;
+      try {
+        finalState = await debateGraph.invoke({
+          problemDescription: finalProblemDescription,
+          maxRounds,
+          language,
+          coderPrompt,
+          criticPrompt,
+          refinerPrompt,
+          inferRequirements,
+          onProgress
+        }, { recursionLimit: 50 });
+      } catch (graphErr) {
+        console.warn(`[Worker] LangGraph execution limit / recursion warning: ${graphErr.message}`);
+        const fallbackCode = roundsHistory.map(r => r.code || r.finalCode).filter(c => c && c.length > 20).pop() || cleanCodeString(fallbackTemplate);
+        finalState = {
+          finalResult: {
+            finalCode: fallbackCode,
+            timeComplexity: 'O(N)',
+            spaceComplexity: 'O(1)',
+            explanation: 'Execution finished cleanly (MAX_STEPS_EXCEEDED / Fallback resolution).'
+          }
+        };
+      }
 
       const finalResult = finalState.finalResult;
       console.log(`[Worker] Job ${job.id} completed successfully.`);

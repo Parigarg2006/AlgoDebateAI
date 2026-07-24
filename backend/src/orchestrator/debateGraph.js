@@ -372,16 +372,19 @@ async function refinerNode(state) {
  * 6. Define Conditional Edge (Routing Logic)
  */
 function routeAfterCritic(state) {
-  const limit = Math.min(state.maxRounds || 4, 4);
+  const limit = state.maxRounds ? Math.max(1, state.maxRounds) : 1;
   const isEmpty = isCodeEmptyOrPlaceholder(state.code, state.language);
-  if (isEmpty) {
-    console.log(`[Router] Code is empty or placeholder. Forcing coder agent node loop to generate full logic.`);
-    return "coder";
-  }
-  if (state.criticApproved || state.currentRound > limit) {
+  
+  if (state.criticApproved || state.currentRound >= limit || state.currentRound >= 4) {
     return "refiner";
   }
-  return "coder";
+
+  if (isEmpty && state.currentRound < limit) {
+    console.log(`[Router] Code is empty or placeholder. Retrying coder agent node.`);
+    return "coder";
+  }
+
+  return "refiner";
 }
 
 // 7. Assemble the StateGraph workflow

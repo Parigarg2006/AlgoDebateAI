@@ -764,31 +764,29 @@ function App() {
 
     socket.on(`job-progress:${tempJobId}`, (progress) => {
       console.log("[Socket Stream] Progress update:", progress);
-      requestAnimationFrame(() => {
-        const history = progress.roundsHistory || [];
-        if (history.length === 0) return;
-        
-        const latest = history[history.length - 1];
-        
-        if (latest.node && latest.node !== 'critic-done') {
-          setActiveNode(latest.node);
-          setCurrentRound(latest.round || 1);
-        } else if (latest.node === 'critic-done') {
-          setActiveNode(null);
-          setCurrentRound(latest.round || 1);
+      const history = progress.roundsHistory || [];
+      if (history.length === 0) return;
+      
+      const latest = history[history.length - 1];
+      
+      if (latest.node && latest.node !== 'critic-done') {
+        setActiveNode(latest.node);
+        setCurrentRound(latest.round || 1);
+      } else if (latest.node === 'critic-done') {
+        setActiveNode(null);
+        setCurrentRound(latest.round || 1);
+      }
+      
+      const incomingCode = latest.code || latest.finalCode || latest.final_code || latest.refined_code;
+      if (incomingCode) {
+        const cleaned = cleanCodeForEditor(incomingCode);
+        if (cleaned && cleaned.trim().length > 10) {
+          console.log("[Socket Stream] Updated live code:", cleaned.substring(0, 60) + "...");
+          setLiveCode(cleaned);
         }
-        
-        const incomingCode = latest.code || latest.finalCode || latest.final_code || latest.refined_code;
-        if (incomingCode) {
-          const cleaned = cleanCodeForEditor(incomingCode);
-          if (cleaned && cleaned.trim().length > 10) {
-            console.log("[Socket Stream] Updated live code:", cleaned.substring(0, 60) + "...");
-            setLiveCode(cleaned);
-          }
-        }
+      }
 
-        setRoundsHistory(history);
-      });
+      setRoundsHistory(history);
     });
 
     socket.on(`job-completed:${tempJobId}`, (result) => {
@@ -1120,17 +1118,14 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
+    if (jobState === 'failed' || error || !hasExecuted) return 0;
+    if (jobState === 'completed' && hasExecuted) return 100;
     if (jobState === 'idle') return 0;
-    if (jobState === 'failed' || error) return 0;
-    if (jobState === 'completed') return 100;
-    
-    // Dynamic Step-by-Step Verification Confidence Progression:
-    if (activeNode === 'refiner' || roundsHistory.some(r => r.node === 'refiner' || r.finalCode)) return 100;
-    if (activeNode === 'critic' || roundsHistory.some(r => r.node === 'critic' || r.criticApproved !== undefined)) return 75;
-    if (activeNode === 'sandbox' || roundsHistory.some(r => r.node === 'sandbox' || r.sandboxResults)) return 50;
-    if (activeNode === 'coder' || roundsHistory.some(r => r.node === 'coder')) return 25;
-
-    return 0;
+    if (activeNode === 'coder') return 35;
+    if (activeNode === 'sandbox') return 70;
+    if (activeNode === 'critic') return 85;
+    if (activeNode === 'refiner') return 95;
+    return 35;
   };
   const optPercent = getOptimizationPercentage();
 
