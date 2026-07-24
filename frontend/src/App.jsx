@@ -1355,7 +1355,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   type="button"
                   className="btn-run-custom-test"
                   onClick={handleRunCustomTest}
-                  disabled={isCustomRunning || (!coderDraft && !(finalResult?.finalCode))}
+                  disabled={isCustomRunning || (!liveCode && !(finalResult?.finalCode))}
                 >
                   {isCustomRunning ? (
                     <>
