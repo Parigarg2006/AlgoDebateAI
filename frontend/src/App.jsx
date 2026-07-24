@@ -56,11 +56,26 @@ const unescapeNewlines = (str) => {
 };
 
 /**
+ * Helper to unescape HTML entities like &quot;, &apos;, &lt;, &gt;, &amp;
+ */
+const unescapeHtmlEntities = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#34;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+};
+
+/**
  * Helper to clean code strings for CodeMirror/editor input
  */
 const cleanCodeForEditor = (code) => {
   if (!code || typeof code !== 'string') return '';
-  let cleaned = unescapeNewlines(code);
+  let cleaned = unescapeHtmlEntities(unescapeNewlines(code));
   cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').replace(/```/g, '').trim();
   return cleaned;
 };
@@ -233,6 +248,7 @@ function App() {
   // Job State
   const [jobId, setJobId] = useState(null);
   const [jobState, setJobState] = useState('idle'); // idle, active, completed, failed
+  const [hasExecuted, setHasExecuted] = useState(false);
   const [error, setError] = useState(null);
   
   // Debate Progress State
@@ -602,6 +618,7 @@ function App() {
     setProblemUrl('');
     setJobId(null);
     setJobState('idle');
+    setHasExecuted(false);
     setError(null);
     setActiveNode(null);
     setCurrentRound(1);
@@ -766,15 +783,12 @@ function App() {
     });
 
     socket.on(`job-completed:${tempJobId}`, (result) => {
-      console.log("FINAL RECEIVED CODE:", result);
+      console.log("FINAL RECEIVED CODE PAYLOAD:", result);
 
       if (clientTimeoutRef.current) {
         clearTimeout(clientTimeoutRef.current);
         clientTimeoutRef.current = null;
       }
-
-      setJobState('completed');
-      setActiveNode(null);
 
       const history = result.roundsHistory || [];
       if (history.length > 0) {
@@ -788,11 +802,34 @@ function App() {
                            result.finalCode || 
                            result.code || 
                            history.filter(r => (r.code || r.finalCode) && !(r.code || r.finalCode).includes('Select a problem')).pop()?.code || 
-                           history.filter(r => (r.code || r.finalCode)).pop()?.code ||
                            '';
 
       const finalCode = cleanCodeForEditor(rawFinalCode);
       console.log("EXTRACTED FINAL CODE FOR EDITOR:", finalCode);
+
+      // Strict Validation: Code payload must be non-empty (>40 chars) and contain valid implementation body
+      const isValidCodePayload = finalCode && 
+                                 finalCode.trim().length > 40 && 
+                                 !finalCode.includes('Select a problem') && 
+                                 (finalCode.includes('return') || finalCode.includes('def ') || finalCode.includes('public:') || finalCode.includes('class Solution'));
+
+      if (!isValidCodePayload) {
+        console.warn("[Validation Error] Incomplete or invalid Code Payload received:", finalCode);
+        setJobState('failed');
+        setHasExecuted(false);
+        setActiveNode(null);
+        setError('Execution Failed: Incomplete Code Payload');
+        showToast('⚠️ Execution Failed: Incomplete Code Payload');
+
+        socket.off(`job-progress:${tempJobId}`);
+        socket.off(`job-completed:${tempJobId}`);
+        socket.off(`job-failed:${tempJobId}`);
+        return;
+      }
+
+      setJobState('completed');
+      setHasExecuted(true);
+      setActiveNode(null);
 
       const cleanedResult = result.finalResult ? {
         ...result.finalResult,
@@ -825,8 +862,10 @@ function App() {
       }
 
       setJobState('failed');
+      setHasExecuted(false);
       setActiveNode(null);
       setError(data?.error || 'Execution failed on server.');
+      showToast('⚠️ Execution Failed: Server Error');
       
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
@@ -840,6 +879,7 @@ function App() {
     if (!problemDescription.trim() && !problemUrl.trim()) {
       setError('Please enter a problem description or paste a LeetCode URL.');
       setJobState('failed');
+      setHasExecuted(false);
       return;
     }
 
@@ -849,6 +889,7 @@ function App() {
 
     setJobId(tempJobId);
     setJobState('active');
+    setHasExecuted(false);
     setError(null);
     setActiveNode(null);
     setCurrentRound(1);
@@ -1057,7 +1098,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   }, []);
 
   const getOptimizationPercentage = () => {
-    if (jobState === 'completed') return 100;
+    if (jobState === 'failed' || error || !hasExecuted) return 0;
+    if (jobState === 'completed' && hasExecuted) return 100;
     if (jobState === 'idle') return 0;
     if (activeNode === 'coder') return 35;
     if (activeNode === 'sandbox') return 70;
@@ -1199,7 +1241,13 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     roundsHistory.forEach((r) => {
       if (r.sandboxResults && Array.isArray(r.sandboxResults)) {
         r.sandboxResults.forEach((tc) => {
-          cases.push({ ...tc, round: r.round || 1 });
+          cases.push({
+            ...tc,
+            input: unescapeHtmlEntities(tc.input),
+            expectedOutput: unescapeHtmlEntities(tc.expectedOutput || tc.expected),
+            actualOutput: unescapeHtmlEntities(tc.actualOutput || tc.actual),
+            round: r.round || 1
+          });
         });
       }
     });
@@ -1831,183 +1879,184 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <span className="text-emerald-400 font-semibold tracking-wide" style={{ fontSize: '0.875rem' }}>
                 {isTerminalOpen ? 'Hide Execution Trace' : 'View Full Execution Trace'}
               </span>
-              <ChevronRight size={16} className={`text-emerald-400 transition-transform duration-200 ${isTerminalOpen ? 'rotate-90' : ''}`} style={{ marginLeft: 'auto' }} />
             </button>
           </div>
         </section>
       </main>
 
-      {/* Restored Bottom Panels Section: Test Cases / Input-Output Panel & Complexity Analysis Panel */}
-      <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
-        
-        {/* Panel 1: TEST CASES / INPUT-OUTPUT PANEL */}
-        <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.08)',
-          borderRadius: '12px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#10b981', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                  <Terminal size={16} />
+      {/* Restored Bottom Panels Section: Test Cases & Complexity Analysis (Rendered ONLY when hasExecuted is true and job completed successfully) */}
+      {hasExecuted && jobState === 'completed' && (
+        <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
+          
+          {/* Panel 1: TEST CASES / INPUT-OUTPUT PANEL */}
+          <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            boxShadow: '0 4px 20px rgba(16, 185, 129, 0.08)',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.18)', color: '#10b981', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                    <Terminal size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    TEST CASES & INPUT-OUTPUT PANEL
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  TEST CASES & INPUT-OUTPUT PANEL
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6ee7b7', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  {allTestCases.length > 0 ? `${allTestCases.filter(t => t.status === 'PASS' || t.status === 'PASSED').length}/${allTestCases.length} PASSED` : 'READY'}
                 </span>
               </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6ee7b7', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                {allTestCases.length > 0 ? `${allTestCases.filter(t => t.status === 'PASS' || t.status === 'PASSED').length}/${allTestCases.length} PASSED` : 'READY'}
-              </span>
+
+              {allTestCases.length > 0 ? (
+                <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                  {allTestCases.slice(0, 5).map((tc, idx) => {
+                    const isPass = tc.status === 'PASS' || tc.status === 'PASSED';
+                    return (
+                      <div key={idx} style={{
+                        background: 'rgba(13, 14, 18, 0.85)',
+                        border: isPass ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '0.72rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 700, color: '#e2e8f0' }}>Test Case #{idx + 1} (Round {tc.round})</span>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: isPass ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                            color: isPass ? '#34d399' : '#fca5a5'
+                          }}>
+                            {tc.status || (isPass ? 'PASS' : 'FAIL')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                          <div><span style={{ color: '#64748b' }}>Input:</span> <span style={{ color: '#93c5fd' }}>{tc.input || 'N/A'}</span></div>
+                          <div><span style={{ color: '#64748b' }}>Expected:</span> <span style={{ color: '#86efac' }}>{tc.expectedOutput || tc.expected || 'N/A'}</span></div>
+                          <div><span style={{ color: '#64748b' }}>Actual:</span> <span style={{ color: isPass ? '#86efac' : '#fca5a5' }}>{tc.actualOutput || tc.actual || 'N/A'}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: '16px', background: 'rgba(13, 14, 18, 0.6)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: 0 }}>
+                    Test case inputs, expected outputs, and sandbox execution results will populate here as agents verify solutions.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {allTestCases.length > 0 ? (
-              <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
-                {allTestCases.slice(0, 5).map((tc, idx) => {
-                  const isPass = tc.status === 'PASS' || tc.status === 'PASSED';
-                  return (
-                    <div key={idx} style={{
-                      background: 'rgba(13, 14, 18, 0.85)',
-                      border: isPass ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      fontSize: '0.72rem'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 700, color: '#e2e8f0' }}>Test Case #{idx + 1} (Round {tc.round})</span>
-                        <span style={{
-                          fontSize: '0.62rem',
-                          fontWeight: 800,
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          backgroundColor: isPass ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                          color: isPass ? '#34d399' : '#fca5a5'
-                        }}>
-                          {tc.status || (isPass ? 'PASS' : 'FAIL')}
-                        </span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontFamily: 'monospace', fontSize: '0.7rem' }}>
-                        <div><span style={{ color: '#64748b' }}>Input:</span> <span style={{ color: '#93c5fd' }}>{tc.input || 'N/A'}</span></div>
-                        <div><span style={{ color: '#64748b' }}>Expected:</span> <span style={{ color: '#86efac' }}>{tc.expectedOutput || tc.expected || 'N/A'}</span></div>
-                        <div><span style={{ color: '#64748b' }}>Actual:</span> <span style={{ color: isPass ? '#86efac' : '#fca5a5' }}>{tc.actualOutput || tc.actual || 'N/A'}</span></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div style={{ padding: '16px', background: 'rgba(13, 14, 18, 0.6)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.74rem', color: '#64748b', margin: 0 }}>
-                  Test case inputs, expected outputs, and sandbox execution results will populate here as agents verify solutions.
-                </p>
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveModal('strategy')}
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#6ee7b7',
+                  cursor: 'pointer',
+                  gap: '6px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                className="hover:bg-emerald-500/25 transition-colors"
+              >
+                <span>Read Strategy & Proof Invariants &gt;</span>
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+          {/* Panel 2: COMPLEXITY ANALYSIS PANEL */}
+          <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
+            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            border: '1px solid rgba(6, 182, 212, 0.35)',
+            boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                    <Clock size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    COMPLEXITY ANALYSIS PANEL
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                  {finalResult ? 'VERIFIED' : 'READY'}
+                </span>
+              </div>
+
+              {/* Large Clear Badges for Time & Space */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                    {finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)'}
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                    {finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)'}
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                {finalResult?.explanation ? finalResult.explanation.substring(0, 120) + '...' : 'Optimal runtime asymptotic scaling verified by multi-agent consensus.'}
+              </p>
+            </div>
+
             <button
               type="button"
-              onClick={() => setActiveModal('strategy')}
+              onClick={() => setActiveModal('complexity')}
               style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                color: '#6ee7b7',
+                background: 'rgba(6, 182, 212, 0.18)',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                color: '#38bdf8',
                 cursor: 'pointer',
                 gap: '6px',
                 height: '34px',
                 borderRadius: '8px',
                 fontSize: '0.72rem',
                 fontWeight: 600,
-                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                marginTop: '6px'
               }}
-              className="hover:bg-emerald-500/25 transition-colors"
+              className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center hover:bg-cyan-500/25 hover:border-cyan-400"
             >
-              <span>Read Strategy & Proof Invariants &gt;</span>
+              <span>View Complexity Report &gt;</span>
             </button>
           </div>
         </div>
-
-        {/* Panel 2: COMPLEXITY ANALYSIS PANEL */}
-        <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
-          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.35)',
-          boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
-          borderRadius: '12px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          justify: 'space-between',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                  <Clock size={16} />
-                </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  COMPLEXITY ANALYSIS PANEL
-                </span>
-              </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                {finalResult ? 'VERIFIED' : 'READY'}
-              </span>
-            </div>
-
-            {/* Large Clear Badges for Time & Space */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
-                  {finalResult?.timeComplexity ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'O(N)'}
-                </div>
-              </div>
-              <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                  {finalResult?.spaceComplexity ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'O(1)'}
-                </div>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
-              {finalResult?.explanation ? finalResult.explanation.substring(0, 120) + '...' : 'Optimal runtime asymptotic scaling verified by multi-agent consensus.'}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActiveModal('complexity')}
-            style={{
-              background: 'rgba(6, 182, 212, 0.18)',
-              border: '1px solid rgba(6, 182, 212, 0.4)',
-              color: '#38bdf8',
-              cursor: 'pointer',
-              gap: '6px',
-              height: '34px',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: '6px'
-            }}
-            className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center hover:bg-cyan-500/25 hover:border-cyan-400"
-          >
-            <span>View Complexity Report &gt;</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Slide-Up Detailed Execution Terminal Bottom Drawer (VS Code Style with Drag-to-Resize) */}
       <div 
