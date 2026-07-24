@@ -1418,7 +1418,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         <section className="panel-center">
           
           {/* Verification Workspace Card */}
-          <div className="bento-card code-workspace-card">
+          <div className="bento-card code-workspace-card min-h-[540px] h-[540px] flex flex-col">
             {/* VERIFIED Banner */}
             {jobState === 'completed' && finalResult && (
               <div className="verified-banner fade-in" style={{
@@ -1606,7 +1606,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
         
         {/* Right Column (col-span-3): Pipeline & Logs */}
-        <section className="panel-right">
+        <section className="panel-right h-[540px] flex flex-col justify-between">
           
           {/* Card 1: AGENT STATUS */}
           <div className="bento-card arena-card">
@@ -1666,12 +1666,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* Card 3: VALIDATION LOGS */}
-          <div className="bento-card logs-card">
+          <div className="bento-card logs-card flex-1 flex flex-col justify-between min-h-0">
             <h2 className="card-title">
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div ref={terminalContainerRef} className="logs-terminal max-h-[360px] overflow-y-auto" style={{ padding: '8px 12px' }}>
+            <div ref={terminalContainerRef} className="logs-terminal flex-1 overflow-y-auto" style={{ padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
@@ -1794,7 +1794,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
       {/* Bottom Section: Dedicated Grid for Complexity Analysis & Strategy & Proof (Shown ONLY when finalResult is available) */}
       {finalResult && (
-        <div className="grid grid-cols-2 gap-4 w-full mt-2 max-w-[1750px] mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '8px auto 0' }}>
+        <div className="grid grid-cols-2 gap-4 w-full mt-3 max-w-[1750px] mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '12px auto 0' }}>
           {/* Card 1: Complexity Analysis (Left Column 50%) */}
           <div className="bento-card fade-in col-span-1 h-full flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',

@@ -148,8 +148,11 @@
   grid-column: span 3; /* col-span-3 */
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  height: auto;
+  gap: 12px;
+  min-height: 540px;
+  height: 540px;
+  max-height: 540px;
+  justify-content: space-between;
   margin-top: 0;
   padding-top: 0;
   overflow: visible;
@@ -459,24 +462,24 @@
 .code-workspace-card {
   display: flex;
   flex-direction: column;
-  min-height: 480px;
-  height: 480px;
-  max-height: 480px;
+  min-height: 540px;
+  height: 540px;
+  max-height: 540px;
   flex-shrink: 0;
 }
 
 .workspace-content {
   display: flex;
   flex-direction: column;
-  min-height: 480px;
-  height: 480px;
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 .code-editor-container {
-  min-height: 480px;
-  height: 480px;
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   background-color: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 8px;
@@ -488,9 +491,9 @@
 }
 
 .diff-view-container {
-  min-height: 480px;
-  height: 480px;
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -625,12 +628,15 @@
 .logs-card {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
 }
 
 .logs-terminal {
-  height: 280px;
-  max-height: 360px;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border-slate);
   border-radius: 6px;
