@@ -1666,12 +1666,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* Card 3: VALIDATION LOGS */}
-          <div className="bento-card logs-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="bento-card logs-card">
             <h2 className="card-title">
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div ref={terminalContainerRef} className="logs-terminal" style={{ flex: 1, minHeight: '280px', overflowY: 'auto', padding: '8px 12px' }}>
+            <div ref={terminalContainerRef} className="logs-terminal max-h-[360px] overflow-y-auto" style={{ padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
