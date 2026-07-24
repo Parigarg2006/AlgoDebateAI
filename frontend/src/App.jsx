@@ -1227,33 +1227,38 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     });
   }, [terminalLogs]);
 
-  // Bulletproof final code resolution cascade (never renders empty 6-line boilerplate once code is generated)
+  // Bulletproof final code resolution cascade (updates live stream dynamically)
   const getFinalSolutionCode = useCallback(() => {
-    // 1. Direct finalResult.finalCode from backend completion event
+    // 1. Live code stream during active execution run
+    if (jobState === 'active' && liveCode && liveCode.trim().length > 10 && !liveCode.includes('Select a problem')) {
+      return cleanCodeForEditor(liveCode);
+    }
+
+    // 2. Direct finalResult.finalCode from backend completion event
     if (finalResult?.finalCode && finalResult.finalCode.trim().length > 20 && !finalResult.finalCode.includes('Select a problem')) {
       return cleanCodeForEditor(finalResult.finalCode);
     }
 
-    // 2. Refiner node code from roundsHistory
+    // 3. Refiner node code from roundsHistory
     const refinerNode = [...roundsHistory].reverse().find(r => (r.node === 'refiner' || r.node === 'refiner-done') && r.code);
     if (refinerNode?.code && refinerNode.code.trim().length > 20 && !refinerNode.code.includes('Select a problem')) {
       return cleanCodeForEditor(refinerNode.code);
     }
 
-    // 3. Last code block in roundsHistory (Coder round 4, 3, 2, 1)
+    // 4. Last code block in roundsHistory (Coder round 4, 3, 2, 1)
     const historyWithCode = roundsHistory.filter(r => r.code && r.code.trim().length > 20 && !r.code.includes('Select a problem'));
     if (historyWithCode.length > 0) {
       return cleanCodeForEditor(historyWithCode[historyWithCode.length - 1].code);
     }
 
-    // 4. Live code if it contains actual generated solution
-    if (liveCode && liveCode.trim().length > 20 && !liveCode.includes('Select a problem')) {
+    // 5. Live code fallback
+    if (liveCode && liveCode.trim().length > 10 && !liveCode.includes('Select a problem')) {
       return cleanCodeForEditor(liveCode);
     }
 
-    // 5. Default starter boilerplate when idle
+    // 6. Default starter boilerplate when idle
     return getLanguageStarterCode(language);
-  }, [finalResult, roundsHistory, liveCode, language, getLanguageStarterCode]);
+  }, [jobState, liveCode, finalResult, roundsHistory, language, getLanguageStarterCode]);
 
   const renderedCodeLines = useMemo(() => {
     const currentCodeToDisplay = getFinalSolutionCode();
