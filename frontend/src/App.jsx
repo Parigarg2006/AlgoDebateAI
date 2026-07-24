@@ -242,7 +242,7 @@ function App() {
   const [finalResult, setFinalResult] = useState(null);
   
   // Live tracking states to display code before critic-done
-  const [liveCode, setLiveCode] = useState("// Paste a problem link or description and click 'Run Verification' to start debate...");
+  const [liveCode, setLiveCode] = useState("// Select a problem and click Run Verification...");
   const [coderDraft, setCoderDraft] = useState('');
   
   // Dynamic Diff & Vault states
@@ -608,7 +608,7 @@ function App() {
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode("// Paste a problem link or description and click 'Run Verification' to start debate...");
+    setLiveCode("// Select a problem and click Run Verification...");
     setLanguage('cpp');
     setTimeoutMs(10000);
     setTestCasesCount('0');
@@ -788,7 +788,7 @@ function App() {
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode("// Paste a problem link or description and click 'Run Verification' to start debate...");
+    setLiveCode("// Select a problem and click Run Verification...");
     setCoderDraft('');
     setIsCopied(false);
 
@@ -1794,9 +1794,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
       {/* Bottom Section: Dedicated Grid for Complexity Analysis & Strategy & Proof (Shown ONLY when finalResult is available) */}
       {finalResult && (
-        <section className="bottom-row-section mt-4 grid grid-cols-2 gap-4 align-top h-auto w-full max-w-[1750px] mx-auto">
-          {/* Card 1: Complexity Analysis */}
-          <div className="bento-card fade-in" style={{
+        <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
+          {/* Card 1: Complexity Analysis (Left Column 50%) */}
+          <div className="bento-card fade-in col-span-1 h-full flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
             border: '1px solid rgba(6, 182, 212, 0.35)',
             boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
@@ -1804,41 +1804,44 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'space-between',
             gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                  <Clock size={16} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                    <Clock size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Complexity Analysis
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Complexity Analysis
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                  VERIFIED
                 </span>
               </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                VERIFIED
-              </span>
-            </div>
 
-            {/* Large Clear Badges for Time & Space */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
-                  {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
+              {/* Large Clear Badges for Time & Space */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
+                    {formatLatexFormula(unescapeNewlines(finalResult.timeComplexity))}
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
+                    {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
+                  </div>
                 </div>
               </div>
-              <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                  {formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity))}
-                </div>
-              </div>
-            </div>
 
-            <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
-              Optimal runtime asymptotic scaling verified by multi-agent validation.
-            </p>
+              <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                Optimal runtime asymptotic scaling verified by multi-agent validation.
+              </p>
+            </div>
 
             <button
               type="button"
@@ -1848,7 +1851,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 border: '1px solid rgba(6, 182, 212, 0.4)',
                 color: '#38bdf8',
                 cursor: 'pointer',
-                gap: '6px'
+                gap: '6px',
+                height: '36px'
               }}
               className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center h-9 hover:bg-cyan-500/25 hover:border-cyan-400"
             >
@@ -1857,8 +1861,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             </button>
           </div>
 
-          {/* Card 2: Strategy & Proof */}
-          <div className="bento-card fade-in" style={{
+          {/* Card 2: Strategy & Proof (Right Column 50%) */}
+          <div className="bento-card fade-in col-span-1 h-full flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
             border: '1px solid rgba(168, 85, 247, 0.35)',
             boxShadow: '0 4px 20px rgba(168, 85, 247, 0.1)',
@@ -1866,29 +1870,32 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'space-between',
             gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.18)', color: '#c084fc', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                  <Sparkles size={16} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.18)', color: '#c084fc', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                    <Sparkles size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Strategy & Proof
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Strategy & Proof
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                  PROVED
                 </span>
               </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '3px 8px', borderRadius: '100px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                PROVED
-              </span>
-            </div>
 
-            <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
-              Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
-            </p>
-            
-            <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
-              Invariant validation complete. Edge cases and mathematical boundary conditions verified across 4 agent passes.
-            </p>
+              <p style={{ fontSize: '0.76rem', color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
+                Mathematical proof of correctness, algorithmic invariant analysis, and boundary condition validation.
+              </p>
+              
+              <p style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                Invariant validation complete. Edge cases and mathematical boundary conditions verified across 4 agent passes.
+              </p>
+            </div>
 
             <button
               type="button"
@@ -1898,7 +1905,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 border: '1px solid rgba(168, 85, 247, 0.4)',
                 color: '#c084fc',
                 cursor: 'pointer',
-                gap: '6px'
+                gap: '6px',
+                height: '36px'
               }}
               className="w-full py-2 px-4 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center h-9 hover:bg-purple-500/25 hover:border-purple-400"
             >
@@ -1906,7 +1914,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <ChevronRight size={14} />
             </button>
           </div>
-        </section>
+        </div>
       )}
 
       {/* Slide-Up Detailed Execution Terminal Bottom Drawer (VS Code Style with Drag-to-Resize) */}
