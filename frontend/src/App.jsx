@@ -1908,8 +1908,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
       </main>
 
-      {/* Restored Original Bottom Cards Section: Complexity Analysis & Strategy Proof (Rendered ONLY when hasExecuted is true) */}
-      {hasExecuted && (
+      {/* Restored Original Bottom Cards Section: Complexity Analysis & Strategy Proof (Rendered ONLY on completion) */}
+      {(hasExecuted && jobState === 'completed') && (
         <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0', alignItems: 'stretch' }}>
           
           {/* LEFT CARD: COMPLEXITY ANALYSIS */}
