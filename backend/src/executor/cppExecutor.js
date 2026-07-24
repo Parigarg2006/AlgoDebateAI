@@ -110,10 +110,21 @@ function extractSignature(cppTemplate) {
 function getCppReadCode(type, varName) {
   const cleanType = type.replace(/const\s+/, '').replace(/&\s*/g, '').trim();
   
+  if (cleanType === 'string' || cleanType === 'std::string') {
+    return `
+    std::string ${varName};
+    if (!(std::cin >> ${varName})) return 0;
+    if (${varName}.length() >= 2 && ${varName}.front() == '"' && ${varName}.back() == '"') {
+        ${varName} = ${varName}.substr(1, ${varName}.length() - 2);
+    }
+    `;
+  }
+
   // Check if it is a 2D vector: vector<vector<T>>
   const vec2DMatch = cleanType.match(/^vector\s*<\s*vector\s*<\s*([\w\s\*&<>:]+?)\s*>\s*>\s*$/);
   if (vec2DMatch) {
     const innerType = vec2DMatch[1].trim();
+    const stripQuotes = (innerType === 'string' || innerType === 'std::string') ? `if (${varName}[r][c].length() >= 2 && ${varName}[r][c].front() == '"' && ${varName}[r][c].back() == '"') { ${varName}[r][c] = ${varName}[r][c].substr(1, ${varName}[r][c].length() - 2); }` : '';
     return `
     int rows_${varName}, cols_${varName};
     if (!(std::cin >> rows_${varName} >> cols_${varName})) return 0;
@@ -121,6 +132,7 @@ function getCppReadCode(type, varName) {
     for (int r = 0; r < rows_${varName}; ++r) {
         for (int c = 0; c < cols_${varName}; ++c) {
             if (!(std::cin >> ${varName}[r][c])) return 0;
+            ${stripQuotes}
         }
     }
     `;
@@ -130,12 +142,14 @@ function getCppReadCode(type, varName) {
   const vec1DMatch = cleanType.match(/^vector\s*<\s*([\w\s\*&<>:]+?)\s*>\s*$/);
   if (vec1DMatch) {
     const innerType = vec1DMatch[1].trim();
+    const stripQuotes = (innerType === 'string' || innerType === 'std::string') ? `if (${varName}[i].length() >= 2 && ${varName}[i].front() == '"' && ${varName}[i].back() == '"') { ${varName}[i] = ${varName}[i].substr(1, ${varName}[i].length() - 2); }` : '';
     return `
     int size_${varName};
     if (!(std::cin >> size_${varName})) return 0;
     ${cleanType} ${varName}(size_${varName});
     for (int i = 0; i < size_${varName}; ++i) {
         if (!(std::cin >> ${varName}[i])) return 0;
+        ${stripQuotes}
     }
     `;
   }
