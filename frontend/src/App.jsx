@@ -807,19 +807,31 @@ function App() {
       const finalCode = cleanCodeForEditor(rawFinalCode);
       console.log("EXTRACTED FINAL CODE FOR EDITOR:", finalCode);
 
-      // Strict Validation: Code payload must be non-empty (>40 chars) and contain valid implementation body
+      // 1. Strict Payload Validation: Code payload must be non-empty (>40 chars) and contain valid implementation body
       const isValidCodePayload = finalCode && 
                                  finalCode.trim().length > 40 && 
                                  !finalCode.includes('Select a problem') && 
                                  (finalCode.includes('return') || finalCode.includes('def ') || finalCode.includes('public:') || finalCode.includes('class Solution'));
 
-      if (!isValidCodePayload) {
-        console.warn("[Validation Error] Incomplete or invalid Code Payload received:", finalCode);
+      // 2. Check for sandbox errors across all rounds
+      const hasSandboxErrors = history.some(r => 
+        r.sandboxResults && Array.isArray(r.sandboxResults) && 
+        r.sandboxResults.some(tc => tc.status === 'FAIL' || tc.status === 'RTE' || tc.status === 'TLE' || tc.status === 'COMPILE_ERROR')
+      );
+
+      // 3. Real Verification Confidence check:
+      // If code payload is incomplete or sandbox contains errors/RTE -> Set Verification Confidence to 0% and mark status as 'FAILED'
+      if (!isValidCodePayload || hasSandboxErrors) {
+        console.warn("[Validation Error] Sandbox failure or incomplete payload detected. Setting Verification Confidence to 0% and status to FAILED.");
         setJobState('failed');
-        setHasExecuted(false);
+        setHasExecuted(true); // Guaranteed bottom panels rendering to show test case failures
         setActiveNode(null);
-        setError('Execution Failed: Incomplete Code Payload');
-        showToast('⚠️ Execution Failed: Incomplete Code Payload');
+        setError(hasSandboxErrors ? 'Verification Failed: Test cases or compilation failed in sandbox execution.' : 'Execution Failed: Incomplete Code Payload');
+        showToast(hasSandboxErrors ? '⚠️ Verification Failed: Sandbox test errors' : '⚠️ Execution Failed: Incomplete Code Payload');
+
+        if (finalCode) {
+          setLiveCode(finalCode);
+        }
 
         socket.off(`job-progress:${tempJobId}`);
         socket.off(`job-completed:${tempJobId}`);
@@ -827,6 +839,7 @@ function App() {
         return;
       }
 
+      // Verification Confidence set to 100% ONLY when test cases pass without compilation errors or RTE
       setJobState('completed');
       setHasExecuted(true);
       setActiveNode(null);
@@ -1884,8 +1897,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
       </main>
 
-      {/* Restored Bottom Panels Section: Test Cases & Complexity Analysis (Rendered ONLY when hasExecuted is true and job completed successfully) */}
-      {hasExecuted && jobState === 'completed' && (
+      {/* Restored Bottom Panels Section: Test Cases & Complexity Analysis (Rendered reliably whenever hasExecuted is true) */}
+      {hasExecuted && (
         <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
           
           {/* Panel 1: TEST CASES / INPUT-OUTPUT PANEL */}

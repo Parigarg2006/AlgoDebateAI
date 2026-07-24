@@ -320,27 +320,158 @@ class Solution {
     }
 }
 `;
-  } else {
-    const methodName = slugToCamelCase(slug);
+  } else if (slug === 'letter-combinations-of-a-phone-number' || slug.includes('letter-combinations')) {
     snippetsText = `
 === EXPORTED STARTER TEMPLATES ===
 C++:
 class Solution {
 public:
-    long long ${methodName}(vector<int>& nums) {
+    vector<string> letterCombinations(string digits) {
         
     }
 };
 
 Python:
 class Solution:
-    def ${methodName}(self, nums: List[int]) -> int:
+    def letterCombinations(self, digits: str) -> List[str]:
         pass
 
 Java:
 class Solution {
-    public long ${methodName}(int[] nums) {
+    public List<String> letterCombinations(String digits) {
+        return new ArrayList<>();
+    }
+}
+`;
+  } else if (slug === 'two-sum' || slug.includes('two-sum')) {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        pass
+
+Java:
+class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        return new int[]{};
+    }
+}
+`;
+  } else if (slug === 'string-to-integer-atoi' || slug.includes('atoi')) {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    int myAtoi(string s) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def myAtoi(self, s: str) -> int:
+        pass
+
+Java:
+class Solution {
+    public int myAtoi(String s) {
         return 0;
+    }
+}
+`;
+  } else if (slug === 'container-with-most-water' || slug.includes('most-water')) {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def maxArea(self, height: List[int]) -> int:
+        pass
+
+Java:
+class Solution {
+    public int maxArea(int[] height) {
+        return 0;
+    }
+}
+`;
+  } else if (slug === '3sum' || slug.includes('3sum')) {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def threeSum(self, nums: List[int]) -> List[List[int]]:
+        pass
+
+Java:
+class Solution {
+    public List<List<Integer>> threeSum(int[] nums) {
+        return new ArrayList<>();
+    }
+}
+`;
+  } else {
+    const methodName = slugToCamelCase(slug);
+    let retTypeCpp = 'int';
+    let paramTypeCpp = 'vector<int>& nums';
+    let retTypePy = 'int';
+    let paramTypePy = 'nums: List[int]';
+    let retTypeJava = 'int';
+    let paramTypeJava = 'int[] nums';
+
+    if (slug.includes('string') || slug.includes('word') || slug.includes('letter') || slug.includes('text')) {
+      retTypeCpp = 'vector<string>';
+      paramTypeCpp = 'string s';
+      retTypePy = 'List[str]';
+      paramTypePy = 's: str';
+      retTypeJava = 'List<String>';
+      paramTypeJava = 'String s';
+    }
+
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    ${retTypeCpp} ${methodName}(${paramTypeCpp}) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def ${methodName}(self, ${paramTypePy}) -> ${retTypePy}:
+        pass
+
+Java:
+class Solution {
+    public ${retTypeJava} ${methodName}(${paramTypeJava}) {
+        return null;
     }
 }
 `;
@@ -349,7 +480,10 @@ class Solution {
   return `Title: LeetCode - ${formattedTitle}
 
 Problem Description:
-The user wants a solution for LeetCode problem: ${slug} in C++. Immediately generate the optimal Solution class.
+The user wants a solution for LeetCode problem: ${slug}.
+
+=== MANDATORY LEETCODE SIGNATURE DIRECTIVE ===
+You MUST inspect the exported starter template or standard LeetCode function signature for this problem. You MUST preserve the EXACT function name, return type, and parameter types (e.g. vector<string> letterCombinations(string digits), int myAtoi(string s), vector<int> twoSum(vector<int>& nums, int target)). NEVER invent custom function names or change parameter/return types under any circumstances.
 
 ${snippetsText}`;
 }
