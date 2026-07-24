@@ -45,14 +45,7 @@ const socket = io('http://localhost:5000', {
  */
 const unescapeNewlines = (str) => {
   if (!str || typeof str !== 'string') return '';
-  let s = str;
-  if (s.includes('\\n')) {
-    s = s.replace(/\\n/g, '\n');
-  }
-  if (s.includes('\\t')) {
-    s = s.replace(/\\t/g, '\t');
-  }
-  return s;
+  return str.replaceAll('\\n', '\n').replaceAll('\\t', '\t').replaceAll('\\r', '');
 };
 
 /**
@@ -736,14 +729,28 @@ function App() {
       clearTimeout(clientTimeoutRef.current);
     }
 
-    // Client safety timeout: max 20 sec max wait
-    const maxWaitTime = Math.min((timeoutMs || 10000) + 5000, 20000);
+    // Client safety timeout: max 35-45 sec wait
+    const maxWaitTime = Math.max((timeoutMs || 10000) + 20000, 35000);
 
     clientTimeoutRef.current = setTimeout(() => {
       setJobState((currentState) => {
         if (currentState === 'active') {
-          showToast('⚠️ Execution Timed Out - Displaying Latest Code');
+          showToast('⚠️ Execution Timed Out - Displaying Available Code');
           setActiveNode(null);
+          setHasExecuted(true); // Always render bottom panels on timeout fallback
+
+          // Retrieve best available code from liveCode or roundsHistory
+          let fallbackCode = liveCode;
+          if (!fallbackCode || fallbackCode.includes('Select a problem')) {
+            const lastCode = roundsHistory.map(r => r.code || r.finalCode).filter(c => c && c.length > 20 && !c.includes('Select a problem')).pop();
+            if (lastCode) {
+              fallbackCode = cleanCodeForEditor(lastCode);
+            }
+          }
+
+          if (fallbackCode && !fallbackCode.includes('Select a problem')) {
+            setLiveCode(fallbackCode);
+          }
 
           socket.off(`job-progress:${tempJobId}`);
           socket.off(`job-completed:${tempJobId}`);

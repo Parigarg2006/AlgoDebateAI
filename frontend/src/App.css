@@ -532,7 +532,8 @@
 
 .code-line-content {
   padding-left: 14px;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   color: var(--text-primary);
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
   font-size: 0.8rem;
