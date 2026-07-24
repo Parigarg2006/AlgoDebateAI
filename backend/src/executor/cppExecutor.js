@@ -441,6 +441,10 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
     const sourcePath = path.join(TEMP_DIR, `solution_${id}.py`);
 
     let modifiedCode = code;
+    if (!modifiedCode.includes('from typing import') && !modifiedCode.includes('import typing')) {
+      modifiedCode = `from typing import List, Dict, Optional, Tuple, Set, Any\nimport collections, math, heapq, bisect, sys\n\n` + modifiedCode;
+    }
+
     try {
       const pyTemplate = extractLanguageSnippet(problemDescription, 'python');
       if (pyTemplate) {
@@ -492,6 +496,9 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
     const sourcePath = path.join(javaDir, `${className}.java`);
 
     let modifiedCode = code;
+    if (!modifiedCode.includes('import java.util')) {
+      modifiedCode = `import java.util.*;\nimport java.io.*;\nimport java.math.*;\n\n` + modifiedCode;
+    }
     try {
       const javaTemplate = extractLanguageSnippet(problemDescription, 'java');
       if (javaTemplate) {

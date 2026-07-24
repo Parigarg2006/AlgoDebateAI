@@ -1464,6 +1464,8 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                       disabled={jobState === 'active'}
                     >
                       <option value="cpp">C++</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
                     </select>
                   </div>
                 </div>
