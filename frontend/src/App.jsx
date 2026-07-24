@@ -739,6 +739,7 @@ function App() {
     }, maxWaitTime);
 
     socket.on(`job-progress:${tempJobId}`, (progress) => {
+      console.log("[Socket Stream] Progress update:", progress);
       const history = progress.roundsHistory || [];
       if (history.length === 0) return;
       
@@ -752,9 +753,11 @@ function App() {
         setCurrentRound(latest.round || 1);
       }
       
-      if (latest.code) {
-        const cleaned = cleanCodeForEditor(latest.code);
-        if (cleaned) {
+      const incomingCode = latest.code || latest.finalCode || latest.final_code || latest.refined_code;
+      if (incomingCode) {
+        const cleaned = cleanCodeForEditor(incomingCode);
+        if (cleaned && cleaned.trim().length > 10) {
+          console.log("[Socket Stream] Updated live code:", cleaned.substring(0, 60) + "...");
           setLiveCode(cleaned);
         }
       }
@@ -763,6 +766,8 @@ function App() {
     });
 
     socket.on(`job-completed:${tempJobId}`, (result) => {
+      console.log("FINAL RECEIVED CODE:", result);
+
       if (clientTimeoutRef.current) {
         clearTimeout(clientTimeoutRef.current);
         clientTimeoutRef.current = null;
@@ -776,15 +781,25 @@ function App() {
         setRoundsHistory(history);
       }
 
-      const lastHistoryCode = history.filter(r => r.code && !r.code.includes('Select a problem')).pop()?.code;
-      const finalCode = cleanCodeForEditor(result.finalResult?.finalCode || result.finalCode || lastHistoryCode || '');
+      const rawFinalCode = result.finalResult?.finalCode || 
+                           result.finalResult?.final_code || 
+                           result.finalResult?.refined_code || 
+                           result.final_code || 
+                           result.finalCode || 
+                           result.code || 
+                           history.filter(r => (r.code || r.finalCode) && !(r.code || r.finalCode).includes('Select a problem')).pop()?.code || 
+                           history.filter(r => (r.code || r.finalCode)).pop()?.code ||
+                           '';
+
+      const finalCode = cleanCodeForEditor(rawFinalCode);
+      console.log("EXTRACTED FINAL CODE FOR EDITOR:", finalCode);
 
       const cleanedResult = result.finalResult ? {
         ...result.finalResult,
-        finalCode: finalCode || cleanCodeForEditor(result.finalResult.finalCode),
-        explanation: unescapeNewlines(result.finalResult.explanation),
-        timeComplexity: unescapeNewlines(result.finalResult.timeComplexity),
-        spaceComplexity: unescapeNewlines(result.finalResult.spaceComplexity)
+        finalCode: finalCode || cleanCodeForEditor(result.finalResult.finalCode || result.finalResult.final_code),
+        explanation: unescapeNewlines(result.finalResult.explanation || result.finalResult.description || ''),
+        timeComplexity: unescapeNewlines(result.finalResult.timeComplexity || result.finalResult.time_complexity || 'O(N)'),
+        spaceComplexity: unescapeNewlines(result.finalResult.spaceComplexity || result.finalResult.space_complexity || 'O(1)')
       } : {
         finalCode,
         explanation: 'Solution compiled and verified successfully by multi-agent consensus.',
