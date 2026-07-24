@@ -260,6 +260,7 @@ function App() {
   const containerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
+  const clientTimeoutRef = useRef(null);
 
   // Helper for language starter code
   const getLanguageStarterCode = useCallback((lang) => {
@@ -717,8 +718,31 @@ function App() {
     }
   }, [problemUrl, showToast]);
 
-  // Setup WS listeners
+  // Setup WS listeners with Client-Side Safety Timeout
   const setupJobWebSocketListeners = (tempJobId) => {
+    if (clientTimeoutRef.current) {
+      clearTimeout(clientTimeoutRef.current);
+    }
+
+    // Client safety timeout: max 20 sec max wait
+    const maxWaitTime = Math.min((timeoutMs || 10000) + 5000, 20000);
+
+    clientTimeoutRef.current = setTimeout(() => {
+      setJobState((currentState) => {
+        if (currentState === 'active') {
+          showToast('⚠️ Execution Timed Out - Displaying Latest Code');
+          setActiveNode(null);
+
+          socket.off(`job-progress:${tempJobId}`);
+          socket.off(`job-completed:${tempJobId}`);
+          socket.off(`job-failed:${tempJobId}`);
+
+          return 'completed';
+        }
+        return currentState;
+      });
+    }, maxWaitTime);
+
     socket.on(`job-progress:${tempJobId}`, (progress) => {
       const history = progress.roundsHistory || [];
       if (history.length === 0) return;
@@ -727,21 +751,28 @@ function App() {
       
       if (latest.node && latest.node !== 'critic-done') {
         setActiveNode(latest.node);
-        setCurrentRound(latest.round);
+        setCurrentRound(latest.round || 1);
       } else if (latest.node === 'critic-done') {
         setActiveNode(null);
-        setCurrentRound(latest.round);
+        setCurrentRound(latest.round || 1);
       }
       
       if (latest.code) {
         const cleaned = cleanCodeForEditor(latest.code);
-        setLiveCode(cleaned);
+        if (cleaned) {
+          setLiveCode(cleaned);
+        }
       }
 
       setRoundsHistory(history);
     });
 
     socket.on(`job-completed:${tempJobId}`, (result) => {
+      if (clientTimeoutRef.current) {
+        clearTimeout(clientTimeoutRef.current);
+        clientTimeoutRef.current = null;
+      }
+
       setJobState('completed');
       setActiveNode(null);
       const cleanedResult = result.finalResult ? {
@@ -762,9 +793,14 @@ function App() {
     });
 
     socket.on(`job-failed:${tempJobId}`, (data) => {
+      if (clientTimeoutRef.current) {
+        clearTimeout(clientTimeoutRef.current);
+        clientTimeoutRef.current = null;
+      }
+
       setJobState('failed');
       setActiveNode(null);
-      setError(data.error);
+      setError(data?.error || 'Execution failed on server.');
       
       socket.off(`job-progress:${tempJobId}`);
       socket.off(`job-completed:${tempJobId}`);
@@ -792,8 +828,7 @@ function App() {
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
-    setLiveCode("// Select a problem and click Run Verification...");
-    setCoderDraft('');
+    setLiveCode(getLanguageStarterCode(language));
     setIsCopied(false);
 
     try {
@@ -820,6 +855,10 @@ function App() {
       }
 
     } catch (err) {
+      if (clientTimeoutRef.current) {
+        clearTimeout(clientTimeoutRef.current);
+        clientTimeoutRef.current = null;
+      }
       setJobState('failed');
       setJobId(null);
       setError(err.message);
