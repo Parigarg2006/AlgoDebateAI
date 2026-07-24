@@ -592,6 +592,43 @@ function App() {
     return { leftLines, rightLines };
   }, []);
 
+  // Helper to reliably get Round 1 Initial Coder Draft without placeholder text
+  const getInitialCoderDraftCode = useCallback(() => {
+    // 1. Direct state
+    if (coderDraft && !coderDraft.startsWith('// Select a problem')) {
+      return cleanCodeForEditor(coderDraft);
+    }
+
+    // 2. Search roundsHistory for round 1 / coder node code
+    const round1Coder = roundsHistory.find(r => (r.node === 'coder' || r.round === 1) && r.code);
+    if (round1Coder?.code && !round1Coder.code.startsWith('// Select a problem')) {
+      return cleanCodeForEditor(round1Coder.code);
+    }
+
+    const anyCoderCode = roundsHistory.find(r => r.code && !r.code.startsWith('// Select a problem'));
+    if (anyCoderCode?.code) {
+      return cleanCodeForEditor(anyCoderCode.code);
+    }
+
+    // 3. Fallback to finalResult.finalCode if available
+    if (finalResult?.finalCode && !finalResult.finalCode.startsWith('// Select a problem')) {
+      return cleanCodeForEditor(finalResult.finalCode);
+    }
+
+    // 4. Fallback to liveCode if it contains actual code
+    if (liveCode && !liveCode.startsWith('// Select a problem')) {
+      return cleanCodeForEditor(liveCode);
+    }
+
+    // 5. Fallback template
+    if (language === 'python') {
+      return `# Coder Agent Round 1 Initial Draft\nclass Solution:\n    def solve(self):\n        pass`;
+    } else if (language === 'java') {
+      return `// Coder Agent Round 1 Initial Draft\nclass Solution {\n    public void solve() {}\n}`;
+    }
+    return `// Coder Agent Round 1 Initial Draft\nclass Solution {\npublic:\n    void solve() {}\n};`;
+  }, [coderDraft, roundsHistory, finalResult, liveCode, language]);
+
   // Reset Handler
   const handleReset = () => {
     if (jobId) {
@@ -734,10 +771,19 @@ function App() {
         setCurrentRound(latest.round);
       }
       
+      // Capture initial Round 1 Coder draft
+      const firstCoderInHistory = history.find(h => (h.node === 'coder' || h.round === 1) && h.code)?.code;
+      if (firstCoderInHistory) {
+        const cleanedFirst = cleanCodeForEditor(firstCoderInHistory);
+        if (!cleanedFirst.startsWith('// Select a problem')) {
+          setCoderDraft(cleanedFirst);
+        }
+      }
+
       if (latest.code) {
         const cleaned = cleanCodeForEditor(latest.code);
         setLiveCode(cleaned);
-        setCoderDraft(prev => prev ? prev : cleaned);
+        setCoderDraft(prev => (prev && !prev.startsWith('// Select a problem')) ? prev : cleaned);
       }
 
       setRoundsHistory(history);
@@ -756,6 +802,12 @@ function App() {
       setFinalResult(cleanedResult);
       if (cleanedResult?.finalCode) {
         setLiveCode(cleanedResult.finalCode);
+      }
+      
+      const firstCoderInCompleted = result.roundsHistory?.find(h => (h.node === 'coder' || h.round === 1) && h.code)?.code;
+      const initialDraft = cleanCodeForEditor(result.finalResult?.coderDraft || firstCoderInCompleted || result.coderDraft || '');
+      if (initialDraft && !initialDraft.startsWith('// Select a problem')) {
+        setCoderDraft(initialDraft);
       }
       
       socket.off(`job-progress:${tempJobId}`);
@@ -985,8 +1037,11 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     } : null;
     setFinalResult(cleanedResult);
     setJobId(record.jobId);
-    setJobState('completed');
-    setCoderDraft(cleanCodeForEditor(record.coderDraft || ''));
+    const firstCoderInRecord = record.roundsHistory?.find(r => (r.node === 'coder' || r.round === 1) && r.code)?.code;
+    const draftFromRecord = cleanCodeForEditor(record.coderDraft || firstCoderInRecord || '');
+    if (draftFromRecord && !draftFromRecord.startsWith('// Select a problem')) {
+      setCoderDraft(draftFromRecord);
+    }
     if (cleanedResult && cleanedResult.finalCode) {
       setLiveCode(cleanedResult.finalCode);
     }

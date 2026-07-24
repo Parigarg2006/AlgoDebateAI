@@ -1002,11 +1002,13 @@
 }
 
 .diff-line.removed {
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 2px solid rgba(239, 68, 68, 0.5);
 }
 
 .diff-line.added {
-  background: rgba(16, 185, 129, 0.05);
+  background: rgba(16, 185, 129, 0.12);
+  border-left: 2px solid rgba(16, 185, 129, 0.5);
 }
 
 .diff-line.empty {
