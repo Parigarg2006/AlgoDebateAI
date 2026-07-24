@@ -264,6 +264,29 @@ function App() {
   const audioCtxRef = useRef(null);
   const prevLogsLengthRef = useRef(0);
 
+  // Synchronized Diff View Scroll Refs & Handlers
+  const diffLeftScrollRef = useRef(null);
+  const diffRightScrollRef = useRef(null);
+  const isSyncingScrollRef = useRef(false);
+
+  const handleLeftDiffScroll = (e) => {
+    if (isSyncingScrollRef.current) return;
+    isSyncingScrollRef.current = true;
+    if (diffRightScrollRef.current) {
+      diffRightScrollRef.current.scrollTop = e.target.scrollTop;
+    }
+    setTimeout(() => { isSyncingScrollRef.current = false; }, 40);
+  };
+
+  const handleRightDiffScroll = (e) => {
+    if (isSyncingScrollRef.current) return;
+    isSyncingScrollRef.current = true;
+    if (diffLeftScrollRef.current) {
+      diffLeftScrollRef.current.scrollTop = e.target.scrollTop;
+    }
+    setTimeout(() => { isSyncingScrollRef.current = false; }, 40);
+  };
+
   // Sound Engine
   const playTick = useCallback(() => {
     if (isMuted) return;
@@ -534,7 +557,7 @@ function App() {
     }
   }, [jobState, finalResult, jobId, problemDescription, maxRounds, language, roundsHistory, coderDraft, saveSessionToVault]);
 
-  // Diff Aligner
+  // Positional 1-to-1 Side-by-Side Diff Aligner (Zero Empty Gap Voids)
   const computeLineDiff = useCallback((oldText, newText) => {
     const oldLines = oldText ? oldText.split('\n') : [];
     const newLines = newText ? newText.split('\n') : [];
@@ -542,50 +565,29 @@ function App() {
     const leftLines = [];
     const rightLines = [];
     
-    let oldIdx = 0;
-    let newIdx = 0;
-    
-    while (oldIdx < oldLines.length || newIdx < newLines.length) {
-      const oldLine = oldLines[oldIdx];
-      const newLine = newLines[newIdx];
-      
-      if (oldIdx < oldLines.length && newIdx < newLines.length && oldLine === newLine) {
-        leftLines.push({ type: 'unchanged', text: oldLine });
-        rightLines.push({ type: 'unchanged', text: newLine });
-        oldIdx++;
-        newIdx++;
-      } else {
-        const nextMatchInOld = newIdx < newLines.length ? oldLines.slice(oldIdx, oldIdx + 20).indexOf(newLine) : -1;
-        const nextMatchInNew = oldIdx < oldLines.length ? newLines.slice(newIdx, newIdx + 20).indexOf(oldLine) : -1;
-        
-        if (nextMatchInOld !== -1 && (nextMatchInNew === -1 || nextMatchInOld <= nextMatchInNew)) {
-          for (let k = 0; k < nextMatchInOld; k++) {
-            leftLines.push({ type: 'removed', text: oldLines[oldIdx + k] });
-            rightLines.push({ type: 'empty', text: '' });
-          }
-          oldIdx += nextMatchInOld;
-        } else if (nextMatchInNew !== -1) {
-          for (let k = 0; k < nextMatchInNew; k++) {
-            leftLines.push({ type: 'empty', text: '' });
-            rightLines.push({ type: 'added', text: newLines[newIdx + k] });
-          }
-          newIdx += nextMatchInNew;
+    const maxLen = Math.max(oldLines.length, newLines.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const hasOld = i < oldLines.length;
+      const hasNew = i < newLines.length;
+
+      const oldLine = hasOld ? oldLines[i] : null;
+      const newLine = hasNew ? newLines[i] : null;
+
+      if (hasOld && hasNew) {
+        if (oldLine === newLine) {
+          leftLines.push({ type: 'unchanged', text: oldLine });
+          rightLines.push({ type: 'unchanged', text: newLine });
         } else {
-          if (oldIdx < oldLines.length && newIdx < newLines.length) {
-            leftLines.push({ type: 'removed', text: oldLines[oldIdx] });
-            rightLines.push({ type: 'added', text: newLines[newIdx] });
-            oldIdx++;
-            newIdx++;
-          } else if (oldIdx < oldLines.length) {
-            leftLines.push({ type: 'removed', text: oldLines[oldIdx] });
-            rightLines.push({ type: 'empty', text: '' });
-            oldIdx++;
-          } else if (newIdx < newLines.length) {
-            leftLines.push({ type: 'empty', text: '' });
-            rightLines.push({ type: 'added', text: newLines[newIdx] });
-            newIdx++;
-          }
+          leftLines.push({ type: 'removed', text: oldLine });
+          rightLines.push({ type: 'added', text: newLine });
         }
+      } else if (hasOld) {
+        leftLines.push({ type: 'removed', text: oldLine });
+        rightLines.push({ type: 'empty', text: '' });
+      } else if (hasNew) {
+        leftLines.push({ type: 'empty', text: '' });
+        rightLines.push({ type: 'added', text: newLine });
       }
     }
     
@@ -1719,7 +1721,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                               <span>Expand</span>
                             </button>
                           </div>
-                          <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
+                          <div 
+                            ref={diffLeftScrollRef}
+                            onScroll={handleLeftDiffScroll}
+                            className="custom-scrollbar" 
+                            style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}
+                          >
                             {leftRendered.map((line, idx) => (
                               <div key={idx} className={`diff-line ${line.type}`}>
                                 <span className="diff-line-number">{line.lineNum}</span>
@@ -1755,7 +1762,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                               <span>Expand</span>
                             </button>
                           </div>
-                          <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
+                          <div 
+                            ref={diffRightScrollRef}
+                            onScroll={handleRightDiffScroll}
+                            className="custom-scrollbar" 
+                            style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}
+                          >
                             {rightRendered.map((line, idx) => (
                               <div key={idx} className={`diff-line ${line.type}`}>
                                 <span className="diff-line-number">{line.lineNum}</span>
