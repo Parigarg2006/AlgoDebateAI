@@ -980,13 +980,14 @@
 }
 
 .diff-panel-header {
-  padding: 6px 12px;
-  background: rgba(255,255,255,0.01);
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.02);
   border-bottom: 1px solid var(--border-slate);
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .diff-line {
@@ -994,7 +995,7 @@
   align-items: baseline;
   min-height: 22px;
   white-space: pre;
-  padding: 0 4px;
+  padding: 0 16px;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
   font-size: 0.8rem;
   line-height: 1.6;

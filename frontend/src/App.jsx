@@ -703,14 +703,19 @@ function App() {
   }, [getTabContentAndFilename, showToast]);
 
   const handleTabShare = useCallback(() => {
-    const { filename } = getTabContentAndFilename();
+    const href = window.location.href;
+    const isLocalhost = href.includes('localhost') || href.includes('127.0.0.1');
+    const shareLink = isLocalhost 
+      ? (problemUrl ? `https://algodebate-ai.vercel.app/?problem=${encodeURIComponent(problemUrl)}` : 'https://algodebate-ai.vercel.app')
+      : href;
+
     try {
-      navigator.clipboard.writeText(window.location.href);
-      showToast(`Share link for ${filename} copied to clipboard!`);
+      navigator.clipboard.writeText(shareLink);
+      showToast('Share link copied to clipboard!');
     } catch (e) {
       showToast('Share link copied to clipboard!');
     }
-  }, [getTabContentAndFilename, showToast]);
+  }, [problemUrl, showToast]);
 
   // Setup WS listeners
   const setupJobWebSocketListeners = (tempJobId) => {
@@ -1555,7 +1560,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   {/* Left Column: Initial Coder Draft */}
                   <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                     <div className="diff-panel-header">Coder Draft (Initial)</div>
-                    <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                    <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
                       {(() => {
                         const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
                         return leftLines.map((line, idx) => (
@@ -1571,7 +1576,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   {/* Right Column: Refined Output */}
                   <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                     <div className="diff-panel-header">Refined Output (Final)</div>
-                    <div className="custom-scrollbar" style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+                    <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
                       {(() => {
                         const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
                         return rightLines.map((line, idx) => (
