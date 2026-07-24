@@ -1111,27 +1111,27 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           position: 'fixed',
           top: '24px',
           right: '24px',
-          backgroundColor: '#ef4444',
-          color: '#ffffff',
+          backgroundColor: '#0D1F17',
+          color: '#6ee7b7',
           padding: '12px 20px',
           borderRadius: '8px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.4)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(16, 185, 129, 0.3)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
           fontSize: '0.85rem',
           fontWeight: 700,
-          border: '1px solid rgba(255, 255, 255, 0.1)'
+          border: '1px solid rgba(16, 185, 129, 0.4)'
         }}>
-          <AlertTriangle size={16} />
+          <CheckCircle2 size={16} style={{ color: '#10b981' }} />
           <span>{toastMessage}</span>
           <button 
             onClick={() => setToastMessage(null)}
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#ffffff',
+              color: '#6ee7b7',
               marginLeft: '10px',
               cursor: 'pointer',
               fontSize: '1rem',
