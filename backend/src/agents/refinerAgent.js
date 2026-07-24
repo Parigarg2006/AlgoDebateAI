@@ -142,8 +142,8 @@ Universal Polish & Error Rectification Framework:
 
     return {
       finalCode: cleanCodeString(finalDraftCode || defaultCode),
-      explanation: `Algorithmic invariant strategy, boundary condition verification, and mathematical correctness proof generated for ${langUpper}.`,
-      strategy: `Step-by-step mathematical invariant proof and algorithmic strategy optimized for ${langUpper} execution bounds.`,
+      explanation: `No detailed explanation generated for ${langUpper} due to API rate limit or timeout.`,
+      strategy: `No mathematical strategy proof generated for ${langUpper} due to API rate limit or timeout.`,
       timeComplexity: language === 'python' ? "O(N log N)" : (language === 'java' ? "O(N)" : "O(N)"),
       spaceComplexity: language === 'python' ? "O(N)" : (language === 'java' ? "O(N)" : "O(1)")
     };
