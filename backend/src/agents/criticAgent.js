@@ -77,7 +77,9 @@ export async function critiqueCode(problemDescription, code, sandboxResults = []
     }
   }
 
-  const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
+  const normLang = (language || 'cpp').toLowerCase();
+  const langUpper = (normLang === 'python' || normLang === 'py') ? 'Python' : ((normLang === 'java') ? 'Java' : 'C++');
+
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
   prompt += `Coder's proposed ${langUpper} Code:\n${code}\n\n`;
 
@@ -102,6 +104,7 @@ export async function critiqueCode(problemDescription, code, sandboxResults = []
   const systemInstruction = customSystemInstruction || `
 You are a harsh, meticulous competitive programming judge and code reviewer.
 Your only job is to find bugs, edge case vulnerabilities, or performance/complexity bottlenecks in the provided ${langUpper} code.
+Evaluate the code strictly for ${langUpper} as selected by the user.
 
 Universal Evaluation Framework:
 1. PROBLEM CLASSIFICATION: Classify the problem type internally (e.g., Dynamic Programming, Graph Theory, Greedy, Segment Trees, String Mutation, Bit Manipulation, etc.).

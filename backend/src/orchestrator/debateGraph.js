@@ -241,17 +241,20 @@ async function sandboxNode(state) {
  */
 async function criticNode(state) {
   const lang = state.language || 'cpp';
-  console.log(`[Node: Critic] Reviewing solution logic in ${lang.toUpperCase()}...`);
+  const normLang = lang.toLowerCase();
+  const langUpper = (normLang === 'python' || normLang === 'py') ? 'Python' : ((normLang === 'java') ? 'Java' : 'C++');
+
+  console.log(`[Node: Critic] Reviewing solution logic in ${langUpper}...`);
   
   if (state.onProgress) {
-    await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code, message: '[CRITIC] Critic Agent reviewing solution logic...' });
+    await state.onProgress({ node: 'critic', round: state.currentRound, code: state.code, message: `[CRITIC] Critic Agent reviewing solution logic (${langUpper})...` });
   }
-  
+
   const criticPromptWithInstructions = (state.criticPrompt || '') + `
-[STRICT CRITIC RULES & COMPILATION ERROR DETECTION]
-1. Mandatory Signature Matching: If the C++ compilation output or signature verification contains 'no member named X', 'parameter mismatch', or signature failure, you MUST reject the code (approved = false) and force the Coder Agent to adopt the exact boilerplate signature line-for-line.
+[STRICT CRITIC RULES & EXECUTION ERROR DETECTION FOR ${langUpper}]
+1. Mandatory Signature Matching: If the ${langUpper} execution output or signature verification contains parameter mismatch, signature failure, or incorrect class structure, you MUST reject the code (approved = false) and force the Coder Agent to adopt the exact boilerplate signature line-for-line for ${langUpper}.
 2. Example Testcase Verification: Execute and simulate the generated code against ALL extracted example test cases (Example 1, Example 2, Example 3) and extreme edge cases. Reject the code (approved = false) if it fails ANY test case or uses incorrect function signatures.
-3. Zero-Error Verification Guarantee: Only set approved = true if the C++ code successfully compiles AND passes all extracted example test cases in the sandbox runner.
+3. Zero-Error Verification Guarantee: Only set approved = true if the ${langUpper} code successfully executes AND passes all extracted example test cases in the sandbox runner.
 `;
 
   const critique = await critiqueCode(state.problemDescription, state.code, state.sandboxResults, criticPromptWithInstructions, lang);

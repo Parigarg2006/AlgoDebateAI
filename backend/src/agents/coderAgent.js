@@ -19,7 +19,9 @@ const ai = new GoogleGenAI({ apiKey });
  * Supports C++, Python, and Java.
  */
 export async function generateDraft(problemDescription, criticismHistory = [], customSystemInstruction = null, language = 'cpp') {
-  const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
+  const normLang = (language || 'cpp').toLowerCase();
+  const langUpper = (normLang === 'python' || normLang === 'py') ? 'Python' : ((normLang === 'java') ? 'Java' : 'C++');
+
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
 
   // If we have criticism from the Critic Agent or Sandbox, we build an iterative prompt
@@ -39,32 +41,30 @@ export async function generateDraft(problemDescription, criticismHistory = [], c
   const systemInstruction = customSystemInstruction || `
 You are an expert competitive programmer and algorithms specialist.
 Your task is to write high-quality, optimal, and compilable ${langUpper} code.
+Write the complete optimal solution strictly in ${langUpper} (e.g. C++, Python, or Java) as selected by the user.
+
 Guidelines:
-1. Write code in ${langUpper}.
-2. MANDATORY TEMPLATE ENFORCEMENT: You MUST dynamically preserve the EXACT function name, return type, parameter types, and parameter names provided in the starter template under '=== EXPORTED STARTER TEMPLATES ===' for ANY problem input (e.g. vector<string> letterCombinations(string digits), int myAtoi(string s), vector<int> twoSum(vector<int>& nums, int target)). NEVER invent custom function names, change return types, or alter parameter types under any circumstances. Match every data type, parameter name, parameter order, and return type line-for-line. For C++, ensure the solution is wrapped inside 'class Solution { public: ... }'.
-3. For C++, you are STRICTLY PROHIBITED from appending any 'int main()', '#ifndef ONLINE_JUDGE', or standard I/O driver code. The output MUST end strictly with '};' right after the 'class Solution' block. Do NOT generate any test case parsing or driver main function.
-4. Ensure that you do not write any additional helper code or main function outside of the class Solution. The final C++ code must end with '};'.
-5. Do not include verbose print statements or prompts. Only write the class implementation.
-6. Ensure the time complexity is optimal for large input constraints.
-7. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft. This includes checking for negative bounds, empty arrays/strings/lists, single element collections, extreme inputs (maximum sizes), overflows (e.g. use long long / 64-bit integers where required), index out of bounds, and potential division by zero. Ensure type safety and correctness.
-8. Do NOT write quick hardcoded heuristics, simplified greedy arithmetic shortcuts, or oversimplified formulas. Specifically for alternating sequence problems, ABSOLUTELY FORBID greedy shortcuts, parity assumptions, or fast formulas like s + (n/2)*m. The Coder MUST generate full Dynamic Programming (DP) state-transition tables or explicit state machine simulations (or mathematically derived O(1) calculations directly from the DP relations: dp[i][UP] = dp[i-1][DOWN] + m and dp[i][DOWN] = dp[i-1][UP] - 1) to find optimal alternating sequence peaks. Ensure your code passes all general edge cases and boundary limits instead of fitting a single reference test case.
-9. You MUST perform structured, step-by-step reasoning before generating the final code. Follow this exact flow:
-   - Constraints Analysis: Analyze input sizes, types, and mathematical limits.
-   - Edge Case Strategy: Document specific plans for extreme/zero/negative bounds.
-   - Verified Code Generation: Walk through how your code implements these strategies.
-   Output this step-by-step analysis in the 'reasoning' field of your response.
-10. LeetCode Sample Test Context: When a LeetCode problem URL/description is parsed, automatically extract and include Example 1, Example 2, and explicit problem constraints into your prompt context alongside existing guidelines. Use these examples and constraints to guide your solution's correctness.
-11. DO NOT RE-DEFINE PRE-COMPILED LEETCODE STRUCTS: When generating solutions for Linked List (ListNode) or Tree (TreeNode) problems, DO NOT write or output struct ListNode or struct TreeNode definitions in the final C++ code block. Assume ListNode and TreeNode are already available globally in the LeetCode header context.
-12. FULL IMPLEMENTATION MANDATE: You are STRICTLY PROHIBITED from returning boilerplate stubs, placeholder comments, or empty function shells (such as 'pass' in Python, 'return null;' or 'return new ArrayList<>()' in Java, or empty function bodies in C++). You MUST generate the COMPLETE, FULL WORKING ALGORITHMIC LOGIC inside the function/method body for ${langUpper} that fully solves the problem.
+1. Write code strictly in ${langUpper}.
+2. MANDATORY TEMPLATE ENFORCEMENT: You MUST dynamically preserve the EXACT function name, return type, parameter types, and parameter names provided in the starter template under '=== EXPORTED STARTER TEMPLATES ===' for ${langUpper}.
+- If language is Python: You MUST wrap your solution strictly inside 'class Solution:' (e.g. def methodName(self, ...):). Include typing imports (from typing import List, Dict, Optional).
+- If language is Java: You MUST wrap your solution strictly inside 'class Solution' (e.g. public ReturnType methodName(...)). Include java.util.* imports.
+- If language is C++: You MUST wrap your solution strictly inside 'class Solution { public: ... };'.
+NEVER invent custom function names, change return types, or alter parameter types under any circumstances.
+3. You are STRICTLY PROHIBITED from appending any 'int main()', '#ifndef ONLINE_JUDGE', or driver runner code. The output MUST end cleanly after the class Solution block.
+4. Ensure the time complexity is optimal for large input constraints.
+5. Aggressively handle edge cases, dynamic boundary constraints, and type checks during the initial draft.
+6. LeetCode Sample Test Context: Use extracted sample examples and constraints to guide your solution's correctness.
+7. DO NOT RE-DEFINE PRE-COMPILED LEETCODE STRUCTS: When generating solutions for Linked List (ListNode) or Tree (TreeNode) problems, DO NOT write or output struct ListNode or struct TreeNode definitions in the final code block. Assume ListNode and TreeNode are already available globally.
+8. FULL IMPLEMENTATION MANDATE: You are STRICTLY PROHIBITED from returning boilerplate stubs, placeholder comments, or empty function shells (such as 'pass' in Python, 'return null;' in Java, or empty function bodies in C++). You MUST generate the COMPLETE, FULL WORKING ALGORITHMIC LOGIC inside the function/method body for ${langUpper} that fully solves the problem.
   `.trim();
 
   // Dynamically configure description based on language
   let codeDesc = `The complete, compilable ${langUpper} source code.`;
-  if (language === 'cpp') {
+  if (normLang === 'cpp' || normLang === 'c++') {
     codeDesc += ' You MUST wrap your solution inside class Solution { public: ... } and use the exact expected function signature parsed from the description. You are STRICTLY PROHIBITED from appending any main() function, #ifndef ONLINE_JUDGE, or driver code. The code must end strictly with "};". Do not wrap code block in backticks.';
-  } else if (language === 'python') {
+  } else if (normLang === 'python' || normLang === 'py') {
     codeDesc += ' You MUST wrap your solution inside class Solution: with a method (e.g. def methodName(self, ...)) matching the exact LeetCode signature. Include typing imports (from typing import List, Dict, Optional) if needed. Do not wrap in backticks.';
-  } else if (language === 'java') {
+  } else if (normLang === 'java') {
     codeDesc += ' You MUST wrap your solution inside class Solution { public ReturnType methodName(...) { ... } } matching the exact LeetCode signature. Include java.util.* imports if needed. Do not wrap in backticks.';
   }
 

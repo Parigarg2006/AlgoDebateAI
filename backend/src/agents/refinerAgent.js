@@ -22,7 +22,9 @@ const ai = new GoogleGenAI({ apiKey });
  * @returns {Promise<{finalCode: string, explanation: string, timeComplexity: string, spaceComplexity: string}>}
  */
 export async function refineCode(problemDescription, finalDraftCode, debateHistory = [], customSystemInstruction = null, language = 'cpp') {
-  const langUpper = language === 'cpp' ? 'C++' : (language === 'python' ? 'Python' : 'Java');
+  const normLang = (language || 'cpp').toLowerCase();
+  const langUpper = (normLang === 'python' || normLang === 'py') ? 'Python' : ((normLang === 'java') ? 'Java' : 'C++');
+
   let prompt = `Problem Description:\n${problemDescription}\n\n`;
   prompt += `Approved ${langUpper} Code Draft:\n${finalDraftCode}\n\n`;
 
@@ -35,18 +37,23 @@ export async function refineCode(problemDescription, finalDraftCode, debateHisto
     });
   }
 
-  prompt += `Please polish the approved ${langUpper} code draft. Add clear, professional comments, format it nicely (MUST include proper line breaks and indentation), write a comprehensive markdown explanation, and state the exact Time and Space complexities.`;
+  prompt += `Please polish the approved ${langUpper} code draft. Write the complete optimal solution strictly in ${langUpper} as selected by the user. Add clear, professional comments, format it nicely (MUST include proper line breaks and indentation), write a comprehensive markdown explanation, and state the exact Time and Space complexities.`;
 
   // System instruction defining the Refiner's role as a tech lead
   const systemInstruction = customSystemInstruction || `
 You are a senior technical lead and software architect.
 Your job is to polish, clean, and write clear comments for the approved ${langUpper} algorithm.
+Write the complete optimal solution strictly in ${langUpper} (e.g. C++, Python, or Java) as selected by the user.
 
 Universal Polish & Error Rectification Framework:
 1. ERROR RECTIFICATION: Inspect the debate history. If any round had sandbox execution faults (like COMPILE_ERROR, TLE, RTE, segmentation faults) or stderr streams, ensure that your final code draft fully resolves all of those issues and contains no trace of the faults.
 2. SYNTAX POLISHING: Make sure the returned ${langUpper} code uses clean, standard formatting with correct newlines and indentation.
 3. STRUCTURED SCHEMAS: Provide the final code, explanation, time complexity, and space complexity in a strict JSON format.
-4. LEETCODE PACKAGING: For C++, you MUST ensure the returned 'finalCode' is wrapped inside a standard 'class Solution { public: ... }'. For Python, wrap inside 'class Solution: def methodName(self, ...):'. For Java, wrap inside 'class Solution { public ReturnType methodName(...) { ... } }'. You MUST completely remove any helper 'main' function, stdin/stdout operations, or preprocessor blocks.
+4. LEETCODE PACKAGING FOR ${langUpper}:
+   - For Python: You MUST wrap 'finalCode' strictly inside 'class Solution:' (e.g. def methodName(self, ...):). Include typing imports (from typing import List, Dict, Optional).
+   - For Java: You MUST wrap 'finalCode' strictly inside 'class Solution' (e.g. public ReturnType methodName(...)). Include java.util.* imports.
+   - For C++: You MUST wrap 'finalCode' strictly inside 'class Solution { public: ... };'.
+   You MUST completely remove any helper 'main' function, stdin/stdout operations, or preprocessor blocks.
 5. NO STRUCT RE-DEFINITIONS: For Linked List (ListNode) or Tree (TreeNode) problems, DO NOT output struct ListNode { ... }; or struct TreeNode { ... }; in finalCode. Assume they are provided globally by LeetCode.
 6. FULL IMPLEMENTATION MANDATE: Ensure that 'finalCode' contains the COMPLETE, FULLY IMPLEMENTED ALGORITHMIC SOLUTION for ${langUpper}. Under NO circumstances return an empty stub, 'pass', 'return null;', or boilerplate shell.
   `.trim();

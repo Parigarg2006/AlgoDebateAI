@@ -257,25 +257,22 @@ class Solution {
       }
 
       // Inject standard LeetCode function signature mapping rules to guide both Coder and Refiner
-      const signatureInstruction = `
-\n\n[MANDATORY TEMPLATE ENFORCEMENT]
-You MUST wrap your code strictly inside the provided LeetCode C++ code template under '=== EXPORTED STARTER TEMPLATES ==='. Do NOT rename, alter, overload, or wrap the main driver function inside custom signatures. Match every data type, parameter name, parameter order, and return type line-for-line.
+      const normLang = (language || 'cpp').toLowerCase();
+      const langUpper = (normLang === 'python' || normLang === 'py') ? 'Python' : ((normLang === 'java') ? 'Java' : 'C++');
 
-[CRITICAL SIGNATURE RULES]
-You MUST use exact LeetCode function names and parameters for standard problems. Never invent custom function names like solve() or append arbitrary suffixes. The function name inside class Solution must match LeetCode's standard driver exactly.
-Specifically:
-- 'word-ladder-ii' -> \`vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList)\`
-- 'word-ladder' -> \`int ladderLength(string beginWord, string endWord, vector<string>& wordList)\`
-- 'n-queens-ii' -> \`int totalNQueens(int n)\`
-- 'n-queens' -> \`vector<vector<string>> solveNQueens(int n)\`
-- 'trapping-rain-water-ii' -> \`int trapRainWater(vector<vector<int>>& heightMap)\`
-- 'concatenated-words' -> \`vector<string> findAllConcatenatedWordsInADict(vector<string>& words)\`
-- 'minimum-cost-to-hire-k-workers' -> \`double mincostToHireWorkers(vector<int>& quality, vector<int>& wage, int k)\`
-- 'merge-k-sorted-lists' -> \`ListNode* mergeKLists(vector<ListNode*>& lists)\`
-- 'maximum-alternating-subsequence-sum' -> \`long long maxAlternatingSum(vector<int>& nums)\`
+      const signatureInstruction = `
+\n\n[MANDATORY TEMPLATE ENFORCEMENT FOR ${langUpper}]
+Write the complete optimal solution strictly in ${langUpper} as selected by the user.
+You MUST wrap your code strictly inside the provided LeetCode ${langUpper} code template under '=== EXPORTED STARTER TEMPLATES ==='. Do NOT rename, alter, overload, or wrap the main driver function inside custom signatures. Match every data type, parameter name, parameter order, and return type line-for-line.
+
+[CRITICAL SIGNATURE & LANGUAGE RULES FOR ${langUpper}]
+You MUST use exact LeetCode function names and parameters for standard problems. Never invent custom function names like solve() or append arbitrary suffixes.
+- For Python: Generate valid Python 3 solution inside 'class Solution:' (e.g. def methodName(self, ...):). Include typing imports (from typing import List, Dict, Optional).
+- For Java: Generate valid Java solution inside 'class Solution' (e.g. public ReturnType methodName(...)). Include java.util.* imports.
+- For C++: Generate valid C++ solution inside 'class Solution { public: ... };'.
 
 [PREVENT GENERIC FALLBACK]
-NEVER default to \`vector<int>& nums\` unless the problem explicitly takes an integer array. Always check if the input parameter is a single integer \`int n\`, 2D grid, string array, or custom pointer (e.g. \`ListNode*\`). Always map the problem slug to its exact standard LeetCode C++ class method name and parameter types.
+Always map the problem slug to its exact standard LeetCode ${langUpper} class method name and parameter types as specified in the starter template.
 `;
       finalProblemDescription += signatureInstruction;
 
