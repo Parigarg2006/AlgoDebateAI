@@ -389,6 +389,29 @@ class Solution {
     }
 }
 `;
+  } else if (slug === 'next-permutation' || slug.includes('next-permutation')) {
+    snippetsText = `
+=== EXPORTED STARTER TEMPLATES ===
+C++:
+class Solution {
+public:
+    void nextPermutation(vector<int>& nums) {
+        
+    }
+};
+
+Python:
+class Solution:
+    def nextPermutation(self, nums: List[int]) -> None:
+        pass
+
+Java:
+class Solution {
+    public void nextPermutation(int[] nums) {
+        
+    }
+}
+`;
   } else if (slug === 'container-with-most-water' || slug.includes('most-water')) {
     snippetsText = `
 === EXPORTED STARTER TEMPLATES ===

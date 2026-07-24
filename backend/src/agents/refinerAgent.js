@@ -46,7 +46,11 @@ Universal Polish & Error Rectification Framework:
 1. ERROR RECTIFICATION: Inspect the debate history. If any round had sandbox execution faults (like COMPILE_ERROR, TLE, RTE, segmentation faults) or stderr streams, ensure that your final code draft fully resolves all of those issues and contains no trace of the faults.
 2. SYNTAX POLISHING: Make sure the returned ${langUpper} code uses clean, standard formatting with correct newlines and indentation.
 3. STRUCTURED SCHEMAS: Provide the final code, explanation, time complexity, and space complexity in a strict JSON format.
-4. LEETCODE PACKAGING: For C++, you MUST ensure the returned 'finalCode' is wrapped inside a standard 'class Solution { public: ... }' and contains ONLY the solution class and methods. You MUST completely remove any helper 'main' function, stdin/stdout operations, or '#ifndef ONLINE_JUDGE' preprocessor blocks.
+4. LEETCODE PACKAGING:
+- For C++, ensure finalCode is wrapped inside 'class Solution { public: ... };'.
+- For Python, ensure finalCode is wrapped inside 'class Solution:' with proper indentation and type hints (e.g. class Solution:\n    def methodName(self, ...):).
+- For Java, ensure finalCode is wrapped inside 'class Solution { public ReturnType methodName(...) { ... } }'.
+You MUST completely remove any helper main function, stdin/stdout operations, or driver code.
 5. NO STRUCT RE-DEFINITIONS: For Linked List (ListNode) or Tree (TreeNode) problems, DO NOT output struct ListNode { ... }; or struct TreeNode { ... }; in finalCode. Assume they are provided globally by LeetCode.
 6. FULL IMPLEMENTATION MANDATE: Ensure that 'finalCode' contains the COMPLETE, FULLY IMPLEMENTED ALGORITHMIC SOLUTION for ${langUpper}. Under NO circumstances return an empty stub, 'pass', 'return null;', or boilerplate shell.
   `.trim();
