@@ -247,6 +247,7 @@ function App() {
   
   // Dynamic Diff & Vault states
   const [isDiffView, setIsDiffView] = useState(false);
+  const [expandedDiffPane, setExpandedDiffPane] = useState(null); // 'initial' | 'final' | null
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [vaultRecords, setVaultRecords] = useState([]);
 
@@ -1555,39 +1556,98 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   <span>⚔️ DEBATE IN PROGRESS: Critic challenged Coder</span>
                 </div>
               )}
-              {isDiffView && coderDraft && (jobState === 'active' || jobState === 'completed') ? (
+              {isDiffView && (jobState === 'active' || jobState === 'completed') ? (
                 <div className="diff-view-container fade-in">
-                  {/* Left Column: Initial Coder Draft */}
-                  <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                    <div className="diff-panel-header">Coder Draft (Initial)</div>
-                    <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
-                      {(() => {
-                        const { leftLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                        return leftLines.map((line, idx) => (
-                          <div key={idx} className={`diff-line ${line.type}`}>
-                            <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                            <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                  {(() => {
+                    const initialDraftCode = cleanCodeForEditor(
+                      coderDraft || 
+                      roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || 
+                      liveCode || 
+                      ''
+                    );
+                    const finalCodeOutput = cleanCodeForEditor(
+                      finalResult?.finalCode || 
+                      liveCode || 
+                      ''
+                    );
+                    const { leftLines, rightLines } = computeLineDiff(initialDraftCode, finalCodeOutput);
+
+                    return (
+                      <>
+                        {/* Left Column: Initial Coder Draft */}
+                        <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                          <div className="diff-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Coder Draft (Initial)</span>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedDiffPane('initial')}
+                              title="Expand Coder Draft (Initial)"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.65rem',
+                                fontWeight: 600
+                              }}
+                              className="hover:text-emerald-400 transition-colors"
+                            >
+                              <Maximize2 size={11} />
+                              <span>Expand</span>
+                            </button>
                           </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
-                  
-                  {/* Right Column: Refined Output */}
-                  <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                    <div className="diff-panel-header">Refined Output (Final)</div>
-                    <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
-                      {(() => {
-                        const { rightLines } = computeLineDiff(coderDraft, finalResult?.finalCode || liveCode);
-                        return rightLines.map((line, idx) => (
-                          <div key={idx} className={`diff-line ${line.type}`}>
-                            <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
-                            <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                          <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
+                            {leftLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'removed' ? '- ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ))}
                           </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
+                        </div>
+                        
+                        {/* Right Column: Refined Output */}
+                        <div className="diff-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                          <div className="diff-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Refined Output (Final)</span>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedDiffPane('final')}
+                              title="Expand Refined Output (Final)"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.65rem',
+                                fontWeight: 600
+                              }}
+                              className="hover:text-emerald-400 transition-colors"
+                            >
+                              <Maximize2 size={11} />
+                              <span>Expand</span>
+                            </button>
+                          </div>
+                          <div className="custom-scrollbar" style={{ flex: 1, padding: '10px 4px', overflowY: 'auto' }}>
+                            {rightLines.map((line, idx) => (
+                              <div key={idx} className={`diff-line ${line.type}`}>
+                                <span className="diff-line-number">{line.type !== 'empty' ? idx + 1 : ''}</span>
+                                <span className="diff-line-text">{line.type === 'added' ? '+ ' : (line.type === 'empty' ? '' : '  ')}{line.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="code-editor-container custom-scrollbar fade-in">
@@ -2455,6 +2515,145 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expanded Overlay Modal for Diff View Panes (Initial Coder Draft or Refined Output) */}
+      {expandedDiffPane && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 2050,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+          onClick={() => setExpandedDiffPane(null)}
+          className="fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '900px',
+              maxWidth: '95vw',
+              maxHeight: '85vh',
+              background: '#090a0f',
+              border: expandedDiffPane === 'initial' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '16px',
+              boxShadow: expandedDiffPane === 'initial' ? '0 0 40px rgba(239, 68, 68, 0.2)' : '0 0 40px rgba(16, 185, 129, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div 
+              style={{
+                padding: '14px 20px',
+                background: 'rgba(13, 14, 18, 0.95)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Code2 size={20} className={expandedDiffPane === 'initial' ? 'text-red-400' : 'text-emerald-400'} />
+                <h3 style={{
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  color: expandedDiffPane === 'initial' ? '#fca5a5' : '#6ee7b7',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  margin: 0
+                }}>
+                  {expandedDiffPane === 'initial' ? 'Coder Draft (Initial Round 1 Code)' : 'Refined Output (Final Polished Code)'}
+                </h3>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const codeToCopy = expandedDiffPane === 'initial'
+                      ? cleanCodeForEditor(coderDraft || roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || liveCode)
+                      : cleanCodeForEditor(finalResult?.finalCode || liveCode);
+                    handleCopyCode(codeToCopy);
+                    showToast('Copied to clipboard!');
+                  }}
+                  title="Copy Code"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem'
+                  }}
+                  className="hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  <Copy size={12} />
+                  <span>Copy Code</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExpandedDiffPane(null)}
+                  title="Close"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Code Display */}
+            <div 
+              className="custom-scrollbar"
+              style={{
+                flex: 1,
+                padding: '16px 20px',
+                overflowY: 'auto',
+                background: 'var(--bg-input)',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: '0.82rem',
+                lineHeight: 1.6
+              }}
+            >
+              {(() => {
+                const targetCode = expandedDiffPane === 'initial'
+                  ? cleanCodeForEditor(coderDraft || roundsHistory.find(r => (r.node === 'coder' || r.code))?.code || liveCode)
+                  : cleanCodeForEditor(finalResult?.finalCode || liveCode);
+                const codeLines = (targetCode || '').split('\n');
+                return codeLines.map((line, idx) => (
+                  <div key={idx} className="code-line-row">
+                    <span className="code-line-number">{idx + 1}</span>
+                    <span className="code-line-content">{line}</span>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>
