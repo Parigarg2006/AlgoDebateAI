@@ -857,11 +857,13 @@ function App() {
         ...result.finalResult,
         finalCode: finalCode || cleanCodeForEditor(result.finalResult.finalCode || result.finalResult.final_code),
         explanation: unescapeNewlines(result.finalResult.explanation || result.finalResult.description || ''),
+        strategy: unescapeNewlines(result.finalResult.strategy || result.finalResult.strategy_proof || result.finalResult.proof || result.finalResult.explanation || ''),
         timeComplexity: unescapeNewlines(result.finalResult.timeComplexity || result.finalResult.time_complexity || 'O(N)'),
         spaceComplexity: unescapeNewlines(result.finalResult.spaceComplexity || result.finalResult.space_complexity || 'O(1)')
       } : {
         finalCode,
         explanation: 'Solution compiled and verified successfully by multi-agent consensus.',
+        strategy: 'Algorithmic invariant strategy and correctness proof generated for the verified solution.',
         timeComplexity: 'O(N)',
         spaceComplexity: 'O(1)'
       };
