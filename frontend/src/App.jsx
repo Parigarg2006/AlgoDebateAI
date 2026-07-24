@@ -1202,7 +1202,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       <main className="main-container">
         
         {/* Left Column (col-span-3): Input, Configuration, Mission Path */}
-        <section className="panel-left">
+        <section className="panel-left h-[520px] max-h-[520px] flex flex-col justify-between overflow-hidden">
           
           {/* PROBLEM INPUT Section */}
           <div className="bento-card">
@@ -1415,10 +1415,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
         
         {/* Center Column (col-span-6): Verification Workspace */}
-        <section className="panel-center">
+        <section className="panel-center h-[520px] max-h-[520px] flex flex-col overflow-hidden">
           
           {/* Verification Workspace Card */}
-          <div className="bento-card code-workspace-card flex-1 h-full flex flex-col">
+          <div className="bento-card code-workspace-card h-[520px] max-h-[520px] flex flex-col overflow-hidden">
             {/* VERIFIED Banner */}
             {jobState === 'completed' && finalResult && (
               <div className="verified-banner fade-in" style={{
@@ -1606,7 +1606,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
         </section>
         
         {/* Right Column (col-span-3): Pipeline & Logs */}
-        <section className="panel-right flex-1 h-full flex flex-col justify-between">
+        <section className="panel-right h-[520px] max-h-[520px] flex flex-col justify-between overflow-hidden">
           
           {/* Card 1: AGENT STATUS */}
           <div className="bento-card arena-card">
@@ -1666,12 +1666,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* Card 3: VALIDATION LOGS */}
-          <div className="bento-card logs-card flex-1 flex flex-col justify-between min-h-0">
+          <div className="bento-card logs-card flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
             <h2 className="card-title">
               <TerminalIcon size={13} />
               VALIDATION LOGS
             </h2>
-            <div ref={terminalContainerRef} className="logs-terminal flex-1 min-h-[220px] overflow-y-auto" style={{ padding: '8px 12px' }}>
+            <div ref={terminalContainerRef} className="logs-terminal flex-1 overflow-y-auto max-h-[280px]" style={{ padding: '8px 12px' }}>
               {parsedLogs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '20px 0' }}>
                   No active logs streamed.
