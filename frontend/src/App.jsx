@@ -1038,13 +1038,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
     } : null;
     setFinalResult(cleanedResult);
     setJobId(record.jobId);
-    const firstCoderInRecord = record.roundsHistory?.find(r => (r.node === 'coder' || r.round === 1) && r.code)?.code;
-    const draftFromRecord = cleanCodeForEditor(record.coderDraft || firstCoderInRecord || '');
-    if (draftFromRecord && !draftFromRecord.startsWith('// Select a problem')) {
-      setCoderDraft(draftFromRecord);
-    }
     if (cleanedResult && cleanedResult.finalCode) {
       setLiveCode(cleanedResult.finalCode);
+    } else if (firstCoderInRecord) {
+      setLiveCode(cleanCodeForEditor(firstCoderInRecord));
     }
     setIsVaultOpen(false);
   }, []);
@@ -1157,24 +1154,24 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
   // Bulletproof final code resolution cascade (never renders empty 6-line boilerplate once code is generated)
   const getFinalSolutionCode = useCallback(() => {
     // 1. Direct finalResult.finalCode from backend completion event
-    if (finalResult?.finalCode && !finalResult.finalCode.includes('Select a problem')) {
+    if (finalResult?.finalCode && finalResult.finalCode.trim().length > 20 && !finalResult.finalCode.includes('Select a problem')) {
       return cleanCodeForEditor(finalResult.finalCode);
     }
 
     // 2. Refiner node code from roundsHistory
-    const refinerNode = roundsHistory.find(r => r.node === 'refiner' && r.code);
-    if (refinerNode?.code && !refinerNode.code.includes('Select a problem')) {
+    const refinerNode = [...roundsHistory].reverse().find(r => (r.node === 'refiner' || r.node === 'refiner-done') && r.code);
+    if (refinerNode?.code && refinerNode.code.trim().length > 20 && !refinerNode.code.includes('Select a problem')) {
       return cleanCodeForEditor(refinerNode.code);
     }
 
     // 3. Last code block in roundsHistory (Coder round 4, 3, 2, 1)
-    const historyWithCode = roundsHistory.filter(r => r.code && !r.code.includes('Select a problem'));
+    const historyWithCode = roundsHistory.filter(r => r.code && r.code.trim().length > 20 && !r.code.includes('Select a problem'));
     if (historyWithCode.length > 0) {
       return cleanCodeForEditor(historyWithCode[historyWithCode.length - 1].code);
     }
 
     // 4. Live code if it contains actual generated solution
-    if (liveCode && !liveCode.includes('Select a problem')) {
+    if (liveCode && liveCode.trim().length > 20 && !liveCode.includes('Select a problem')) {
       return cleanCodeForEditor(liveCode);
     }
 
@@ -1573,7 +1570,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Code2 size={16} className="text-emerald-400" />
                 <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 800, margin: 0 }}>
-                  CODE EDITOR ({language.toUpperCase()})
+                  CODE EDITOR ({language === 'cpp' ? 'C++' : language.toUpperCase()})
                 </span>
               </div>
               
