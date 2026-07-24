@@ -911,7 +911,7 @@ function App() {
     setJobState('active');
     setHasExecuted(false);
     setError(null);
-    setActiveNode(null);
+    setActiveNode('coder'); // Immediately reset agent status cards (Coder: RUNNING, others: PENDING) & Verification Confidence to 0%
     setCurrentRound(1);
     setRoundsHistory([]);
     setFinalResult(null);
