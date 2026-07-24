@@ -44,6 +44,13 @@ export function extractSampleTestCases(description) {
 export function cleanCodeString(str) {
   if (!str || typeof str !== 'string') return '';
   let cleaned = str;
+
+  // Extract code from markdown code fences if present
+  const codeMatch = str.match(/```(?:cpp|python|java|c\+\+|py)?\s*([\s\S]*?)```/i);
+  if (codeMatch && codeMatch[1] && codeMatch[1].trim().length > 15) {
+    cleaned = codeMatch[1].trim();
+  }
+
   if (cleaned.includes('\\n')) {
     cleaned = cleaned.replace(/\\n/g, '\n');
   }
