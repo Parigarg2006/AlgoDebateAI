@@ -1202,7 +1202,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
       <main className="main-container">
         
         {/* Left Column (col-span-3): Input, Configuration, Mission Path */}
-        <section className="panel-left h-[700px] max-h-[700px] flex flex-col justify-start gap-3 overflow-hidden">
+        <section className="panel-left h-[700px] max-h-[700px] flex flex-col justify-start gap-2.5 pb-2 overflow-hidden">
           
           {/* PROBLEM INPUT Section */}
           <div className="bento-card" style={{ padding: '12px 14px', gap: '10px' }}>
@@ -1230,7 +1230,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 value={problemDescription}
                 onChange={(e) => setProblemDescription(e.target.value)}
                 disabled={jobState === 'active'}
-                style={{ height: '65px' }}
+                style={{ height: '60px' }}
               />
             </form>
           </div>
@@ -1373,12 +1373,12 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
           
           {/* LangGraph Mission Path Node Flow */}
-          <div className="bento-card" style={{ padding: '12px 14px', gap: '10px' }}>
+          <div className="bento-card" style={{ padding: '10px 14px', gap: '8px' }}>
             <h2 className="card-title">
               <Workflow size={13} />
               LANGGRAPH MISSION PATH
             </h2>
-            <div className="mission-path-container" style={{ padding: '12px 16px' }}>
+            <div className="mission-path-container" style={{ padding: '10px 14px' }}>
               {/* Stage 1: Input */}
               <div className={`mission-node-wrapper ${getMissionNodeStatus(1)}`}>
                 <div className="mission-circle">
