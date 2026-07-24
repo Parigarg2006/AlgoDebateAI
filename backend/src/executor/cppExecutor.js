@@ -303,7 +303,7 @@ export async function executeCpp(code, testCases, language = 'cpp', timeoutMs = 
       preHeaders += `struct TreeNode {\n    int val;\n    TreeNode *left;\n    TreeNode *right;\n    TreeNode() : val(0), left(nullptr), right(nullptr) {}\n    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}\n};\n\n`;
     }
 
-    if (!modifiedCode.includes('#include <vector>') && !modifiedCode.includes('#include<vector>')) {
+    if (!modifiedCode.includes('using namespace std;') && !modifiedCode.includes('using namespace std')) {
       modifiedCode = preHeaders + modifiedCode;
     }
     try {

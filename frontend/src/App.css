@@ -509,11 +509,12 @@
 
 .code-line-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
-  font-size: 0.8rem;
-  line-height: 1.6;
-  min-height: 22px;
+  font-size: 0.82rem;
+  line-height: 1.6rem !important;
+  min-height: 1.6rem;
+  width: 100%;
 }
 
 .code-line-number {
@@ -528,16 +529,17 @@
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
+  line-height: 1.6rem !important;
 }
 
 .code-line-content {
   padding-left: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre !important;
+  word-break: normal;
   color: var(--text-primary);
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'ui-monospace', monospace);
-  font-size: 0.8rem;
-  line-height: 1.6;
+  font-size: 0.82rem;
+  line-height: 1.6rem !important;
   flex: 1;
 }
 

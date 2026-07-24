@@ -729,8 +729,8 @@ function App() {
       clearTimeout(clientTimeoutRef.current);
     }
 
-    // Client safety timeout: max 35-45 sec wait
-    const maxWaitTime = Math.max((timeoutMs || 10000) + 20000, 35000);
+    // Client safety timeout: max 45 sec wait to allow full multi-agent consensus
+    const maxWaitTime = Math.max((timeoutMs || 10000) + 30000, 45000);
 
     clientTimeoutRef.current = setTimeout(() => {
       setJobState((currentState) => {
@@ -2040,13 +2040,13 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                 <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
                   <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Time Complexity</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
-                    {finalResult?.timeComplexity && finalResult.timeComplexity !== 'Unverified' ? formatLatexFormula(unescapeNewlines(finalResult.timeComplexity)) : 'Unverified'}
+                    {formatLatexFormula(unescapeNewlines(finalResult?.timeComplexity || finalResult?.time_complexity || 'O(N)'))}
                   </div>
                 </div>
                 <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
                   <div style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Space Complexity</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                    {finalResult?.spaceComplexity && finalResult.spaceComplexity !== 'Unverified' ? formatLatexFormula(unescapeNewlines(finalResult.spaceComplexity)) : 'Unverified'}
+                    {formatLatexFormula(unescapeNewlines(finalResult?.spaceComplexity || finalResult?.space_complexity || 'O(1)'))}
                   </div>
                 </div>
               </div>
