@@ -263,13 +263,8 @@ function App() {
   const clientTimeoutRef = useRef(null);
 
   // Helper for language starter code
-  const getLanguageStarterCode = useCallback((lang) => {
-    if (lang === 'python') {
-      return `# Select a problem and click Run Verification...\n\nclass Solution:\n    def solve(self, nums: list[int]) -> int:\n        return 0`;
-    } else if (lang === 'java') {
-      return `// Select a problem and click Run Verification...\n\nimport java.util.*;\n\nclass Solution {\n    public int solve(int[] nums) {\n        return 0;\n    }\n}`;
-    }
-    return `// Select a problem and click Run Verification...\n\n#include <iostream>\n#include <vector>\n\nusing namespace std;\n\nclass Solution {\npublic:\n    int solve(vector<int>& nums) {\n        return 0;\n    }\n};`;
+  const getLanguageStarterCode = useCallback((_lang) => {
+    return '// Select a problem and click Run Verification...';
   }, []);
 
   // Multi-Language Syntax Highlighter
@@ -1370,13 +1365,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
                     <select 
                       className="bento-select" 
                       value={language} 
-                      onChange={(e) => {
-                        const newLang = e.target.value;
-                        setLanguage(newLang);
-                        if (jobState === 'idle' || liveCode.startsWith('// Select a problem') || liveCode.startsWith('# Select a problem')) {
-                          setLiveCode(getLanguageStarterCode(newLang));
-                        }
-                      }} 
+                      onChange={(e) => setLanguage(e.target.value)} 
                       disabled={jobState === 'active'}
                     >
                       <option value="cpp">C++</option>
@@ -1570,7 +1559,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Code2 size={16} className="text-emerald-400" />
                 <span className="card-title" style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 800, margin: 0 }}>
-                  CODE EDITOR ({language === 'cpp' ? 'C++' : language.toUpperCase()})
+                  CODE EDITOR
                 </span>
               </div>
               
