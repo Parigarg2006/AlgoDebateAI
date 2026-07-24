@@ -398,7 +398,7 @@ export async function fetchLeetCodeProblem(problemUrl) {
           variables: { titleSlug: slug }
         })
       }),
-      5000
+      1500
     );
 
     if (response.ok) {

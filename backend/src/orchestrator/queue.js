@@ -41,6 +41,14 @@ export const debateWorker = new Worker(
       }
     };
 
+    // Immediately notify frontend WebSocket that graph execution has started
+    await onProgress({
+      node: 'coder',
+      round: 1,
+      code: '// Select a problem and click Run Verification...',
+      message: '[SYSTEM] Initializing LangGraph debate graph...'
+    });
+
     try {
       const { problemDescription, problemUrl, maxRounds, language, coderPrompt, criticPrompt, refinerPrompt } = job.data;
 
