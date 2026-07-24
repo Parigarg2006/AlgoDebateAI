@@ -1906,10 +1906,10 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
 
       {/* Restored Bottom Panels Section: Test Cases & Complexity Analysis (Rendered reliably whenever hasExecuted is true) */}
       {hasExecuted && (
-        <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0' }}>
+        <div className="grid grid-cols-2 gap-4 w-full mt-4 max-w-[1750px] mx-auto fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', maxWidth: '1750px', margin: '16px auto 0', alignItems: 'stretch' }}>
           
           {/* Panel 1: TEST CASES / INPUT-OUTPUT PANEL */}
-          <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
+          <div className="bento-card col-span-1 h-full min-h-[220px] flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
             boxShadow: '0 4px 20px rgba(16, 185, 129, 0.08)',
@@ -1917,7 +1917,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            justify: 'space-between',
+            justifyContent: 'space-between',
+            minHeight: '220px',
+            height: '100%',
             gap: '12px'
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2005,7 +2007,7 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
           </div>
 
           {/* Panel 2: COMPLEXITY ANALYSIS PANEL */}
-          <div className="bento-card col-span-1 h-full flex flex-col justify-between" style={{
+          <div className="bento-card col-span-1 h-full min-h-[220px] flex flex-col justify-between" style={{
             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%)',
             border: '1px solid rgba(6, 182, 212, 0.35)',
             boxShadow: '0 4px 20px rgba(6, 182, 212, 0.1)',
@@ -2013,7 +2015,9 @@ Please refactor and correct this C++ code so that it compiles and passes this cu
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            justify: 'space-between',
+            justifyContent: 'space-between',
+            minHeight: '220px',
+            height: '100%',
             gap: '12px'
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
